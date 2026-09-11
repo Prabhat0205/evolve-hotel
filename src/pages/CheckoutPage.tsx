@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   CreditCard, ShieldCheck, Lock, Calendar, Users, 
-  Sparkles, CheckCircle2, ArrowLeft, Bed, Info, LogIn, UserPlus, UserCircle2, Check 
+  Sparkles, CheckCircle2, ArrowLeft, Bed, Info, LogIn, UserPlus, UserCircle2, Check,
+  ShoppingBag, Plus, Minus, Trash2
 } from 'lucide-react';
 import { Reservation } from '../types';
 
 export const CheckoutPage: React.FC = () => {
   const { 
     selectedProperty, selectedRoom, selectedRate, 
+    selectedRooms, removeRoomFromOrder, updateRoomQuantity, clearRoomOrder,
     searchDates, currentUser, isMember, navigateTo, 
     setLastConfirmedReservation, addToast, openAuthModal,
     activeGuestCode, activeGuestPhone, addReservation
@@ -87,9 +89,24 @@ export const CheckoutPage: React.FC = () => {
     }
   };
 
+  // Resolve order items from multi-room selection or fallback to current single selection
+  const fallbackOrderItem = {
+    id: 'single-room-selection',
+    room,
+    rate,
+    quantity: 1
+  };
+
+  const orderItems = selectedRooms.length > 0 ? selectedRooms : [fallbackOrderItem];
+  const totalRoomsCount = orderItems.reduce((acc, item) => acc + item.quantity, 0);
+
   const nights = 4;
-  const freeNightDiscount = (useFreeNight && !isGuestCheckout) ? rate.nightlyPrice : 0;
-  const subtotal = Math.max(0, rate.nightlyPrice * nights - freeNightDiscount);
+  const nightlySubtotal = orderItems.reduce((acc, item) => {
+    return acc + item.rate.nightlyPrice * item.quantity;
+  }, 0);
+
+  const freeNightDiscount = (useFreeNight && !isGuestCheckout) ? (orderItems[0]?.rate.nightlyPrice || 480) : 0;
+  const subtotal = Math.max(0, nightlySubtotal * nights - freeNightDiscount);
   const taxesAndFees = Math.round(subtotal * 0.12);
   const total = subtotal + taxesAndFees;
 
@@ -132,6 +149,18 @@ export const CheckoutPage: React.FC = () => {
       const code = `EV-${Math.floor(100000 + Math.random() * 900000)}`;
       const generatedGuestCode = checkoutMode === 'guest' ? `GUEST-${Math.floor(100000 + Math.random() * 900000)}` : undefined;
 
+      const bookedRoomsList = orderItems.map(item => ({
+        roomName: item.room.name,
+        bedConfig: item.room.bedConfig,
+        rateTitle: isGuestCheckout ? (item.rate.title.includes('Member') ? 'Standard Suite Rate (Room Only)' : item.rate.title) : item.rate.title,
+        nightlyRate: item.rate.nightlyPrice,
+        quantity: item.quantity
+      }));
+
+      const primaryRoomTitle = orderItems.length === 1
+        ? `${orderItems[0].quantity > 1 ? `${orderItems[0].quantity}× ` : ''}${orderItems[0].room.name}`
+        : `${totalRoomsCount} Rooms (${orderItems.map(i => `${i.quantity}× ${i.room.name}`).join(', ')})`;
+
       const newReservation: Reservation = {
         id: `res-${Date.now()}`,
         confirmationCode: code,
@@ -140,15 +169,15 @@ export const CheckoutPage: React.FC = () => {
         propertyCity: `${selectedProperty.city}, ${selectedProperty.country}`,
         propertyAddress: selectedProperty.address,
         propertyImage: selectedProperty.heroImage,
-        roomName: room.name,
-        roomCategory: room.category,
+        roomName: primaryRoomTitle,
+        roomCategory: orderItems[0]?.room.category || 'SUITE',
         checkInDate: searchDates.checkIn,
         checkOutDate: searchDates.checkOut,
         nightsCount: nights,
         guestsCount: { adults: searchDates.adults, children: searchDates.children },
         status: 'CONFIRMED',
-        rateType: rate.title,
-        nightlyRate: rate.nightlyPrice,
+        rateType: orderItems.length === 1 ? orderItems[0].rate.title : `${totalRoomsCount} Suites Combined Rate`,
+        nightlyRate: nightlySubtotal,
         taxesAndFees,
         totalAmount: total,
         currency: 'USD',
@@ -157,11 +186,13 @@ export const CheckoutPage: React.FC = () => {
         specialRequests: `${spaAccessSelected && !isGuestCheckout ? 'Hydrotherapy Spa Access included. ' : ''}${specialRequests}`,
         guestPhone: checkoutMode === 'guest' ? phone : undefined,
         guestCode: generatedGuestCode,
-        userId: currentUser ? currentUser.id : undefined
+        userId: currentUser ? currentUser.id : undefined,
+        bookedRooms: bookedRoomsList
       };
 
       setLastConfirmedReservation(newReservation);
       addReservation(newReservation);
+      clearRoomOrder();
       setSubmitting(false);
 
       if (checkoutMode === 'guest' && generatedGuestCode) {
@@ -264,6 +295,135 @@ export const CheckoutPage: React.FC = () => {
             alignItems: 'start'
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              {/* Multi-Room Order Breakdown Card */}
+              <div className="evolve-card" style={{ padding: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+                      Selected Suites & Rooms in Order ({totalRoomsCount})
+                    </h3>
+                    <p style={{ color: '#6e7a76', fontSize: '0.8125rem', margin: '4px 0 0 0' }}>
+                      All accommodations below will be guaranteed together on this reservation.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('property-detail')}
+                    style={{
+                      backgroundColor: '#f6f3ec',
+                      color: '#173f34',
+                      border: '1.5px solid #173f34',
+                      borderRadius: '9999px',
+                      padding: '7px 14px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Plus size={14} /> Add Another Suite
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {orderItems.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px',
+                        borderRadius: '14px',
+                        backgroundColor: '#faf9f5',
+                        border: '1px solid #eeece5',
+                        gap: '14px',
+                        flexWrap: 'wrap'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '220px', flex: 1 }}>
+                        <img
+                          src={item.room.images[0] || selectedProperty.heroImage}
+                          alt={item.room.name}
+                          style={{ width: '64px', height: '64px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                        <div style={{ minWidth: 0 }}>
+                          <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#17271f', margin: 0 }}>
+                            {item.room.name}
+                          </h4>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <Bed size={13} color="#dda943" /> {item.room.bedConfig}
+                            </span>
+                            <span>•</span>
+                            <span>{item.room.maxGuests} Guests Max</span>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#997125', fontWeight: 600, marginTop: '2px' }}>
+                            {item.rate.title} · ${item.rate.nightlyPrice}/night
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                        {selectedRooms.length > 0 && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #d8d6cf',
+                            borderRadius: '8px',
+                            padding: '4px 8px'
+                          }}>
+                            <button
+                              type="button"
+                              onClick={() => updateRoomQuantity(item.id, item.quantity - 1)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#17271f' }}
+                              title="Decrease quantity"
+                            >
+                              <Minus size={13} />
+                            </button>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 700, minWidth: '18px', textAlign: 'center' }}>
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateRoomQuantity(item.id, item.quantity + 1)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#17271f' }}
+                              title="Increase quantity"
+                            >
+                              <Plus size={13} />
+                            </button>
+                          </div>
+                        )}
+
+                        <div style={{ textAlign: 'right', minWidth: '90px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#17271f' }}>
+                            ${item.quantity * item.rate.nightlyPrice * nights}
+                          </div>
+                          <div style={{ fontSize: '0.6875rem', color: '#6e7a76' }}>
+                            ${item.quantity * item.rate.nightlyPrice}/nt ({nights}N)
+                          </div>
+                        </div>
+
+                        {selectedRooms.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeRoomFromOrder(item.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c53929', padding: '4px' }}
+                            title="Remove room from order"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="evolve-card" style={{ padding: '28px' }}>
                 <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
                   1. Contact Information
@@ -536,45 +696,56 @@ export const CheckoutPage: React.FC = () => {
                   Reservation Summary
                 </h3>
 
-                <div style={{ display: 'flex', gap: '14px', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid #eeece5' }}>
+                <div style={{ display: 'flex', gap: '14px', marginBottom: '18px', paddingBottom: '16px', borderBottom: '1px solid #eeece5' }}>
                   <img
                     src={selectedProperty.heroImage}
                     alt={selectedProperty.name}
                     style={{ width: '84px', height: '84px', borderRadius: '12px', objectFit: 'cover' }}
                   />
                   <div>
-                    <h4 style={{ fontSize: '1rem', color: '#17271f', margin: 0 }}>
+                    <h4 style={{ fontSize: '1.05rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
                       {selectedProperty.name}
                     </h4>
-                    <div style={{ fontSize: '0.75rem', color: '#997125', fontWeight: 600, marginTop: '2px' }}>
-                      {room.name}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '4px' }}>
+                    <div style={{ fontSize: '0.8125rem', color: '#6e7a76', marginTop: '4px' }}>
                       {searchDates.checkIn} → {searchDates.checkOut} ({nights} Nights)
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#997125', fontWeight: 700, marginTop: '4px' }}>
+                      {totalRoomsCount} Room{totalRoomsCount > 1 ? 's' : ''} in Order
                     </div>
                   </div>
                 </div>
 
-                <div style={{
-                  backgroundColor: '#f6f3ec',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  fontSize: '0.8125rem',
-                  color: '#173f34',
-                  fontWeight: 600,
-                  marginBottom: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <Sparkles size={14} color="#dda943" />
-                  <span>{rate.title}</span>
+                {/* Ordered Rooms Breakdown */}
+                <div style={{ marginBottom: '18px', paddingBottom: '16px', borderBottom: '1px solid #eeece5' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#929b98', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                    Suites & Rates in this Order:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {orderItems.map((item, idx) => (
+                      <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '0.8125rem' }}>
+                        <div style={{ maxWidth: '65%' }}>
+                          <div style={{ fontWeight: 700, color: '#17271f' }}>
+                            {item.quantity}× {item.room.name}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#997125' }}>
+                            {item.rate.title.split(' • ')[0]} · ${item.rate.nightlyPrice}/nt
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', fontWeight: 700, color: '#17271f' }}>
+                          ${item.quantity * item.rate.nightlyPrice * nights}
+                          <div style={{ fontSize: '0.6875rem', color: '#6e7a76', fontWeight: 400 }}>
+                            {item.quantity} × {nights}N
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.875rem', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6e7a76' }}>
-                    <span>${rate.nightlyPrice} × {nights} Nights</span>
-                    <span>${subtotal}</span>
+                    <span>Combined Room Subtotal ({nights} Nights)</span>
+                    <span>${nightlySubtotal * nights}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6e7a76' }}>
                     <span>Estimated Local Taxes & Hospitality Fees (12%)</span>

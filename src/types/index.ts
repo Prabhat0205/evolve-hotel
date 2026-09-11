@@ -122,6 +122,20 @@ export interface Reservation {
   guestPhone?: string;
   guestCode?: string;
   userId?: string;
+  bookedRooms?: Array<{
+    roomName: string;
+    bedConfig: string;
+    rateTitle: string;
+    nightlyRate: number;
+    quantity: number;
+  }>;
+}
+
+export interface SelectedRoomItem {
+  id: string;
+  room: Room;
+  rate: RoomRate;
+  quantity: number;
 }
 
 export interface RewardItem {

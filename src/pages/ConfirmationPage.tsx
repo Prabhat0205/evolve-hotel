@@ -199,6 +199,41 @@ export const ConfirmationPage: React.FC = () => {
             </div>
           </div>
 
+          {/* If multi-room reservation, show all booked rooms */}
+          {res.bookedRooms && res.bookedRooms.length > 0 && (
+            <div style={{
+              backgroundColor: '#faf9f5',
+              borderRadius: '14px',
+              padding: '20px 24px',
+              border: '1px solid #eeece5',
+              marginBottom: '24px'
+            }}>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#17271f', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                All Reserved Suites in this Order ({res.bookedRooms.reduce((s, r) => s + r.quantity, 0)} Total Rooms):
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {res.bookedRooms.map((r, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: idx < res.bookedRooms!.length - 1 ? '1px dashed #e2ded5' : 'none' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.9375rem' }}>
+                        {r.quantity}× {r.roomName}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#6e7a76' }}>
+                        {r.bedConfig} • {r.rateTitle}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', fontWeight: 700, color: '#17271f', fontSize: '0.9375rem' }}>
+                      ${r.nightlyRate}/night
+                      <div style={{ fontSize: '0.6875rem', color: '#997125' }}>
+                        ${r.nightlyRate * r.quantity * res.nightsCount} ({res.nightsCount} Nights)
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Cancellation Policy summary */}
           <div style={{
             backgroundColor: '#faf9f5',

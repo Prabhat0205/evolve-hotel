@@ -35,7 +35,7 @@ export const SearchPage: React.FC = () => {
       <div className="app-container-wide">
         {/* Header Breadcrumb & Title */}
         <div style={{ marginBottom: '32px' }}>
-          <span className="eyebrow-text">EXPLORE DESTINATIONS</span>
+          <span className="eyebrow-text">BOOK CATEGORY · EXPLORE DESTINATIONS</span>
           <h1 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', color: '#17271f', marginTop: '4px' }}>
             Curated Hotels & Suites Across America
           </h1>

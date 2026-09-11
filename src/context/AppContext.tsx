@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { 
   User, Property, Room, RoomRate, Reservation, 
   BreakfastItem, BreakfastOrder, NotificationItem,
-  BreakfastCartItem 
+  BreakfastCartItem, SelectedRoomItem 
 } from '../types';
 import { mockPersonas } from '../data/mockUsers';
 import { mockProperties } from '../data/mockProperties';
@@ -55,6 +55,12 @@ interface AppContextType {
   setSelectedRoom: (room: Room | null) => void;
   selectedRate: RoomRate | null;
   setSelectedRate: (rate: RoomRate | null) => void;
+  selectedRooms: SelectedRoomItem[];
+  setSelectedRooms: React.Dispatch<React.SetStateAction<SelectedRoomItem[]>>;
+  addRoomToOrder: (room: Room, rate: RoomRate, quantity?: number) => void;
+  removeRoomFromOrder: (orderItemId: string) => void;
+  updateRoomQuantity: (orderItemId: string, quantity: number) => void;
+  clearRoomOrder: () => void;
   searchDates: { checkIn: string; checkOut: string; adults: number; children: number; destination: string };
   setSearchDates: React.Dispatch<React.SetStateAction<{ checkIn: string; checkOut: string; adults: number; children: number; destination: string }>>;
   lastConfirmedReservation: Reservation | null;
@@ -141,6 +147,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     destination: 'Kyoto, Japan',
   });
   const [lastConfirmedReservation, setLastConfirmedReservation] = useState<Reservation | null>(() => loadFromStorage('evolve_lastConfirmedReservation_v2', null));
+  const [selectedRooms, setSelectedRooms] = useState<SelectedRoomItem[]>(() => loadFromStorage<SelectedRoomItem[]>('evolve_selected_rooms_v2', []));
 
   const [reservations, setReservations] = useState<Reservation[]>(() => {
     const loaded = loadFromStorage<Reservation[] | null>('evolve_reservations_v2', null);
@@ -251,6 +258,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem('evolve_lastConfirmedReservation_v2', JSON.stringify(lastConfirmedReservation));
   }, [lastConfirmedReservation]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('evolve_selected_rooms_v2', JSON.stringify(selectedRooms));
+    } catch {}
+  }, [selectedRooms]);
+
+  const addRoomToOrder = (room: Room, rate: RoomRate, quantity: number = 1) => {
+    setSelectedRooms(prev => {
+      const existingIndex = prev.findIndex(item => item.room.id === room.id && item.rate.id === rate.id);
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + quantity
+        };
+        return updated;
+      } else {
+        const newItem: SelectedRoomItem = {
+          id: `${room.id}_${rate.id}_${Date.now()}`,
+          room,
+          rate,
+          quantity
+        };
+        return [...prev, newItem];
+      }
+    });
+    setSelectedRoom(room);
+    setSelectedRate(rate);
+  };
+
+  const removeRoomFromOrder = (orderItemId: string) => {
+    setSelectedRooms(prev => prev.filter(item => item.id !== orderItemId));
+  };
+
+  const updateRoomQuantity = (orderItemId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeRoomFromOrder(orderItemId);
+      return;
+    }
+    setSelectedRooms(prev => prev.map(item => item.id === orderItemId ? { ...item, quantity } : item));
+  };
+
+  const clearRoomOrder = () => {
+    setSelectedRooms([]);
+  };
 
   // Navigation helper
   const navigateTo = (route: AppRoute, params: any = {}) => {
@@ -510,6 +563,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSelectedRoom,
       selectedRate,
       setSelectedRate,
+      selectedRooms,
+      setSelectedRooms,
+      addRoomToOrder,
+      removeRoomFromOrder,
+      updateRoomQuantity,
+      clearRoomOrder,
       searchDates,
       setSearchDates,
       lastConfirmedReservation,
