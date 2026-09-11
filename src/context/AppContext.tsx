@@ -145,6 +145,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [reservations, setReservations] = useState<Reservation[]>(() => {
     const loaded = loadFromStorage<Reservation[] | null>('evolve_reservations_v2', null);
     if (loaded && Array.isArray(loaded) && loaded.length > 0) {
+      const hasEV2041 = loaded.some(r => r.confirmationCode === 'EV-2041');
+      if (!hasEV2041) {
+        const ev2041 = initialMockReservations.find(r => r.confirmationCode === 'EV-2041');
+        if (ev2041) {
+          const merged = [ev2041, ...loaded];
+          try {
+            localStorage.setItem('evolve_reservations_v2', JSON.stringify(merged));
+          } catch {}
+          return merged;
+        }
+      }
       return loaded;
     }
     // Seed fallback reservations immediately to storage

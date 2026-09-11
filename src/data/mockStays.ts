@@ -1,7 +1,32 @@
 import { Reservation } from '../types';
 
 export const mockReservations: Reservation[] = [
-  // 1. Julian Hayes (user-member-01) - Houston Medical Center property
+  // 1. Julian Hayes (user-member-01) - EV-2041 matching Screenshot 2
+  {
+    id: 'res-member-ev2041',
+    confirmationCode: 'EV-2041',
+    propertyId: 'evolve-houston',
+    propertyName: 'Evolve Hotels & Suites Houston',
+    propertyCity: 'Houston, USA',
+    propertyAddress: '8200 Main Street, Houston, TX 77025',
+    propertyImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+    roomName: 'King Suite',
+    roomCategory: 'SUITE',
+    checkInDate: '2026-09-19',
+    checkOutDate: '2026-09-22',
+    nightsCount: 3,
+    guestsCount: { adults: 2, children: 0 },
+    status: 'CONFIRMED',
+    rateType: 'Member Exclusive Rate',
+    nightlyRate: 150,
+    taxesAndFees: 54,
+    totalAmount: 504.00,
+    currency: 'USD',
+    paymentMethod: { brand: 'amex', last4: '1004' },
+    cancellationDeadline: '2026-09-18T16:00:00Z',
+    specialRequests: 'High floor, quiet room away from elevator.',
+    userId: 'user-member-01'
+  },
   {
     id: 'res-member-houston',
     confirmationCode: 'EV-424857',
@@ -9,7 +34,7 @@ export const mockReservations: Reservation[] = [
     propertyName: 'Evolve Hotels & Suites Houston',
     propertyCity: 'Houston, USA',
     propertyAddress: '8200 Main Street, Houston, TX 77025',
-    propertyImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+    propertyImage: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
     roomName: 'Medical Center King Suite',
     roomCategory: 'SUITE',
     checkInDate: '2026-10-14',
