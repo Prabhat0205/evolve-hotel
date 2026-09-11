@@ -43,6 +43,9 @@ export const MyStaysPage: React.FC = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // Individual date cancellation state (matches user screenshot)
+  const [selectedCancelDates, setSelectedCancelDates] = useState<string[]>([]);
+
   // Filter reservations based on active session
   const userReservations = reservations.filter(r => {
     if (currentPersona === 'guest' && activeGuestCode && activeGuestPhone) {
@@ -115,6 +118,7 @@ export const MyStaysPage: React.FC = () => {
     setNewCheckOut(res.checkOutDate);
     setSelectedSuiteType(res.roomName || 'King Suite');
     setSelectedGuests(`${res.guestsCount?.adults || 2} adults`);
+    setSelectedCancelDates([]);
     setModalSubView('options');
     setOptionsModalOpen(true);
   };
@@ -242,27 +246,107 @@ export const MyStaysPage: React.FC = () => {
     setOptionsModalOpen(false);
   };
 
-  const handleConfirmCancelSelectedDates = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRes) return;
-    const d1 = new Date(newCheckIn);
-    const d2 = new Date(newCheckOut);
-    if (d2 <= d1) {
-      addToast('error', 'Invalid Stay Dates', 'Check-out date must be after check-in date.');
+  // Helper to extract individual nights for cancellation (matches user screenshot)
+  const getStayNightDates = (checkIn: string, checkOut: string) => {
+    try {
+      const d1 = new Date(checkIn);
+      const d2 = new Date(checkOut);
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime()) || d2 <= d1) return [];
+      const nights: { dateStr: string; displayDate: string; deadlineText: string }[] = [];
+      const curr = new Date(d1);
+      while (curr < d2) {
+        const year = curr.getFullYear();
+        const month = String(curr.getMonth() + 1).padStart(2, '0');
+        const day = String(curr.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
+        const displayDate = curr.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        const deadlineDate = new Date(curr);
+        deadlineDate.setDate(deadlineDate.getDate() - 1);
+        const deadlineMonth = deadlineDate.toLocaleDateString('en-US', { month: 'short' });
+        const deadlineDay = deadlineDate.getDate();
+        const deadlineText = `Cancel by ${deadlineMonth} ${deadlineDay} at 4:00 PM Central Time with no late penalty.`;
+
+        nights.push({ dateStr, displayDate, deadlineText });
+        curr.setDate(curr.getDate() + 1);
+      }
+      return nights;
+    } catch {
+      return [];
+    }
+  };
+
+  const handleToggleCancelDate = (dateStr: string) => {
+    setSelectedCancelDates(prev => 
+      prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr]
+    );
+  };
+
+  const handleExecuteDateCancellation = () => {
+    if (!selectedRes || selectedCancelDates.length === 0) return;
+
+    const allNights = getStayNightDates(selectedRes.checkInDate, selectedRes.checkOutDate);
+
+    // If all nights are cancelled, cancel entire reservation
+    if (selectedCancelDates.length >= allNights.length) {
+      cancelReservation(selectedRes.id);
+      setOptionsModalOpen(false);
+      addToast(
+        'success', 
+        'Reservation Cancelled', 
+        `All nights cancelled. Full refund of $${selectedRes.totalAmount} USD credited to your original payment method.`
+      );
       return;
     }
-    const diffNights = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Remaining nights
+    const remainingNights = allNights.filter(n => !selectedCancelDates.includes(n.dateStr));
+    const sortedRemaining = [...remainingNights].sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+    const newNightsCount = sortedRemaining.length;
+    const nightlyRate = selectedRes.nightlyRate;
+    const newSubtotal = nightlyRate * newNightsCount;
+    const newTaxes = Math.round(newSubtotal * 0.12);
+    const newTotal = newSubtotal + newTaxes;
+    const refundAmount = Math.max(0, selectedRes.totalAmount - newTotal);
+
+    const firstNight = new Date(sortedRemaining[0].dateStr);
+    const lastNight = new Date(sortedRemaining[sortedRemaining.length - 1].dateStr);
+    lastNight.setDate(lastNight.getDate() + 1);
+
+    const y1 = firstNight.getFullYear();
+    const m1 = String(firstNight.getMonth() + 1).padStart(2, '0');
+    const d1 = String(firstNight.getDate()).padStart(2, '0');
+    const updatedCheckIn = `${y1}-${m1}-${d1}`;
+
+    const y2 = lastNight.getFullYear();
+    const m2 = String(lastNight.getMonth() + 1).padStart(2, '0');
+    const d2 = String(lastNight.getDate()).padStart(2, '0');
+    const updatedCheckOut = `${y2}-${m2}-${d2}`;
+
     const updated: Reservation = {
       ...selectedRes,
-      checkInDate: newCheckIn,
-      checkOutDate: newCheckOut,
-      nightsCount: diffNights,
-      totalAmount: selectedRes.nightlyRate * diffNights + selectedRes.taxesAndFees
+      checkInDate: updatedCheckIn,
+      checkOutDate: updatedCheckOut,
+      nightsCount: newNightsCount,
+      totalAmount: newTotal
     };
+
     updateReservation(updated);
     setSelectedRes(updated);
     setOptionsModalOpen(false);
-    addToast('success', 'Selected Dates Cancelled', `Your reservation has been shortened to ${newCheckIn} → ${newCheckOut}.`);
+
+    addToast(
+      'success',
+      'Selected Date(s) Cancelled',
+      `Cancelled ${selectedCancelDates.length} night(s). A refund of $${refundAmount} USD has been credited to your card.`
+    );
   };
 
   // Date Formatting Helpers
@@ -1544,41 +1628,23 @@ export const MyStaysPage: React.FC = () => {
                       )}
 
                       {tab === 'UPCOMING' && !isViewOnly && (
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px' }}>
-                          <button 
-                            onClick={() => handleOpenOptions(stay)} 
-                            style={{ 
-                              backgroundColor: '#ffffff', 
-                              color: '#173f34', 
-                              border: '1px solid #eeece5', 
-                              borderRadius: '8px', 
-                              padding: '8px 16px', 
-                              fontSize: '0.875rem', 
-                              fontWeight: 700, 
-                              cursor: 'pointer' 
-                            }}
-                          >
-                            Modify or Cancel
-                          </button>
-                          <button
-                            onClick={() => handleStartModification(stay)}
-                            style={{
-                              backgroundColor: '#173f34',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '0.875rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px'
-                            }}
-                          >
-                            Change Stay <ArrowRight size={14} />
-                          </button>
-                        </div>
+                        <button 
+                          onClick={() => handleOpenOptions(stay)} 
+                          style={{ 
+                            alignSelf: 'flex-start',
+                            backgroundColor: '#ffffff', 
+                            color: '#173f34', 
+                            border: '1px solid #eeece5', 
+                            borderRadius: '8px', 
+                            padding: '8px 16px', 
+                            fontSize: '0.875rem', 
+                            fontWeight: 700, 
+                            cursor: 'pointer',
+                            marginBottom: '16px'
+                          }}
+                        >
+                          Modify or Cancel
+                        </button>
                       )}
 
                       <p style={{ color: '#6e7a76', fontSize: '0.9375rem', margin: 0, lineHeight: 1.5 }}>
@@ -1617,7 +1683,7 @@ export const MyStaysPage: React.FC = () => {
               className="modal-content" 
               onClick={(e) => e.stopPropagation()} 
               style={{ 
-                maxWidth: '480px', 
+                maxWidth: modalSubView === 'cancel_dates' ? '540px' : '480px', 
                 width: '100%', 
                 padding: '36px 32px 32px', 
                 borderRadius: '24px', 
@@ -1852,91 +1918,197 @@ export const MyStaysPage: React.FC = () => {
                 </div>
               )}
 
-              {/* VIEW 2: Cancel Selected Dates (Shorten Stay) */}
+              {/* VIEW 2: Cancel Selected Dates (Matches User Screenshot) */}
               {modalSubView === 'cancel_dates' && (
                 <div>
-                  <button
-                    onClick={() => setModalSubView('options')}
-                    style={{
-                      display: 'inline-flex',
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: 800, 
+                    color: '#997125', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.08em', 
+                    display: 'block', 
+                    marginBottom: '6px' 
+                  }}>
+                    INDIVIDUAL-DATE CANCELLATION
+                  </span>
+                  <h3 style={{ 
+                    fontFamily: 'Playfair Display, Georgia, serif', 
+                    fontSize: '2rem', 
+                    fontWeight: 700, 
+                    color: '#17271f', 
+                    margin: '0 0 10px 0',
+                    lineHeight: 1.2
+                  }}>
+                    Select the night(s) to cancel
+                  </h3>
+                  <p style={{ 
+                    fontSize: '0.9375rem', 
+                    color: '#6e7a76', 
+                    marginBottom: '20px', 
+                    lineHeight: 1.5 
+                  }}>
+                    Only the dates you select will be cancelled. Every unselected night remains confirmed.
+                  </p>
+
+                  {/* Reservation and Suite Details Card */}
+                  <div style={{
+                    backgroundColor: '#ffffff',
+                    border: '1.5px solid #eceae3',
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
                       alignItems: 'center',
-                      gap: '6px',
+                      paddingBottom: '12px',
+                      borderBottom: '1px solid #f3f0ea',
+                      fontSize: '0.9375rem'
+                    }}>
+                      <span style={{ color: '#17271f' }}>Reservation</span>
+                      <strong style={{ color: '#17271f', fontWeight: 800 }}>{selectedRes.confirmationCode}</strong>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      paddingTop: '12px',
+                      fontSize: '0.9375rem'
+                    }}>
+                      <span style={{ color: '#17271f' }}>Suite</span>
+                      <strong style={{ color: '#17271f', fontWeight: 800 }}>{selectedRes.roomName}</strong>
+                    </div>
+                  </div>
+
+                  {/* Individual Night Cards with Checkboxes */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+                    {getStayNightDates(selectedRes.checkInDate, selectedRes.checkOutDate).map((night) => {
+                      const isChecked = selectedCancelDates.includes(night.dateStr);
+                      return (
+                        <label 
+                          key={night.dateStr}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '14px',
+                            padding: '16px 18px',
+                            borderRadius: '14px',
+                            border: isChecked ? '1.5px solid #173f34' : '1px solid #d8d6cf',
+                            backgroundColor: isChecked ? '#f4f8f5' : '#ffffff',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <input 
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleCancelDate(night.dateStr)}
+                            style={{ 
+                              width: '20px', 
+                              height: '20px', 
+                              marginTop: '2px', 
+                              accentColor: '#173f34',
+                              cursor: 'pointer',
+                              flexShrink: 0
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#17271f', fontSize: '1.05rem', lineHeight: 1.3 }}>
+                              {night.displayDate}
+                            </div>
+                            <div style={{ color: '#6e7a76', fontSize: '0.8125rem', marginTop: '4px', lineHeight: 1.4 }}>
+                              {night.deadlineText}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* Notice Text matching Screenshot */}
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    color: selectedCancelDates.length > 0 ? '#17653e' : '#6e7a76', 
+                    fontWeight: selectedCancelDates.length > 0 ? 700 : 400,
+                    marginBottom: '20px' 
+                  }}>
+                    {selectedCancelDates.length === 0 ? (
+                      'Select at least one booked night to continue.'
+                    ) : (
+                      `${selectedCancelDates.length} night(s) selected to cancel · Refund will be automatically issued.`
+                    )}
+                  </div>
+
+                  {/* Two Buttons side-by-side matching Screenshot */}
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+                    <button 
+                      type="button" 
+                      onClick={handleExecuteDateCancellation} 
+                      disabled={selectedCancelDates.length === 0}
+                      style={{ 
+                        flex: 1.5, 
+                        backgroundColor: selectedCancelDates.length > 0 ? '#173f34' : '#7b8783', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        borderRadius: '12px', 
+                        padding: '14px 18px', 
+                        fontSize: '0.95rem', 
+                        fontWeight: 700, 
+                        cursor: selectedCancelDates.length > 0 ? 'pointer' : 'not-allowed',
+                        textAlign: 'center',
+                        transition: 'background-color 0.2s ease',
+                        boxShadow: selectedCancelDates.length > 0 ? '0 2px 8px rgba(23, 63, 52, 0.2)' : 'none'
+                      }}
+                      onMouseEnter={(e) => selectedCancelDates.length > 0 && (e.currentTarget.style.backgroundColor = '#102d25')}
+                      onMouseLeave={(e) => selectedCancelDates.length > 0 && (e.currentTarget.style.backgroundColor = '#173f34')}
+                    >
+                      Confirm Selected Date Cancellation
+                    </button>
+
+                    <button 
+                      type="button" 
+                      onClick={() => setModalSubView('options')} 
+                      style={{ 
+                        flex: 1, 
+                        backgroundColor: '#ffffff', 
+                        color: '#17271f', 
+                        border: '1.5px solid #d8d6cf', 
+                        borderRadius: '12px', 
+                        padding: '14px 18px', 
+                        fontSize: '0.95rem', 
+                        fontWeight: 700, 
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'background-color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f6f3ec')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
+                    >
+                      Back
+                    </button>
+                  </div>
+
+                  {/* Centered link matching Screenshot */}
+                  <button
+                    type="button"
+                    onClick={() => setOptionsModalOpen(false)}
+                    style={{
                       background: 'none',
                       border: 'none',
                       color: '#173f34',
-                      fontWeight: 700,
-                      fontSize: '0.875rem',
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
                       cursor: 'pointer',
-                      padding: 0,
-                      marginBottom: '16px'
+                      display: 'block',
+                      margin: '0 auto',
+                      padding: '4px 8px'
                     }}
                   >
-                    <ArrowLeft size={16} /> Back to reservation options
+                    Keep All Dates
                   </button>
-
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
-                    PARTIAL STAY CANCELLATION
-                  </span>
-                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '0 0 8px 0' }}>
-                    Cancel Selected Date(s)
-                  </h3>
-                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '20px', lineHeight: 1.5 }}>
-                    Adjust your arrival or departure dates to cancel individual nights without losing your entire reservation.
-                  </p>
-
-                  <form onSubmit={handleConfirmCancelSelectedDates}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>Revised Check-In</label>
-                        <input 
-                          type="date" 
-                          className="form-input" 
-                          value={newCheckIn} 
-                          onChange={(e) => setNewCheckIn(e.target.value)} 
-                          required 
-                          style={{ padding: '10px 12px' }}
-                        />
-                      </div>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>Revised Check-Out</label>
-                        <input 
-                          type="date" 
-                          className="form-input" 
-                          value={newCheckOut} 
-                          onChange={(e) => setNewCheckOut(e.target.value)} 
-                          required 
-                          style={{ padding: '10px 12px' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ backgroundColor: '#eaf5ee', border: '1px solid #a3d9b8', borderRadius: '12px', padding: '14px 16px', marginBottom: '24px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#17653e', fontWeight: 700, fontSize: '0.875rem', marginBottom: '4px' }}>
-                        <CheckCircle2 size={16} /> Free Partial Cancellation Window Active
-                      </div>
-                      <p style={{ margin: 0, fontSize: '0.8125rem', color: '#17271f', lineHeight: 1.4 }}>
-                        Cancelled dates will be released and your stay total recalculated with $0 penalty fee.
-                      </p>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <button 
-                        type="button" 
-                        onClick={() => setModalSubView('options')} 
-                        className="btn btn-outline" 
-                        style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="submit" 
-                        className="btn btn-primary" 
-                        style={{ flex: 1.5, padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
-                      >
-                        Confirm Cancellation
-                      </button>
-                    </div>
-                  </form>
                 </div>
               )}
 
