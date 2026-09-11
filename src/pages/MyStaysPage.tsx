@@ -46,6 +46,14 @@ export const MyStaysPage: React.FC = () => {
   // Individual date cancellation state (matches user screenshot)
   const [selectedCancelDates, setSelectedCancelDates] = useState<string[]>([]);
 
+  // Confirmation Popup Modal matching User Screenshot
+  const [confirmationModal, setConfirmationModal] = useState<{
+    tag: string;
+    title: string;
+    description: string;
+    redirectTab?: 'UPCOMING' | 'CANCELLED';
+  } | null>(null);
+
   // Filter reservations based on active session
   const userReservations = reservations.filter(r => {
     if (currentPersona === 'guest' && activeGuestCode && activeGuestPhone) {
@@ -217,33 +225,44 @@ export const MyStaysPage: React.FC = () => {
       setPageView('list');
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
+      const refCode = `MD-${Math.floor(1000 + Math.random() * 9000)}`;
+      let desc = '';
       if (diffAmount > 0) {
-        addToast(
-          'success', 
-          'Payment Authorized & Reservation Updated', 
-          `Additional charge of $${diffAmount} USD successfully processed on ${updatedPaymentMethod.brand.toUpperCase()} ending ${updatedPaymentMethod.last4}. Reservation ${updated.confirmationCode} updated.`
-        );
+        desc = `Cloudbeds confirmed stay modification ${refCode} for ${formatStayDates(newCheckIn, newCheckOut)}. Updated confirmation ${updated.confirmationCode}. Payment of $${diffAmount}.00 USD authorized on ${updatedPaymentMethod.brand.toUpperCase()} ending ${updatedPaymentMethod.last4}.`;
+        addToast('success', 'Payment Authorized & Reservation Updated', `Additional charge of $${diffAmount} USD successfully processed.`);
       } else if (diffAmount < 0) {
-        addToast(
-          'success', 
-          'Refund Processed & Reservation Updated', 
-          `Refund of $${Math.abs(diffAmount)} USD issued to ${updatedPaymentMethod.brand.toUpperCase()} ending ${updatedPaymentMethod.last4}. Reservation ${updated.confirmationCode} updated.`
-        );
+        desc = `Cloudbeds confirmed stay modification ${refCode} for ${formatStayDates(newCheckIn, newCheckOut)}. Updated confirmation ${updated.confirmationCode}. Estimated refund: $${Math.abs(diffAmount)}.00 USD issued to ${updatedPaymentMethod.brand.toUpperCase()} ending ${updatedPaymentMethod.last4}.`;
+        addToast('success', 'Refund Processed & Reservation Updated', `Refund of $${Math.abs(diffAmount)} USD issued to your card.`);
       } else {
-        addToast(
-          'success', 
-          'Stay Modification Confirmed', 
-          `Reservation ${updated.confirmationCode} updated to ${newCheckIn} → ${newCheckOut} with $0 additional charge.`
-        );
+        desc = `Cloudbeds confirmed stay modification ${refCode} for ${formatStayDates(newCheckIn, newCheckOut)}. Updated confirmation ${updated.confirmationCode}. Stay updated with no additional charge ($0.00).`;
+        addToast('success', 'Stay Modification Confirmed', `Reservation ${updated.confirmationCode} updated with $0 additional charge.`);
       }
+
+      setConfirmationModal({
+        tag: 'MODIFICATION CONFIRMATION',
+        title: 'Stay modification confirmed',
+        description: desc,
+        redirectTab: 'UPCOMING'
+      });
     }, 950);
   };
 
   // Cancel reservation handlers
   const handleConfirmCancelEntire = () => {
     if (!selectedRes) return;
+    const refCode = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
+    const resCode = selectedRes.confirmationCode;
+    const propName = selectedRes.propertyName;
+    const refund = selectedRes.totalAmount;
     cancelReservation(selectedRes.id);
     setOptionsModalOpen(false);
+    addToast('success', 'Reservation Cancelled', `Reservation ${resCode} has been cancelled.`);
+    setConfirmationModal({
+      tag: 'RESERVATION CANCELLATION CONFIRMATION',
+      title: 'Reservation cancelled',
+      description: `Cloudbeds confirmed reservation cancellation ${refCode} for ${resCode} at ${propName}. Full refund of $${refund.toFixed(2)} USD issued to your original payment method.`,
+      redirectTab: 'CANCELLED'
+    });
   };
 
   // Helper to extract individual nights for cancellation (matches user screenshot)
@@ -295,13 +314,18 @@ export const MyStaysPage: React.FC = () => {
 
     // If all nights are cancelled, cancel entire reservation
     if (selectedCancelDates.length >= allNights.length) {
+      const refCode = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
+      const resCode = selectedRes.confirmationCode;
+      const refund = selectedRes.totalAmount;
       cancelReservation(selectedRes.id);
       setOptionsModalOpen(false);
-      addToast(
-        'success', 
-        'Reservation Cancelled', 
-        `All nights cancelled. Full refund of $${selectedRes.totalAmount} USD credited to your original payment method.`
-      );
+      addToast('success', 'Reservation Cancelled', `All nights cancelled. Full refund of $${refund} USD credited.`);
+      setConfirmationModal({
+        tag: 'RESERVATION CANCELLATION CONFIRMATION',
+        title: 'Reservation cancelled',
+        description: `Cloudbeds confirmed reservation cancellation ${refCode} for ${resCode}. Full refund of $${refund.toFixed(2)} USD issued to your original payment method.`,
+        redirectTab: 'CANCELLED'
+      });
       return;
     }
 
@@ -338,6 +362,17 @@ export const MyStaysPage: React.FC = () => {
       totalAmount: newTotal
     };
 
+    const refCode = `PC-${Math.floor(1000 + Math.random() * 9000)}`;
+    const cancelledNightList = allNights.filter(n => selectedCancelDates.includes(n.dateStr));
+    const cancelledDatesSummary = cancelledNightList.map(n => {
+      try {
+        const d = new Date(n.dateStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch {
+        return n.dateStr;
+      }
+    }).join(', ');
+
     updateReservation(updated);
     setSelectedRes(updated);
     setOptionsModalOpen(false);
@@ -345,8 +380,15 @@ export const MyStaysPage: React.FC = () => {
     addToast(
       'success',
       'Selected Date(s) Cancelled',
-      `Cancelled ${selectedCancelDates.length} night(s). A refund of $${refundAmount} USD has been credited to your card.`
+      `Cancelled ${selectedCancelDates.length} night(s). A refund of $${refundAmount.toFixed(2)} USD has been credited to your card.`
     );
+
+    setConfirmationModal({
+      tag: 'PARTIAL CANCELLATION CONFIRMATION',
+      title: 'Selected date(s) cancelled',
+      description: `Cloudbeds confirmed partial cancellation ${refCode} for ${cancelledDatesSummary}. The unselected dates remain confirmed in Upcoming. Estimated refund: $${refundAmount.toFixed(2)}.`,
+      redirectTab: 'UPCOMING'
+    });
   };
 
   // Date Formatting Helpers
@@ -458,6 +500,110 @@ export const MyStaysPage: React.FC = () => {
   };
 
   const currentStays = getTabContent();
+  // Render Confirmation Modal component matching User Screenshot
+  const renderConfirmationModal = () => {
+    if (!confirmationModal) return null;
+    return (
+      <div 
+        className="modal-overlay" 
+        onClick={() => {
+          if (confirmationModal.redirectTab) {
+            setTab(confirmationModal.redirectTab);
+          }
+          setConfirmationModal(null);
+          setOptionsModalOpen(false);
+          setPageView('list');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        style={{ 
+          zIndex: 3000, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.45)',
+          backdropFilter: 'blur(3px)'
+        }}
+      >
+        <div 
+          className="modal-content" 
+          onClick={(e) => e.stopPropagation()} 
+          style={{ 
+            maxWidth: '520px', 
+            width: '100%', 
+            padding: '38px 34px 32px', 
+            borderRadius: '24px', 
+            backgroundColor: '#ffffff',
+            boxShadow: '0 24px 70px rgba(0,0,0,0.22)',
+            position: 'relative'
+          }}
+        >
+          <span style={{ 
+            fontSize: '0.8125rem', 
+            fontWeight: 800, 
+            color: '#997125', 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.08em', 
+            display: 'block', 
+            marginBottom: '10px' 
+          }}>
+            {confirmationModal.tag}
+          </span>
+
+          <h2 style={{ 
+            fontFamily: 'Playfair Display, Georgia, serif', 
+            fontSize: '2.35rem', 
+            fontWeight: 700, 
+            color: '#17271f', 
+            margin: '0 0 16px 0',
+            lineHeight: 1.15
+          }}>
+            {confirmationModal.title}
+          </h2>
+
+          <p style={{ 
+            color: '#17271f', 
+            fontSize: '1.05rem', 
+            lineHeight: 1.55, 
+            margin: '0 0 28px 0' 
+          }}>
+            {confirmationModal.description}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (confirmationModal.redirectTab) {
+                setTab(confirmationModal.redirectTab);
+              }
+              setConfirmationModal(null);
+              setOptionsModalOpen(false);
+              setPageView('list');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            style={{
+              width: '100%',
+              backgroundColor: '#173f34',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              fontSize: '1.05rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              textAlign: 'center',
+              boxShadow: '0 4px 16px rgba(23, 63, 52, 0.25)',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#102d25')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#173f34')}
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const diffInfo = calculateModificationDifference();
 
   // =========================================================================
@@ -466,6 +612,7 @@ export const MyStaysPage: React.FC = () => {
   if (pageView === 'change_stay' && selectedRes) {
     return (
       <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '50px 20px 80px' }}>
+        {renderConfirmationModal()}
         <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
           
           {/* Breadcrumb / Back button */}
@@ -884,6 +1031,7 @@ export const MyStaysPage: React.FC = () => {
   if (pageView === 'modify_checkout' && selectedRes) {
     return (
       <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '50px 20px 80px' }}>
+        {renderConfirmationModal()}
         <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
           
           {/* Breadcrumb back to change stay */}
@@ -1350,6 +1498,7 @@ export const MyStaysPage: React.FC = () => {
   // =========================================================================
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '60px 20px' }}>
+      {renderConfirmationModal()}
       <div className="app-container-wide" style={{ maxWidth: '1000px', margin: '0 auto' }}>
         
         {/* Header */}
