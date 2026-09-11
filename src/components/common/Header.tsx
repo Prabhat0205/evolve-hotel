@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { mockProperties } from '../../data/mockProperties';
 import { 
   Bell, User as UserIcon, Sparkles, Coffee, 
   ChevronDown, Menu, X, ArrowUpRight, ShieldCheck, 
@@ -10,7 +11,7 @@ export const Header: React.FC = () => {
   const { 
     currentRoute, navigateTo, currentUser, isMember, 
     activeStay, openAuthModal, unreadNotifsCount, notifications, 
-    markNotifAsRead, currentPersona, signOut 
+    markNotifAsRead, currentPersona, signOut, setSelectedProperty
   } = useApp();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -136,13 +137,13 @@ export const Header: React.FC = () => {
             alignItems: 'center',
             gap: '8px'
           }}>
-            {currentUser || currentPersona === 'guest' ? (
+            {currentUser || currentPersona === 'guest' || currentRoute !== 'landing' ? (
               <>
                 <button
                   onClick={() => navigateTo('corporate-booking')}
                   style={{
-                    backgroundColor: '#dda943',
-                    color: '#17271f',
+                    backgroundColor: currentRoute === 'corporate-booking' ? '#173f34' : '#dda943',
+                    color: currentRoute === 'corporate-booking' ? '#ffffff' : '#17271f',
                     padding: '9px 16px',
                     borderRadius: '9999px',
                     fontSize: '0.875rem',
@@ -155,22 +156,39 @@ export const Header: React.FC = () => {
                     marginRight: '8px',
                     transition: 'background-color 0.2s',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#c99632')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#dda943')}
+                  onMouseEnter={(e) => {
+                    if (currentRoute !== 'corporate-booking') e.currentTarget.style.backgroundColor = '#c99632';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentRoute !== 'corporate-booking') e.currentTarget.style.backgroundColor = '#dda943';
+                  }}
                 >
                   Group Booking / Corporate Rate <ArrowUpRight size={15} strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={() => navigateTo('landing')}
                   style={{
-                    backgroundColor: '#173f34',
-                    color: '#ffffff',
+                    backgroundColor: currentRoute === 'landing' ? '#173f34' : 'transparent',
+                    color: currentRoute === 'landing' ? '#ffffff' : '#5b6763',
                     padding: '8px 18px',
                     borderRadius: '9999px',
                     fontSize: '0.875rem',
                     fontWeight: 600,
                     border: 'none',
                     cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentRoute !== 'landing') {
+                      e.currentTarget.style.color = '#173f34';
+                      e.currentTarget.style.backgroundColor = '#f6f3ec';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentRoute !== 'landing') {
+                      e.currentTarget.style.color = '#5b6763';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
                   }}
                 >
                   Home
@@ -185,38 +203,50 @@ export const Header: React.FC = () => {
                     }
                     return true;
                   })
-                  .map(item => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      if (item === 'Book') navigateTo('search');
-                      if (item === 'My Bookings') navigateTo('stays');
-                      if (item === 'My Rewards') navigateTo('membership');
-                      if (item === 'Breakfast') navigateTo('in-stay-breakfast');
-                    }}
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: '#5b6763',
-                      padding: '6px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'color 0.2s, background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#173f34';
-                      e.currentTarget.style.backgroundColor = '#f6f3ec';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#5b6763';
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    {item}
-                  </button>
-                ))}
+                  .map(item => {
+                    const isItemActive = 
+                      (item === 'Book' && (currentRoute === 'search' || currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation')) ||
+                      (item === 'My Bookings' && currentRoute === 'stays') ||
+                      (item === 'My Rewards' && (currentRoute === 'membership' || currentRoute === 'rewards-catalog')) ||
+                      (item === 'Breakfast' && currentRoute === 'in-stay-breakfast');
+
+                    return (
+                      <button
+                        key={item}
+                        onClick={() => {
+                          if (item === 'Book') navigateTo('search');
+                          if (item === 'My Bookings') navigateTo('stays');
+                          if (item === 'My Rewards') navigateTo('membership');
+                          if (item === 'Breakfast') navigateTo('in-stay-breakfast');
+                        }}
+                        style={{
+                          backgroundColor: isItemActive ? '#173f34' : 'transparent',
+                          color: isItemActive ? '#ffffff' : '#5b6763',
+                          padding: '8px 18px',
+                          borderRadius: '9999px',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'color 0.2s, background-color 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isItemActive) {
+                            e.currentTarget.style.color = '#173f34';
+                            e.currentTarget.style.backgroundColor = '#f6f3ec';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isItemActive) {
+                            e.currentTarget.style.color = '#5b6763';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
               </>
             ) : (
               <>
@@ -761,8 +791,8 @@ export const Header: React.FC = () => {
                 padding: '12px 16px',
                 textAlign: 'left',
                 fontWeight: 600,
-                color: currentRoute === 'landing' ? '#173f34' : '#17271f',
-                backgroundColor: currentRoute === 'landing' ? '#f6f3ec' : 'transparent',
+                color: currentRoute === 'landing' ? '#ffffff' : '#17271f',
+                backgroundColor: currentRoute === 'landing' ? '#173f34' : 'transparent',
                 borderRadius: '10px'
               }}
             >
@@ -775,8 +805,8 @@ export const Header: React.FC = () => {
                 padding: '12px 16px',
                 textAlign: 'left',
                 fontWeight: 600,
-                color: currentRoute === 'search' ? '#173f34' : '#17271f',
-                backgroundColor: currentRoute === 'search' ? '#f6f3ec' : 'transparent',
+                color: (currentRoute === 'search' || currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation') ? '#ffffff' : '#17271f',
+                backgroundColor: (currentRoute === 'search' || currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation') ? '#173f34' : 'transparent',
                 borderRadius: '10px'
               }}
             >
