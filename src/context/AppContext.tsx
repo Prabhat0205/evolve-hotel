@@ -63,6 +63,7 @@ interface AppContextType {
   // Stays
   reservations: Reservation[];
   cancelReservation: (id: string) => void;
+  updateReservation: (updatedRes: Reservation) => void;
   addReservation: (res: Reservation) => void;
 
   // In-Stay & Breakfast
@@ -433,6 +434,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addToast('success', 'Reservation Cancelled', 'Refund processed according to hotel cancellation policy.');
   };
 
+  const updateReservation = (updatedRes: Reservation) => {
+    setReservations(prev => prev.map(r => r.id === updatedRes.id ? updatedRes : r));
+  };
+
   const addReservation = (res: Reservation) => {
     setReservations(prev => [res, ...prev]);
   };
@@ -500,6 +505,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setLastConfirmedReservation,
       reservations,
       cancelReservation,
+      updateReservation,
       addReservation,
       breakfastCart,
       addToBreakfastCart,

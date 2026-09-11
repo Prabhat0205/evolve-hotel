@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useApp, normalizePhone, normalizeGuestCode } from '../context/AppContext';
 import { Reservation } from '../types';
 import { 
-  AlertCircle, ShieldCheck, Sparkles, UserCheck, Lock, ArrowRight
+  AlertCircle, ShieldCheck, Sparkles, UserCheck, Lock, ArrowRight, X, ArrowLeft, Calendar, CheckCircle2
 } from 'lucide-react';
 
 export const MyStaysPage: React.FC = () => {
   const { 
-    reservations, cancelReservation, navigateTo, addToast,
+    reservations, cancelReservation, updateReservation, navigateTo, addToast,
     currentUser, currentPersona, activeGuestCode, activeGuestPhone,
     openAuthModal, loginAs, loginAsGuest
   } = useApp();
@@ -15,8 +15,8 @@ export const MyStaysPage: React.FC = () => {
 
   // Modal states
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [modifyModalOpen, setModifyModalOpen] = useState(false);
+  const [optionsModalOpen, setOptionsModalOpen] = useState(false);
+  const [modalSubView, setModalSubView] = useState<'options' | 'modify_dates' | 'cancel_dates' | 'confirm_cancel'>('options');
   const [newCheckIn, setNewCheckIn] = useState('');
   const [newCheckOut, setNewCheckOut] = useState('');
 
@@ -36,31 +36,89 @@ export const MyStaysPage: React.FC = () => {
   const pastStays = userReservations.filter(r => r.status === 'COMPLETED');
   const cancelledStays = userReservations.filter(r => r.status === 'CANCELLED');
 
-  const handleOpenCancel = (res: Reservation) => {
-    setSelectedRes(res);
-    setCancelModalOpen(true);
-  };
-
-  const handleConfirmCancel = () => {
-    if (!selectedRes) return;
-    cancelReservation(selectedRes.id);
-    setCancelModalOpen(false);
-  };
-
-  const handleOpenModify = (res: Reservation) => {
+  const handleOpenOptions = (res: Reservation) => {
     setSelectedRes(res);
     setNewCheckIn(res.checkInDate);
     setNewCheckOut(res.checkOutDate);
-    setModifyModalOpen(true);
+    setModalSubView('options');
+    setOptionsModalOpen(true);
   };
 
-  const handleConfirmModify = (e: React.FormEvent) => {
+  const handleConfirmCancelEntire = () => {
+    if (!selectedRes) return;
+    cancelReservation(selectedRes.id);
+    setOptionsModalOpen(false);
+  };
+
+  const handleConfirmModifyDates = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRes) return;
-    selectedRes.checkInDate = newCheckIn;
-    selectedRes.checkOutDate = newCheckOut;
-    setModifyModalOpen(false);
-    addToast('success', 'Reservation Modified', `Dates updated to ${newCheckIn} → ${newCheckOut}.`);
+    const d1 = new Date(newCheckIn);
+    const d2 = new Date(newCheckOut);
+    if (d2 <= d1) {
+      addToast('error', 'Invalid Stay Dates', 'Check-out date must be after check-in date.');
+      return;
+    }
+    const diffNights = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
+    const updated: Reservation = {
+      ...selectedRes,
+      checkInDate: newCheckIn,
+      checkOutDate: newCheckOut,
+      nightsCount: diffNights,
+      totalAmount: selectedRes.nightlyRate * diffNights + selectedRes.taxesAndFees
+    };
+    updateReservation(updated);
+    setSelectedRes(updated);
+    setOptionsModalOpen(false);
+    addToast('success', 'Reservation Modified', `Dates updated to ${newCheckIn} → ${newCheckOut} (${diffNights} nights).`);
+  };
+
+  const handleConfirmCancelSelectedDates = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRes) return;
+    const d1 = new Date(newCheckIn);
+    const d2 = new Date(newCheckOut);
+    if (d2 <= d1) {
+      addToast('error', 'Invalid Stay Dates', 'Check-out date must be after check-in date.');
+      return;
+    }
+    const diffNights = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
+    const updated: Reservation = {
+      ...selectedRes,
+      checkInDate: newCheckIn,
+      checkOutDate: newCheckOut,
+      nightsCount: diffNights,
+      totalAmount: selectedRes.nightlyRate * diffNights + selectedRes.taxesAndFees
+    };
+    updateReservation(updated);
+    setSelectedRes(updated);
+    setOptionsModalOpen(false);
+    addToast('success', 'Selected Dates Cancelled', `Your reservation has been shortened to ${newCheckIn} → ${newCheckOut}.`);
+  };
+
+  const formatStayDates = (checkIn: string, checkOut: string) => {
+    try {
+      const d1 = new Date(checkIn);
+      const d2 = new Date(checkOut);
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return `${checkIn}, ${checkOut}`;
+      const opt: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+      return `${d1.toLocaleDateString('en-US', opt)}, ${d2.toLocaleDateString('en-US', opt)}`;
+    } catch {
+      return `${checkIn}, ${checkOut}`;
+    }
+  };
+
+  const formatCancellationDeadlineFull = (checkIn: string) => {
+    try {
+      const date = new Date(checkIn);
+      if (isNaN(date.getTime())) return 'the day before arrival';
+      date.setDate(date.getDate() - 1);
+      const m = date.toLocaleDateString('en-US', { month: 'long' });
+      const d = date.getDate();
+      return `${m} ${d}`;
+    } catch {
+      return 'the day before arrival';
+    }
   };
 
   const getMonthAndDay = (dateStr: string) => {
@@ -399,7 +457,7 @@ export const MyStaysPage: React.FC = () => {
 
                   {tab === 'UPCOMING' && !isViewOnly && (
                     <button 
-                      onClick={() => handleOpenModify(stay)} 
+                      onClick={() => handleOpenOptions(stay)} 
                       style={{ alignSelf: 'flex-start', backgroundColor: '#ffffff', color: '#173f34', border: '1px solid #eeece5', borderRadius: '8px', padding: '8px 16px', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', marginBottom: '16px' }}
                     >
                       Modify or Cancel
@@ -436,67 +494,505 @@ export const MyStaysPage: React.FC = () => {
     )}
 
 
-        {/* CANCEL MODAL */}
-        {cancelModalOpen && selectedRes && (
-          <div className="modal-overlay" onClick={() => setCancelModalOpen(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ padding: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <AlertCircle size={24} color="#b91c1c" />
-                <h3 style={{ fontSize: '1.35rem', color: '#17271f', margin: 0 }}>
-                  Cancel Reservation #{selectedRes.confirmationCode}
-                </h3>
-              </div>
-              <p style={{ fontSize: '0.875rem', color: '#6e7a76', lineHeight: 1.6, marginBottom: '20px' }}>
-                Are you sure you wish to cancel your stay at <strong>{selectedRes.propertyName}</strong> ({selectedRes.checkInDate} → {selectedRes.checkOutDate})?
-              </p>
-              <div style={{
-                backgroundColor: '#eaf5ee',
-                border: '1.5px solid #a3d9b8',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '24px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#17653e', fontWeight: 700, fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <ShieldCheck size={16} /> Free Cancellation Window Active
-                </div>
-                <div style={{ fontSize: '0.8125rem', color: '#17271f' }}>
-                  Cancellation penalty: <strong>$0 USD (Zero penalty)</strong>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button onClick={() => setCancelModalOpen(false)} className="btn btn-outline" style={{ padding: '10px 18px' }}>Keep Reservation</button>
-                <button onClick={handleConfirmCancel} style={{ backgroundColor: '#b91c1c', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
-                  Confirm Cancellation
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* UNIFIED MODIFY OR CANCEL POPUP MODAL */}
+        {optionsModalOpen && selectedRes && (
+          <div className="modal-overlay" onClick={() => setOptionsModalOpen(false)} style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div 
+              className="modal-content" 
+              onClick={(e) => e.stopPropagation()} 
+              style={{ 
+                maxWidth: '480px', 
+                width: '100%', 
+                padding: '36px 32px 32px', 
+                borderRadius: '24px', 
+                backgroundColor: '#ffffff',
+                boxShadow: '0 24px 70px rgba(0,0,0,0.22)',
+                position: 'relative'
+              }}
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setOptionsModalOpen(false)}
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#6e7a76',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f6f3ec')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <X size={20} />
+              </button>
 
-        {/* MODIFY MODAL */}
-        {modifyModalOpen && selectedRes && (
-          <div className="modal-overlay" onClick={() => setModifyModalOpen(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ padding: '32px' }}>
-              <h3 style={{ fontSize: '1.35rem', color: '#17271f', marginBottom: '8px' }}>Modify Stay Dates</h3>
-              <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '20px' }}>
-                {selectedRes.propertyName} — {selectedRes.roomName}
-              </p>
-              <form onSubmit={handleConfirmModify}>
-                <div className="form-group">
-                  <label className="form-label">New Check-In Date</label>
-                  <input type="date" className="form-input" value={newCheckIn} onChange={(e) => setNewCheckIn(e.target.value)} required />
+              {/* VIEW 1: Main Reservation Options Matching User Mockup */}
+              {modalSubView === 'options' && (
+                <div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <span style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: 800, 
+                      color: '#997125', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.08em',
+                      display: 'block',
+                      marginBottom: '6px'
+                    }}>
+                      RESERVATION OPTIONS
+                    </span>
+                    <h2 style={{ 
+                      fontFamily: 'Playfair Display, serif', 
+                      fontSize: '2.15rem', 
+                      fontWeight: 700, 
+                      color: '#17271f', 
+                      margin: '0 0 10px 0',
+                      lineHeight: 1.15
+                    }}>
+                      Modify or cancel
+                    </h2>
+                    <p style={{ 
+                      color: '#6e7a76', 
+                      fontSize: '0.9375rem', 
+                      lineHeight: 1.45, 
+                      margin: 0 
+                    }}>
+                      Changes are subject to availability, current rates and the cancellation deadline.
+                    </p>
+                  </div>
+
+                  {/* Box 1: Reservation Details */}
+                  <div style={{
+                    border: '1.5px solid #eceae3',
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    marginBottom: '14px',
+                    backgroundColor: '#ffffff'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      paddingBottom: '12px',
+                      borderBottom: '1px solid #f3f0ea',
+                      fontSize: '0.9375rem'
+                    }}>
+                      <span style={{ color: '#17271f' }}>Reservation</span>
+                      <strong style={{ color: '#17271f', fontWeight: 800, fontSize: '1rem' }}>
+                        {selectedRes.confirmationCode}
+                      </strong>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '12px 0',
+                      borderBottom: '1px solid #f3f0ea',
+                      fontSize: '0.9375rem'
+                    }}>
+                      <span style={{ color: '#17271f' }}>Stay</span>
+                      <strong style={{ color: '#17271f', fontWeight: 800, textAlign: 'right' }}>
+                        {selectedRes.roomName} · {formatStayDates(selectedRes.checkInDate, selectedRes.checkOutDate)}
+                      </strong>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      paddingTop: '12px',
+                      fontSize: '0.9375rem'
+                    }}>
+                      <span style={{ color: '#17271f' }}>Reservation system</span>
+                      <strong style={{ color: '#17271f', fontWeight: 800 }}>
+                        Cloudbeds source · Website Direct
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Box 2: Cancellation deadline */}
+                  <div style={{
+                    backgroundColor: '#f6f4ee',
+                    borderRadius: '14px',
+                    padding: '16px 20px',
+                    marginBottom: '14px'
+                  }}>
+                    <div style={{ fontWeight: 800, color: '#17271f', fontSize: '0.95rem', marginBottom: '4px' }}>
+                      Cancellation deadline
+                    </div>
+                    <div style={{ color: '#17271f', fontSize: '0.875rem', lineHeight: 1.45 }}>
+                      Cancel by {formatCancellationDeadlineFull(selectedRes.checkInDate)} at 4:00 PM Central Time with no late penalty.
+                    </div>
+                  </div>
+
+                  {/* Box 3: Penalty after deadline */}
+                  <div style={{
+                    backgroundColor: '#f6f4ee',
+                    borderRadius: '14px',
+                    padding: '16px 20px',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{ fontWeight: 800, color: '#17271f', fontSize: '0.95rem', marginBottom: '4px' }}>
+                      Penalty after deadline
+                    </div>
+                    <div style={{ color: '#17271f', fontSize: '0.875rem', lineHeight: 1.45 }}>
+                      One night’s room rate plus applicable taxes.
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button
+                      onClick={() => setModalSubView('modify_dates')}
+                      style={{
+                        backgroundColor: '#173f34',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '15px 20px',
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        boxShadow: '0 2px 8px rgba(23, 63, 52, 0.15)',
+                        transition: 'background-color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#102d25')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#173f34')}
+                    >
+                      Modify dates or reservation
+                    </button>
+
+                    <button
+                      onClick={() => setModalSubView('cancel_dates')}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#17271f',
+                        border: '1.5px solid #d8d6cf',
+                        borderRadius: '12px',
+                        padding: '13px 20px',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f6f3ec')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
+                    >
+                      Cancel selected date(s)
+                    </button>
+
+                    <button
+                      onClick={() => setModalSubView('confirm_cancel')}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#17271f',
+                        border: '1.5px solid #d8d6cf',
+                        borderRadius: '12px',
+                        padding: '13px 20px',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f6f3ec')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
+                    >
+                      Cancel Entire Reservation
+                    </button>
+
+                    <button
+                      onClick={() => setOptionsModalOpen(false)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#173f34',
+                        fontSize: '1rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        padding: '6px 2px 0',
+                        marginTop: '4px'
+                      }}
+                    >
+                      Keep reservation
+                    </button>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">New Check-Out Date</label>
-                  <input type="date" className="form-input" value={newCheckOut} onChange={(e) => setNewCheckOut(e.target.value)} required />
+              )}
+
+              {/* VIEW 2: Modify Stay Dates */}
+              {modalSubView === 'modify_dates' && (
+                <div>
+                  <button
+                    onClick={() => setModalSubView('options')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#173f34',
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginBottom: '16px'
+                    }}
+                  >
+                    <ArrowLeft size={16} /> Back to reservation options
+                  </button>
+
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
+                    CHANGE STAY DATES
+                  </span>
+                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '0 0 8px 0' }}>
+                    Modify Stay Dates
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '20px', lineHeight: 1.5 }}>
+                    {selectedRes.propertyName} — <strong>{selectedRes.roomName}</strong>
+                  </p>
+
+                  <form onSubmit={handleConfirmModifyDates}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>New Check-In</label>
+                        <input 
+                          type="date" 
+                          className="form-input" 
+                          value={newCheckIn} 
+                          onChange={(e) => setNewCheckIn(e.target.value)} 
+                          required 
+                          style={{ padding: '10px 12px' }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>New Check-Out</label>
+                        <input 
+                          type="date" 
+                          className="form-input" 
+                          value={newCheckOut} 
+                          onChange={(e) => setNewCheckOut(e.target.value)} 
+                          required 
+                          style={{ padding: '10px 12px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ backgroundColor: '#f6f4ee', borderRadius: '12px', padding: '14px 16px', marginBottom: '24px', fontSize: '0.8125rem', color: '#17271f' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ color: '#6e7a76' }}>Nightly Rate:</span>
+                        <strong>${selectedRes.nightlyRate} USD</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6e7a76' }}>Current Stay:</span>
+                        <span>{selectedRes.checkInDate} → {selectedRes.checkOutDate} ({selectedRes.nightsCount} nights)</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setModalSubView('options')} 
+                        className="btn btn-outline" 
+                        style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ flex: 1.5, padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                  <button type="button" onClick={() => handleOpenCancel(selectedRes)} className="btn btn-outline" style={{ color: '#b91c1c', borderColor: '#fca5a5' }}>Cancel Booking Instead</button>
-                  <div style={{ flex: 1 }}></div>
-                  <button type="button" onClick={() => setModifyModalOpen(false)} className="btn btn-outline">Cancel</button>
-                  <button type="submit" className="btn btn-primary">Save Changes</button>
+              )}
+
+              {/* VIEW 3: Cancel Selected Dates (Shorten Stay) */}
+              {modalSubView === 'cancel_dates' && (
+                <div>
+                  <button
+                    onClick={() => setModalSubView('options')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#173f34',
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginBottom: '16px'
+                    }}
+                  >
+                    <ArrowLeft size={16} /> Back to reservation options
+                  </button>
+
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
+                    PARTIAL STAY CANCELLATION
+                  </span>
+                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '0 0 8px 0' }}>
+                    Cancel Selected Date(s)
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '20px', lineHeight: 1.5 }}>
+                    Adjust your arrival or departure dates to cancel individual nights without losing your entire reservation.
+                  </p>
+
+                  <form onSubmit={handleConfirmCancelSelectedDates}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>Revised Check-In</label>
+                        <input 
+                          type="date" 
+                          className="form-input" 
+                          value={newCheckIn} 
+                          onChange={(e) => setNewCheckIn(e.target.value)} 
+                          required 
+                          style={{ padding: '10px 12px' }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>Revised Check-Out</label>
+                        <input 
+                          type="date" 
+                          className="form-input" 
+                          value={newCheckOut} 
+                          onChange={(e) => setNewCheckOut(e.target.value)} 
+                          required 
+                          style={{ padding: '10px 12px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ backgroundColor: '#eaf5ee', border: '1px solid #a3d9b8', borderRadius: '12px', padding: '14px 16px', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#17653e', fontWeight: 700, fontSize: '0.875rem', marginBottom: '4px' }}>
+                        <CheckCircle2 size={16} /> Free Partial Cancellation Window Active
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.8125rem', color: '#17271f', lineHeight: 1.4 }}>
+                        Cancelled dates will be released and your stay total recalculated with $0 penalty fee.
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setModalSubView('options')} 
+                        className="btn btn-outline" 
+                        style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ flex: 1.5, padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                      >
+                        Confirm Cancellation of Selected Dates
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </form>
+              )}
+
+              {/* VIEW 4: Confirm Entire Cancellation */}
+              {modalSubView === 'confirm_cancel' && (
+                <div>
+                  <button
+                    onClick={() => setModalSubView('options')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#173f34',
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginBottom: '16px'
+                    }}
+                  >
+                    <ArrowLeft size={16} /> Back to reservation options
+                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '50%' }}>
+                      <AlertCircle size={24} />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        FINAL CONFIRMATION
+                      </span>
+                      <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: 0 }}>
+                        Cancel Entire Reservation?
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '0.9375rem', color: '#6e7a76', lineHeight: 1.6, margin: '16px 0 20px' }}>
+                    Are you sure you wish to cancel reservation <strong>#{selectedRes.confirmationCode}</strong> at <strong>{selectedRes.propertyName}</strong> ({selectedRes.checkInDate} → {selectedRes.checkOutDate})?
+                  </p>
+
+                  <div style={{
+                    backgroundColor: '#eaf5ee',
+                    border: '1.5px solid #a3d9b8',
+                    borderRadius: '14px',
+                    padding: '16px 20px',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#17653e', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>
+                      <ShieldCheck size={18} /> Free Cancellation Window Active
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: '#17271f', lineHeight: 1.5 }}>
+                      Cancellation penalty: <strong>$0 USD (Zero penalty)</strong>. Full refund will be automatically credited to your original payment method.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button 
+                      onClick={() => setModalSubView('options')} 
+                      className="btn btn-outline" 
+                      style={{ flex: 1, padding: '13px', fontSize: '0.95rem', fontWeight: 700 }}
+                    >
+                      Keep Reservation
+                    </button>
+                    <button 
+                      onClick={handleConfirmCancelEntire} 
+                      style={{ 
+                        flex: 1.4, 
+                        backgroundColor: '#b91c1c', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        borderRadius: '12px', 
+                        padding: '13px', 
+                        fontWeight: 700, 
+                        fontSize: '0.95rem', 
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(185, 28, 28, 0.25)'
+                      }}
+                    >
+                      Confirm Cancellation
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
