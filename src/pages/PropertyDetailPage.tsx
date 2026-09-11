@@ -5,7 +5,7 @@ import { Room, RoomRate } from '../types';
 import { 
   MapPin, Star, Users, Check, Sparkles, Coffee, 
   ShieldAlert, Clock, ArrowLeft, ArrowRight, Bed,
-  ShoppingBag, Plus, Minus, Trash2 
+  ShoppingBag, Plus, Minus, Trash2, ChevronLeft, ChevronRight, X 
 } from 'lucide-react';
 
 export const PropertyDetailPage: React.FC = () => {
@@ -17,6 +17,24 @@ export const PropertyDetailPage: React.FC = () => {
 
   const rooms = mockRoomsByProperty[selectedProperty.id] || mockRoomsByProperty['evolve-kyoto'];
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [roomPhotoIndices, setRoomPhotoIndices] = useState<Record<string, number>>({});
+  const [detailModalRoom, setDetailModalRoom] = useState<Room | null>(null);
+
+  const handlePrevPhoto = (roomId: string, maxPhotos: number) => {
+    setRoomPhotoIndices(prev => {
+      const current = prev[roomId] || 0;
+      const nextIndex = current === 0 ? maxPhotos - 1 : current - 1;
+      return { ...prev, [roomId]: nextIndex };
+    });
+  };
+
+  const handleNextPhoto = (roomId: string, maxPhotos: number) => {
+    setRoomPhotoIndices(prev => {
+      const current = prev[roomId] || 0;
+      const nextIndex = (current + 1) % maxPhotos;
+      return { ...prev, [roomId]: nextIndex };
+    });
+  };
 
   const totalOrderedRooms = selectedRooms.reduce((sum, item) => sum + item.quantity, 0);
   const nightlySubtotal = selectedRooms.reduce((sum, item) => sum + item.rate.nightlyPrice * item.quantity, 0);
@@ -316,279 +334,507 @@ export const PropertyDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Room Selection Heading */}
-        <div style={{ marginBottom: '28px' }}>
-          <span className="eyebrow-text">ACCOMMODATIONS</span>
-          <h2 style={{ fontSize: '1.85rem', color: '#17271f' }}>
-            Available Suites & Private Sanctuaries
-          </h2>
-          <p style={{ color: '#6e7a76', fontSize: '0.9375rem' }}>
-            All rooms include high-speed fiber Wi-Fi, handcrafted bath amenities, and evening turndown service.
-          </p>
+        {/* Choose a Suite Section Header (matches screenshot) */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          marginBottom: '24px',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div>
+            <span style={{
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: '#8c7355',
+              textTransform: 'uppercase',
+              display: 'block',
+              marginBottom: '6px'
+            }}>
+              AVAILABLE FOR YOUR STAY
+            </span>
+            <h2 style={{
+              fontFamily: 'Playfair Display, serif',
+              fontSize: 'clamp(2rem, 3.5vw, 2.75rem)',
+              color: '#17271f',
+              margin: 0,
+              fontWeight: 500,
+              lineHeight: 1.15
+            }}>
+              Choose a suite
+            </h2>
+          </div>
+
+          <div style={{
+            backgroundColor: '#dcece4',
+            color: '#173f34',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            fontSize: '0.875rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em'
+          }}>
+            {rooms.length} suite types available
+          </div>
         </div>
 
-        {/* Room List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {rooms.map(room => (
-            <div
-              key={room.id}
-              className="evolve-card"
-              style={{
-                borderRadius: '24px',
-                overflow: 'hidden',
-                border: '1px solid #eeece5',
-                padding: '28px'
-              }}
-            >
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '32px',
-              }}>
-                {/* Room Photo & Specs */}
-                <div>
-                  <div style={{ height: '240px', borderRadius: '16px', overflow: 'hidden', marginBottom: '14px' }}>
-                    <img src={room.images[0]} alt={room.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <h3 style={{ fontSize: '1.4rem', color: '#17271f', marginBottom: '6px' }}>
-                    {room.name}
-                  </h3>
-                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', lineHeight: 1.5, marginBottom: '14px' }}>
-                    {room.description}
-                  </p>
+        {/* Room List - 3-Column Card Layout Matching Screenshot */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {rooms.map(room => {
+            const currentPhotoIdx = roomPhotoIndices[room.id] || 0;
+            const photoList = room.images && room.images.length > 0 ? room.images : [selectedProperty.heroImage];
+            const currentPhoto = photoList[currentPhotoIdx % photoList.length];
 
+            const primaryRate = room.rates.find(r => isMember ? r.rateType === 'MEMBER_EXCLUSIVE' : r.rateType === 'BEST_AVAILABLE') || room.rates[0];
+            const standardPrice = Math.round(primaryRate.nightlyPrice * 1.18);
+            const orderItem = selectedRooms.find(item => item.room.id === room.id);
+            const currentQty = orderItem ? orderItem.quantity : 0;
+
+            return (
+              <div
+                key={room.id}
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                  border: currentQty > 0 ? '2px solid #17653e' : '1px solid #e2ded5',
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(280px, 340px) 1fr minmax(210px, 240px)',
+                  boxShadow: '0 4px 16px rgba(23, 39, 31, 0.04)',
+                  alignItems: 'stretch',
+                  transition: 'border-color 0.2s, box-shadow 0.2s'
+                }}
+              >
+                {/* Column 1: Photo Carousel (Matches Screenshot) */}
+                <div style={{
+                  position: 'relative',
+                  backgroundColor: '#4e6d62',
+                  minHeight: '230px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <img
+                    src={currentPhoto}
+                    alt={room.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      filter: 'brightness(0.92)'
+                    }}
+                  />
+
+                  {/* Centered FINAL HOTEL PHOTO Badge */}
                   <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                    fontSize: '0.8125rem',
-                    color: '#173f34',
-                    fontWeight: 600,
-                    marginBottom: '16px'
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: 'rgba(23, 39, 31, 0.82)',
+                    color: '#ffffff',
+                    padding: '8px 18px',
+                    borderRadius: '9999px',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    pointerEvents: 'none',
+                    backdropFilter: 'blur(6px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                   }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Bed size={15} color="#dda943" /> {room.bedConfig}
-                    </span>
-                    <span>•</span>
-                    <span>{room.sizeSqm} m² / {Math.round(room.sizeSqm * 10.76)} sq ft</span>
-                    <span>•</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Users size={15} color="#dda943" /> Up to {room.maxGuests} guests
-                    </span>
+                    FINAL HOTEL PHOTO
                   </div>
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {room.amenities.map((a, i) => (
-                      <span key={i} style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#f6f3ec', borderRadius: '6px', color: '#6e7a76' }}>
-                        {a}
-                      </span>
-                    ))}
+                  {/* Bottom Carousel Controls (Matches Screenshot) */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '14px',
+                    left: '14px',
+                    right: '14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    zIndex: 2
+                  }}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrevPhoto(room.id, photoList.length);
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(23, 39, 31, 0.85)',
+                        color: '#ffffff',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(4px)',
+                        transition: 'transform 0.15s, background-color 0.15s'
+                      }}
+                      title="Previous photo"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+
+                    <div style={{
+                      backgroundColor: 'rgba(23, 39, 31, 0.85)',
+                      color: '#ffffff',
+                      padding: '4px 14px',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      backdropFilter: 'blur(4px)',
+                      letterSpacing: '0.02em'
+                    }}>
+                      Photo {currentPhotoIdx + 1} of {photoList.length}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNextPhoto(room.id, photoList.length);
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(23, 39, 31, 0.85)',
+                        color: '#ffffff',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(4px)',
+                        transition: 'transform 0.15s, background-color 0.15s'
+                      }}
+                      title="Next photo"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Rates Comparison Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <h4 style={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#17271f', marginBottom: '4px' }}>
-                    Select Your Rate Plan:
-                  </h4>
+                {/* Column 2: Suite Details (Matches Screenshot) */}
+                <div style={{
+                  padding: '28px 32px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <h3 style={{
+                      fontFamily: 'Playfair Display, serif',
+                      fontSize: '1.75rem',
+                      color: '#17271f',
+                      margin: '0 0 8px 0',
+                      fontWeight: 600
+                    }}>
+                      {room.name}
+                    </h3>
+                    <p style={{
+                      fontSize: '0.9375rem',
+                      color: '#5b6763',
+                      lineHeight: 1.5,
+                      margin: '0 0 16px 0',
+                      maxWidth: '480px'
+                    }}>
+                      {room.description}
+                    </p>
 
-                  {room.rates.filter(rate => rate.rateType !== 'CORPORATE' && (isMember ? true : rate.rateType !== 'MEMBER_EXCLUSIVE')).map(rate => {
-                    const isMemberRate = rate.rateType === 'MEMBER_EXCLUSIVE';
-                    const orderItem = selectedRooms.find(item => item.room.id === room.id && item.rate.id === rate.id);
+                    {/* Features Row */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '20px',
+                      fontSize: '0.875rem',
+                      color: '#5b6763',
+                      fontWeight: 500,
+                      flexWrap: 'wrap'
+                    }}>
+                      <span>{room.maxGuests} adults</span>
+                      <span>Smoke-free</span>
+                      <span>Free Wi-Fi</span>
+                    </div>
+                  </div>
 
-                    return (
-                      <div
-                        key={rate.id}
-                        style={{
-                          backgroundColor: isMemberRate ? '#fcf6eb' : '#faf9f5',
-                          border: isMemberRate ? '2px solid #dda943' : (orderItem ? '2px solid #17653e' : '1px solid #eeece5'),
-                          borderRadius: '16px',
-                          padding: '18px 20px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '12px'
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setDetailModalRoom(room)}
+                      style={{
+                        backgroundColor: '#1b3f35',
+                        color: '#ffffff',
+                        borderRadius: '10px',
+                        padding: '12px 24px',
+                        fontSize: '0.875rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(27, 63, 53, 0.18)',
+                        transition: 'background-color 0.15s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#133028'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1b3f35'}
+                    >
+                      View Photos & Suite Details
+                    </button>
+                  </div>
+                </div>
+
+                {/* Column 3: Pricing & Quantity Stepper (Matches Screenshot) */}
+                <div style={{
+                  borderLeft: '1px solid #eeece5',
+                  padding: '30px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{
+                      fontSize: '0.875rem',
+                      color: '#8c8a82',
+                      textDecoration: 'line-through',
+                      marginBottom: '2px'
+                    }}>
+                      Standard ${standardPrice}
+                    </div>
+                    <div style={{
+                      fontSize: '0.9375rem',
+                      fontWeight: 700,
+                      color: '#17271f',
+                      marginBottom: '6px'
+                    }}>
+                      {isMember && primaryRate.rateType === 'MEMBER_EXCLUSIVE' ? 'Evolve Member Privilege' : 'Evolve Direct'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <span style={{
+                        fontSize: '1.95rem',
+                        fontWeight: 800,
+                        color: '#17271f',
+                        lineHeight: 1
+                      }}>
+                        ${primaryRate.nightlyPrice}
+                      </span>
+                      <span style={{ fontSize: '0.875rem', color: '#6e7a76', fontWeight: 500 }}>
+                        / night
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quantity Stepper with "[ - ]  1 selected  [ + ]" */}
+                  <div style={{ marginTop: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (currentQty > 0 && orderItem) {
+                            updateRoomQuantity(orderItem.id, currentQty - 1);
+                          }
                         }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                              {isMemberRate && (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  backgroundColor: '#dda943',
-                                  color: '#17271f',
-                                  padding: '2px 8px',
-                                  borderRadius: '9999px',
-                                  fontSize: '0.6875rem',
-                                  fontWeight: 800
-                                }}>
-                                  <Sparkles size={11} /> MEMBER EXCLUSIVE • SAVE 15%
-                                </span>
-                              )}
-                              {orderItem && (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  backgroundColor: '#17653e',
-                                  color: '#ffffff',
-                                  padding: '2px 8px',
-                                  borderRadius: '9999px',
-                                  fontSize: '0.6875rem',
-                                  fontWeight: 700
-                                }}>
-                                  <Check size={11} strokeWidth={3} /> {orderItem.quantity} in Your Order
-                                </span>
-                              )}
-                            </div>
-                            <h5 style={{ fontSize: '1.05rem', color: '#17271f', fontWeight: 700, margin: 0 }}>
-                              {rate.title}
-                            </h5>
-                            <p style={{ fontSize: '0.8125rem', color: '#6e7a76', marginTop: '4px' }}>
-                              {rate.description}
-                            </p>
-                          </div>
-
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#17271f' }}>
-                              ${rate.nightlyPrice}
-                            </div>
-                            <span style={{ fontSize: '0.75rem', color: '#6e7a76' }}>per night</span>
-                          </div>
-                        </div>
-
-                        {/* Inclusions & Policies */}
-                        <div style={{
+                        disabled={currentQty === 0}
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '8px',
+                          border: '1.5px solid #d8d6cf',
+                          backgroundColor: '#ffffff',
+                          color: currentQty === 0 ? '#b2c0bc' : '#17271f',
                           display: 'flex',
-                          flexWrap: 'wrap',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          paddingTop: '10px',
-                          borderTop: '1px solid rgba(0,0,0,0.06)',
-                          fontSize: '0.75rem',
-                          color: '#173f34',
-                          gap: '8px'
+                          justifyContent: 'center',
+                          cursor: currentQty === 0 ? 'not-allowed' : 'pointer',
+                          transition: 'border-color 0.15s, color 0.15s'
+                        }}
+                        title="Decrease quantity"
+                      >
+                        <Minus size={16} strokeWidth={2.5} />
+                      </button>
+
+                      <div style={{ textAlign: 'center', minWidth: '50px' }}>
+                        <div style={{
+                          fontSize: '1.25rem',
+                          fontWeight: 800,
+                          color: '#17271f',
+                          lineHeight: 1
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {rate.includesBreakfast && isMember && (
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: '#17653e' }}>
-                                <Coffee size={13} /> Gourmet Breakfast Included
-                              </span>
-                            )}
-                            <span style={{ color: '#6e7a76' }}>
-                              Free cancellation up to {rate.cancellationPolicy.deadlineHoursPrior}h
-                            </span>
-                          </div>
-
-                          {/* Action Buttons: Add to Order / Quantity Stepper & Direct Booking */}
-                          {orderItem ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                backgroundColor: '#edf5f0',
-                                borderRadius: '9999px',
-                                border: '1.5px solid #17653e',
-                                padding: '3px 8px',
-                                gap: '8px'
-                              }}>
-                                <button
-                                  onClick={() => updateRoomQuantity(orderItem.id, orderItem.quantity - 1)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#17653e', padding: 0 }}
-                                  title="Decrease room count"
-                                >
-                                  <Minus size={13} />
-                                </button>
-                                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#17653e' }}>
-                                  {orderItem.quantity} in Order
-                                </span>
-                                <button
-                                  onClick={() => updateRoomQuantity(orderItem.id, orderItem.quantity + 1)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#17653e', padding: 0 }}
-                                  title="Add another room of this suite type"
-                                >
-                                  <Plus size={13} />
-                                </button>
-                              </div>
-
-                              <button
-                                onClick={() => {
-                                  setSelectedRoom(room);
-                                  setSelectedRate(rate);
-                                  navigateTo('checkout');
-                                }}
-                                style={{
-                                  backgroundColor: '#173f34',
-                                  color: '#ffffff',
-                                  borderRadius: '10px',
-                                  padding: '8px 16px',
-                                  fontSize: '0.8125rem',
-                                  fontWeight: 700,
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
-                              >
-                                Checkout <ArrowRight size={13} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <button
-                                onClick={() => {
-                                  addRoomToOrder(room, rate, 1);
-                                  addToast('success', 'Room Added to Order', `Added 1× ${room.name} (${rate.title.split(' • ')[0]}) to your order.`);
-                                }}
-                                style={{
-                                  backgroundColor: '#ffffff',
-                                  color: '#173f34',
-                                  border: '1.5px solid #173f34',
-                                  borderRadius: '10px',
-                                  padding: '8px 14px',
-                                  fontSize: '0.8125rem',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  transition: 'all 0.15s'
-                                }}
-                              >
-                                <Plus size={14} /> Add to Order
-                              </button>
-
-                              <button
-                                onClick={() => handleBookRate(room, rate)}
-                                style={{
-                                  backgroundColor: isMemberRate ? '#dda943' : '#173f34',
-                                  color: isMemberRate ? '#17271f' : '#ffffff',
-                                  borderRadius: '10px',
-                                  padding: '8px 18px',
-                                  fontSize: '0.875rem',
-                                  fontWeight: 700,
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                                }}
-                              >
-                                Book Now →
-                              </button>
-                            </div>
-                          )}
+                          {currentQty}
+                        </div>
+                        <div style={{
+                          fontSize: '0.6875rem',
+                          color: '#6e7a76',
+                          marginTop: '3px',
+                          fontWeight: 500
+                        }}>
+                          selected
                         </div>
                       </div>
-                    );
-                  })}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (orderItem) {
+                            updateRoomQuantity(orderItem.id, currentQty + 1);
+                          } else {
+                            addRoomToOrder(room, primaryRate, 1);
+                            addToast('success', 'Suite Added', `Added 1× ${room.name} to your order.`);
+                          }
+                        }}
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          backgroundColor: '#1b3f35',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.15s',
+                          boxShadow: '0 2px 6px rgba(27, 63, 53, 0.2)'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#133028'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1b3f35'}
+                        title="Increase quantity"
+                      >
+                        <Plus size={16} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Suite Details & Photos Modal */}
+        {detailModalRoom && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              maxWidth: '780px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+              position: 'relative',
+              padding: '32px'
+            }}>
+              <button
+                type="button"
+                onClick={() => setDetailModalRoom(null)}
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  border: '1px solid #eeece5',
+                  backgroundColor: '#f6f3ec',
+                  color: '#17271f',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              <span className="eyebrow-text">SUITE DETAILS & SPECIFICATIONS</span>
+              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2rem', color: '#17271f', margin: '4px 0 12px 0' }}>
+                {detailModalRoom.name}
+              </h2>
+              <p style={{ color: '#6e7a76', fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '24px' }}>
+                {detailModalRoom.description}
+              </p>
+
+              {/* Gallery Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                {detailModalRoom.images.map((img, i) => (
+                  <div key={i} style={{ height: '160px', borderRadius: '12px', overflow: 'hidden' }}>
+                    <img src={img} alt="Suite View" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Amenities & Specs */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px', backgroundColor: '#faf9f5', padding: '20px', borderRadius: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#929b98', textTransform: 'uppercase', fontWeight: 700 }}>Bed Configuration</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#17271f', marginTop: '2px' }}>{detailModalRoom.bedConfig}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#929b98', textTransform: 'uppercase', fontWeight: 700 }}>Floor Space</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#17271f', marginTop: '2px' }}>{detailModalRoom.sizeSqm} m² / {Math.round(detailModalRoom.sizeSqm * 10.76)} sq ft</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#929b98', textTransform: 'uppercase', fontWeight: 700 }}>Occupancy</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#17271f', marginTop: '2px' }}>Up to {detailModalRoom.maxGuests} adults</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '0.875rem', textTransform: 'uppercase', color: '#17271f', marginBottom: '10px' }}>In-Suite Amenities:</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {detailModalRoom.amenities.map((a, i) => (
+                    <span key={i} style={{ padding: '6px 12px', backgroundColor: '#f6f3ec', borderRadius: '8px', fontSize: '0.8125rem', color: '#173f34', fontWeight: 500 }}>
+                      ✓ {a}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setDetailModalRoom(null)}
+                  className="btn btn-outline"
+                  style={{ padding: '10px 20px' }}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const primaryRate = detailModalRoom.rates[0];
+                    addRoomToOrder(detailModalRoom, primaryRate, 1);
+                    setDetailModalRoom(null);
+                    addToast('success', 'Suite Added', `Added 1× ${detailModalRoom.name} to your order.`);
+                  }}
+                  className="btn btn-primary"
+                  style={{ padding: '10px 24px' }}
+                >
+                  Select this Suite (${detailModalRoom.rates[0]?.nightlyPrice}/night)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Floating Order Bar */}
         {selectedRooms.length > 0 && (
