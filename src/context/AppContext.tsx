@@ -265,6 +265,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch {}
   }, [selectedRooms]);
 
+  // When user is authenticated as a member, ensure room orders automatically upgrade to member rates
+  useEffect(() => {
+    if (currentUser?.isMember && selectedRooms.length > 0) {
+      let hasUpdates = false;
+      const upgraded = selectedRooms.map(item => {
+        if (item.rate.rateType !== 'MEMBER_EXCLUSIVE') {
+          const memberRate = item.room.rates.find(r => r.rateType === 'MEMBER_EXCLUSIVE');
+          if (memberRate) {
+            hasUpdates = true;
+            return { ...item, rate: memberRate };
+          }
+        }
+        return item;
+      });
+      if (hasUpdates) {
+        setSelectedRooms(upgraded);
+      }
+    }
+  }, [currentUser?.isMember, selectedRooms.length]);
+
   const addRoomToOrder = (room: Room, rate: RoomRate, quantity: number = 1) => {
     setSelectedRooms(prev => {
       const existingIndex = prev.findIndex(item => item.room.id === room.id && item.rate.id === rate.id);

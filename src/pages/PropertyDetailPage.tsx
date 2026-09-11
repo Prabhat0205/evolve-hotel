@@ -5,7 +5,7 @@ import { Room, RoomRate } from '../types';
 import { 
   MapPin, Star, Users, Check, Sparkles, Coffee, 
   ShieldAlert, Clock, ArrowLeft, ArrowRight, Bed,
-  ShoppingBag, Plus, Minus, Trash2, ChevronLeft, ChevronRight, X 
+  ShoppingBag, Plus, Minus, Trash2, ChevronLeft, ChevronRight, X, Calendar
 } from 'lucide-react';
 
 export const PropertyDetailPage: React.FC = () => {
@@ -36,8 +36,24 @@ export const PropertyDetailPage: React.FC = () => {
     });
   };
 
+  const calculateNights = (inDateStr?: string, outDateStr?: string): number => {
+    try {
+      if (!inDateStr || !outDateStr) return 1;
+      const dIn = new Date(inDateStr);
+      const dOut = new Date(outDateStr);
+      const diff = Math.round((dOut.getTime() - dIn.getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 1;
+    } catch {
+      return 1;
+    }
+  };
+
+  const nights = calculateNights(searchDates.checkIn, searchDates.checkOut);
   const totalOrderedRooms = selectedRooms.reduce((sum, item) => sum + item.quantity, 0);
   const nightlySubtotal = selectedRooms.reduce((sum, item) => sum + item.rate.nightlyPrice * item.quantity, 0);
+  const staySubtotal = nightlySubtotal * nights;
+  const estimatedTaxes = Math.round(staySubtotal * 0.12);
+  const estimatedTotal = staySubtotal + estimatedTaxes;
 
   const handleBookRate = (room: Room, rate: RoomRate) => {
     const existing = selectedRooms.find(item => item.room.id === room.id && item.rate.id === rate.id);
@@ -180,6 +196,70 @@ export const PropertyDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Stay Dates & Duration Bar */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          padding: '16px 24px',
+          marginBottom: '28px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          border: '1px solid #eeece5',
+          boxShadow: '0 2px 10px rgba(23, 39, 31, 0.03)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontWeight: 700, fontSize: '0.9375rem' }}>
+              <Calendar size={18} color="#dda943" />
+              <span>{searchDates.checkIn} → {searchDates.checkOut}</span>
+              <span style={{ backgroundColor: '#f6f3ec', color: '#173f34', padding: '3px 10px', borderRadius: '9999px', fontSize: '0.8125rem' }}>
+                {nights} Night{nights > 1 ? 's' : ''}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6e7a76', fontSize: '0.875rem' }}>
+              <Users size={16} />
+              <span>{searchDates.adults} Adults{searchDates.children > 0 ? `, ${searchDates.children} Children` : ''}</span>
+            </div>
+          </div>
+
+          {isMember ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#fcf6eb',
+              color: '#997125',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              fontSize: '0.8125rem',
+              fontWeight: 700
+            }}>
+              <Sparkles size={14} /> Evolve Member Privilege Rates Active
+            </div>
+          ) : (
+            <button
+              onClick={() => openAuthModal('signin')}
+              style={{
+                backgroundColor: '#fcf6eb',
+                color: '#997125',
+                border: '1px solid #dda943',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Sparkles size={14} /> Sign in as Member for Exclusive Rates
+            </button>
+          )}
+        </div>
+
         {/* Active Room Order Banner if rooms selected */}
         {selectedRooms.length > 0 && (
           <div style={{
@@ -217,7 +297,7 @@ export const PropertyDetailPage: React.FC = () => {
                     Your Room Order ({totalOrderedRooms} Room{totalOrderedRooms > 1 ? 's' : ''} Selected)
                   </h3>
                   <p style={{ fontSize: '0.8125rem', color: '#6e7a76', margin: '2px 0 0 0' }}>
-                    You can add multiple suites or rooms in this reservation. All selected rooms will be booked together.
+                    {searchDates.checkIn} → {searchDates.checkOut} ({nights} Nights) • Room Subtotal: ${staySubtotal} USD (+ ${estimatedTaxes} tax = ${estimatedTotal} Total)
                   </p>
                 </div>
               </div>
@@ -255,7 +335,7 @@ export const PropertyDetailPage: React.FC = () => {
                     gap: '8px'
                   }}
                 >
-                  Proceed to Checkout ({totalOrderedRooms} Room{totalOrderedRooms > 1 ? 's' : ''}) <ArrowRight size={16} />
+                  Proceed to Checkout (${staySubtotal} • {nights}N) <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -286,7 +366,7 @@ export const PropertyDetailPage: React.FC = () => {
                         {item.room.name}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#997125' }}>
-                        {item.rate.title.split(' • ')[0]} · ${item.rate.nightlyPrice}/nt
+                        {item.rate.title.split(' • ')[0]} · ${item.rate.nightlyPrice}/nt • ${item.rate.nightlyPrice * item.quantity * nights} ({nights}N)
                       </div>
                     </div>
                   </div>
@@ -387,8 +467,11 @@ export const PropertyDetailPage: React.FC = () => {
             const photoList = room.images && room.images.length > 0 ? room.images : [selectedProperty.heroImage];
             const currentPhoto = photoList[currentPhotoIdx % photoList.length];
 
-            const primaryRate = room.rates.find(r => isMember ? r.rateType === 'MEMBER_EXCLUSIVE' : r.rateType === 'BEST_AVAILABLE') || room.rates[0];
-            const standardPrice = Math.round(primaryRate.nightlyPrice * 1.18);
+            const memberRateObj = room.rates.find(r => r.rateType === 'MEMBER_EXCLUSIVE');
+            const standardRateObj = room.rates.find(r => r.rateType === 'BEST_AVAILABLE') || room.rates[0];
+            const primaryRate = (isMember && memberRateObj) ? memberRateObj : (memberRateObj || standardRateObj);
+            const standardPrice = standardRateObj?.nightlyPrice || Math.round(primaryRate.nightlyPrice * 1.18);
+            const memberPrice = memberRateObj?.nightlyPrice || primaryRate.nightlyPrice;
             const orderItem = selectedRooms.find(item => item.room.id === room.id);
             const currentQty = orderItem ? orderItem.quantity : 0;
 
@@ -602,35 +685,90 @@ export const PropertyDetailPage: React.FC = () => {
                   justifyContent: 'space-between'
                 }}>
                   <div>
-                    <div style={{
-                      fontSize: '0.875rem',
-                      color: '#8c8a82',
-                      textDecoration: 'line-through',
-                      marginBottom: '2px'
-                    }}>
-                      Standard ${standardPrice}
-                    </div>
-                    <div style={{
-                      fontSize: '0.9375rem',
-                      fontWeight: 700,
-                      color: '#17271f',
-                      marginBottom: '6px'
-                    }}>
-                      {isMember && primaryRate.rateType === 'MEMBER_EXCLUSIVE' ? 'Evolve Member Privilege' : 'Evolve Direct'}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span style={{
-                        fontSize: '1.95rem',
-                        fontWeight: 800,
-                        color: '#17271f',
-                        lineHeight: 1
-                      }}>
-                        ${primaryRate.nightlyPrice}
-                      </span>
-                      <span style={{ fontSize: '0.875rem', color: '#6e7a76', fontWeight: 500 }}>
-                        / night
-                      </span>
-                    </div>
+                    {isMember ? (
+                      <>
+                        <div style={{
+                          fontSize: '0.875rem',
+                          color: '#8c8a82',
+                          textDecoration: 'line-through',
+                          marginBottom: '2px'
+                        }}>
+                          Standard ${standardPrice}
+                        </div>
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          backgroundColor: '#fcf6eb',
+                          color: '#997125',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          marginBottom: '6px'
+                        }}>
+                          <Sparkles size={11} /> Member Privilege (Save ${standardPrice - memberPrice}/nt)
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                          <span style={{
+                            fontSize: '2rem',
+                            fontWeight: 800,
+                            color: '#17271f',
+                            lineHeight: 1
+                          }}>
+                            ${memberPrice}
+                          </span>
+                          <span style={{ fontSize: '0.875rem', color: '#6e7a76', fontWeight: 500 }}>
+                            / night
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{
+                          fontSize: '0.8125rem',
+                          color: '#6e7a76',
+                          fontWeight: 600,
+                          marginBottom: '2px'
+                        }}>
+                          Standard Rate
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '6px' }}>
+                          <span style={{
+                            fontSize: '2rem',
+                            fontWeight: 800,
+                            color: '#17271f',
+                            lineHeight: 1
+                          }}>
+                            ${standardPrice}
+                          </span>
+                          <span style={{ fontSize: '0.875rem', color: '#6e7a76', fontWeight: 500 }}>
+                            / night
+                          </span>
+                        </div>
+                        {memberRateObj && (
+                          <button
+                            type="button"
+                            onClick={() => openAuthModal('signin')}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: 0,
+                              color: '#997125',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Sparkles size={11} /> Member: ${memberPrice}/nt (Sign in)
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Quantity Stepper with "[ - ]  1 selected  [ + ]" */}
@@ -809,29 +947,122 @@ export const PropertyDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => setDetailModalRoom(null)}
-                  className="btn btn-outline"
-                  style={{ padding: '10px 20px' }}
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const primaryRate = detailModalRoom.rates[0];
-                    addRoomToOrder(detailModalRoom, primaryRate, 1);
-                    setDetailModalRoom(null);
-                    addToast('success', 'Suite Added', `Added 1× ${detailModalRoom.name} to your order.`);
-                  }}
-                  className="btn btn-primary"
-                  style={{ padding: '10px 24px' }}
-                >
-                  Select this Suite (${detailModalRoom.rates[0]?.nightlyPrice}/night)
-                </button>
-              </div>
+              {(() => {
+                const modalMemberRate = detailModalRoom.rates.find(r => r.rateType === 'MEMBER_EXCLUSIVE');
+                const modalStandardRate = detailModalRoom.rates.find(r => r.rateType === 'BEST_AVAILABLE') || detailModalRoom.rates[0];
+                const chosenRate = (isMember && modalMemberRate) ? modalMemberRate : (modalMemberRate || modalStandardRate);
+                const standardPriceModal = modalStandardRate?.nightlyPrice || 149;
+                const memberPriceModal = modalMemberRate?.nightlyPrice || chosenRate.nightlyPrice;
+
+                return (
+                  <>
+                    {/* Rate & Pricing Card in Modal */}
+                    <div style={{
+                      backgroundColor: '#faf9f5',
+                      border: '1.5px solid #dda943',
+                      borderRadius: '16px',
+                      padding: '18px 22px',
+                      marginBottom: '24px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '14px'
+                    }}>
+                      <div>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          color: '#997125',
+                          letterSpacing: '0.05em',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <Sparkles size={13} />
+                          {isMember ? 'Evolve Member Exclusive Privilege' : 'Standard Best Available Rate'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                          {isMember && modalStandardRate && (
+                            <span style={{ fontSize: '1.05rem', color: '#8c8a82', textDecoration: 'line-through' }}>
+                              ${standardPriceModal}
+                            </span>
+                          )}
+                          <span style={{ fontSize: '1.85rem', fontWeight: 800, color: '#17271f' }}>
+                            ${isMember ? memberPriceModal : standardPriceModal}
+                          </span>
+                          <span style={{ fontSize: '0.875rem', color: '#6e7a76', fontWeight: 500 }}>
+                            / night
+                          </span>
+                          {isMember && modalStandardRate && (
+                            <span style={{
+                              backgroundColor: '#eaf5ee',
+                              color: '#17653e',
+                              padding: '3px 10px',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700
+                            }}>
+                              Save ${standardPriceModal - memberPriceModal}/night
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#5b6763', marginTop: '4px' }}>
+                          {isMember 
+                            ? '✓ Includes complimentary made-to-order breakfast and 2x bonus reward nights' 
+                            : '✓ Free cancellation up to 48 hours prior to check-in'}
+                        </div>
+                      </div>
+
+                      {!isMember && modalMemberRate && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDetailModalRoom(null);
+                            openAuthModal('signin');
+                          }}
+                          style={{
+                            backgroundColor: '#fcf6eb',
+                            color: '#997125',
+                            border: '1.5px solid #dda943',
+                            borderRadius: '10px',
+                            padding: '8px 14px',
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Sign in for ${memberPriceModal}/nt rate
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailModalRoom(null)}
+                        className="btn btn-outline"
+                        style={{ padding: '12px 20px' }}
+                      >
+                        Close
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addRoomToOrder(detailModalRoom, chosenRate, 1);
+                          setDetailModalRoom(null);
+                          addToast('success', 'Suite Added', `Added 1× ${detailModalRoom.name} to your order.`);
+                        }}
+                        className="btn btn-primary"
+                        style={{ padding: '12px 24px', fontWeight: 700 }}
+                      >
+                        Select this Suite (${isMember ? memberPriceModal : standardPriceModal}/night{isMember ? ' • Member Rate' : ''})
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -877,11 +1108,14 @@ export const PropertyDetailPage: React.FC = () => {
                     {totalOrderedRooms} Room{totalOrderedRooms > 1 ? 's' : ''} in Order
                   </span>
                   <span style={{ backgroundColor: '#2a443b', color: '#dda943', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
-                    ${nightlySubtotal}/night
+                    ${nightlySubtotal}/nt
+                  </span>
+                  <span style={{ color: '#ffffff', fontSize: '0.875rem', fontWeight: 700 }}>
+                    · ${staySubtotal} Subtotal ({nights}N)
                   </span>
                 </div>
                 <div style={{ fontSize: '0.8125rem', color: '#b2c0bc', marginTop: '2px' }}>
-                  {selectedRooms.map(item => `${item.quantity}× ${item.room.name}`).join(' • ')}
+                  {searchDates.checkIn} → {searchDates.checkOut} • {selectedRooms.map(item => `${item.quantity}× ${item.room.name}`).join(' • ')}
                 </div>
               </div>
             </div>
@@ -923,7 +1157,7 @@ export const PropertyDetailPage: React.FC = () => {
                   boxShadow: '0 4px 14px rgba(221, 169, 67, 0.35)'
                 }}
               >
-                Proceed to Checkout ({totalOrderedRooms} Room{totalOrderedRooms > 1 ? 's' : ''}) <ArrowRight size={16} />
+                Proceed to Checkout • ${estimatedTotal} Total ({nights}N) <ArrowRight size={16} />
               </button>
             </div>
           </div>

@@ -97,10 +97,39 @@ export const CheckoutPage: React.FC = () => {
     quantity: 1
   };
 
-  const orderItems = selectedRooms.length > 0 ? selectedRooms : [fallbackOrderItem];
+  const calculateNights = (inDateStr?: string, outDateStr?: string): number => {
+    try {
+      if (!inDateStr || !outDateStr) return 1;
+      const dIn = new Date(inDateStr);
+      const dOut = new Date(outDateStr);
+      const diff = Math.round((dOut.getTime() - dIn.getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 1;
+    } catch {
+      return 1;
+    }
+  };
+
+  const nights = calculateNights(searchDates.checkIn, searchDates.checkOut);
+
+  // Sync order items: if member, ensure room uses member rate; if guest, standard rate
+  const resolvedOrderItems = (selectedRooms.length > 0 ? selectedRooms : [fallbackOrderItem]).map(item => {
+    if (!isGuestCheckout) {
+      const memberRate = item.room.rates.find(r => r.rateType === 'MEMBER_EXCLUSIVE');
+      if (memberRate && item.rate.rateType !== 'MEMBER_EXCLUSIVE') {
+        return { ...item, rate: memberRate };
+      }
+    } else if (checkoutMode === 'guest') {
+      const standardRate = item.room.rates.find(r => r.rateType === 'BEST_AVAILABLE') || item.room.rates[0];
+      if (standardRate && item.rate.rateType !== 'BEST_AVAILABLE') {
+        return { ...item, rate: standardRate };
+      }
+    }
+    return item;
+  });
+
+  const orderItems = resolvedOrderItems;
   const totalRoomsCount = orderItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const nights = 4;
   const nightlySubtotal = orderItems.reduce((acc, item) => {
     return acc + item.rate.nightlyPrice * item.quantity;
   }, 0);

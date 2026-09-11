@@ -7,26 +7,12 @@ import { MapPin, Star, Filter, ArrowRight, ShieldCheck, Sparkles, SlidersHorizon
 export const SearchPage: React.FC = () => {
   const { setSelectedProperty, navigateTo, isMember } = useApp();
 
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDestination, setSelectedDestination] = useState<string>('ALL');
-  const [maxPrice, setMaxPrice] = useState<number>(400);
-  const [onlyMemberDeals, setOnlyMemberDeals] = useState<boolean>(false);
 
   const availableCities = ['ALL', ...Array.from(new Set(mockProperties.map(p => p.city)))];
 
   const filteredProperties = mockProperties.filter(prop => {
     if (selectedDestination !== 'ALL' && prop.city !== selectedDestination) return false;
-    if (prop.startingRate > maxPrice) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matches = 
-        prop.name.toLowerCase().includes(q) ||
-        prop.city.toLowerCase().includes(q) ||
-        prop.description.toLowerCase().includes(q) ||
-        prop.address.toLowerCase().includes(q) ||
-        prop.tagline.toLowerCase().includes(q);
-      if (!matches) return false;
-    }
     return true;
   });
 
@@ -44,7 +30,7 @@ export const SearchPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Search & Filter Toolbar */}
+        {/* Destination Filter Toolbar */}
         <div style={{
           backgroundColor: '#ffffff',
           borderRadius: '16px',
@@ -54,7 +40,7 @@ export const SearchPage: React.FC = () => {
           marginBottom: '32px',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '12px',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
@@ -83,51 +69,6 @@ export const SearchPage: React.FC = () => {
                 {dest === 'ALL' ? `All Hotels (${mockProperties.length})` : dest}
               </button>
             ))}
-          </div>
-
-          {/* Keyword Search & Price Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="Search (e.g. Hospital, Spa, Suite)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                border: '1px solid #e2ded5',
-                fontSize: '0.8125rem',
-                color: '#17271f',
-                outline: 'none',
-                minWidth: '220px'
-              }}
-            />
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 600 }}>Max: ${maxPrice}/nt</span>
-              <input
-                type="range"
-                min={100}
-                max={400}
-                step={10}
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                style={{ accentColor: '#173f34', cursor: 'pointer', width: '90px' }}
-              />
-            </div>
-
-            {isMember && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem', fontWeight: 600, color: '#17271f', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={onlyMemberDeals}
-                  onChange={(e) => setOnlyMemberDeals(e.target.checked)}
-                  style={{ accentColor: '#dda943' }}
-                />
-                <Sparkles size={14} color="#dda943" />
-                Member Rates Only
-              </label>
-            )}
           </div>
         </div>
 
