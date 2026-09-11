@@ -3,7 +3,7 @@ import { useApp, normalizePhone, normalizeGuestCode } from '../context/AppContex
 import { Reservation } from '../types';
 import { 
   AlertCircle, ShieldCheck, Sparkles, Lock, ArrowRight, X, ArrowLeft, 
-  CheckCircle2, CreditCard, Calendar, Check, Info, ArrowUpRight
+  CheckCircle2, CreditCard, Calendar, Check, Info, ArrowUpRight, HelpCircle
 } from 'lucide-react';
 
 export const MyStaysPage: React.FC = () => {
@@ -51,8 +51,39 @@ export const MyStaysPage: React.FC = () => {
     tag: string;
     title: string;
     description: string;
-    redirectTab?: 'UPCOMING' | 'CANCELLED';
+    redirectTab?: 'UPCOMING' | 'CANCELLED' | 'MISSING';
   } | null>(null);
+
+  // Missing stay modal states (matches user screenshot)
+  const [reportMissingModalOpen, setReportMissingModalOpen] = useState(false);
+  const [missingProperty, setMissingProperty] = useState('Evolve Hotels & Suites · Texarkana');
+  const [missingConfirmation, setMissingConfirmation] = useState('');
+  const [missingCheckIn, setMissingCheckIn] = useState('');
+  const [missingCheckOut, setMissingCheckOut] = useState('');
+  const [missingBookedChannel, setMissingBookedChannel] = useState('Evolve website');
+  const [missingNotes, setMissingNotes] = useState('');
+  const [isSubmittingMissing, setIsSubmittingMissing] = useState(false);
+
+  // Missing stay requests stored in localStorage
+  const [missingStayRequests, setMissingStayRequests] = useState<Array<{
+    id: string;
+    refCode: string;
+    property: string;
+    confirmationNumber: string;
+    checkIn: string;
+    checkOut: string;
+    bookedChannel: string;
+    notes: string;
+    submittedAt: string;
+    status: string;
+  }>>(() => {
+    try {
+      const saved = localStorage.getItem('evolve_missing_stays_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Filter reservations based on active session
   const userReservations = reservations.filter(r => {
@@ -390,6 +421,69 @@ export const MyStaysPage: React.FC = () => {
       redirectTab: 'UPCOMING'
     });
   };
+
+  // Missing Stay Submission Handler (matches user screenshot)
+  const handleSubmitMissingStay = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!missingProperty) {
+      addToast('error', 'Missing Property', 'Please select a hotel property.');
+      return;
+    }
+    if (!missingConfirmation && (!missingCheckIn || !missingCheckOut)) {
+      addToast('error', 'Incomplete Details', 'Please provide a confirmation number or stay dates.');
+      return;
+    }
+
+    setIsSubmittingMissing(true);
+    setTimeout(() => {
+      const refCode = `MS-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRequest = {
+        id: `req-${Date.now()}`,
+        refCode,
+        property: missingProperty,
+        confirmationNumber: missingConfirmation || 'Pending Search',
+        checkIn: missingCheckIn || 'Recent stay',
+        checkOut: missingCheckOut || 'Recent stay',
+        bookedChannel: missingBookedChannel,
+        notes: missingNotes,
+        submittedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'PENDING VERIFICATION · Cloudbeds Match in Progress'
+      };
+
+      const updated = [newRequest, ...missingStayRequests];
+      setMissingStayRequests(updated);
+      try {
+        localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(updated));
+      } catch {}
+
+      setIsSubmittingMissing(false);
+      setReportMissingModalOpen(false);
+
+      // Reset form fields
+      setMissingConfirmation('');
+      setMissingCheckIn('');
+      setMissingCheckOut('');
+      setMissingNotes('');
+
+      // Show confirmation popup matching screenshot
+      setConfirmationModal({
+        tag: 'STAY ASSISTANCE CONFIRMATION',
+        title: 'Missing stay reported',
+        description: `Cloudbeds confirmed receipt of missing stay request ${refCode} for ${missingProperty}. Staff will verify your booking against your phone records and credit any eligible Reward Nights.`,
+        redirectTab: 'MISSING'
+      });
+      setTab('MISSING');
+    }, 700);
+  };
+
+  const memberDisplayName = currentUser 
+    ? `${currentUser.firstName} ${currentUser.lastName}` 
+    : currentPersona === 'guest' && activeGuestCode 
+    ? `Guest ${activeGuestCode}` 
+    : 'John Parker';
+
+  const memberDisplayPhone = currentUser?.phone || activeGuestPhone || '(555) 123-4567';
+  const memberLabel = currentUser ? 'Signed-in member' : currentPersona === 'guest' ? 'Signed-in guest' : 'Signed-in member';
 
   // Date Formatting Helpers
   const formatStayIndividualDates = (checkIn: string, checkOut: string) => {
@@ -1511,7 +1605,21 @@ export const MyStaysPage: React.FC = () => {
               View every stay matched to your Evolve account. Cloudbeds is the source of truth for reservation dates, rates and status.
             </p>
           </div>
-          <button style={{ backgroundColor: '#ffffff', color: '#173f34', border: '1px solid #eeece5', borderRadius: '8px', padding: '14px 24px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <button 
+            onClick={() => setReportMissingModalOpen(true)}
+            style={{ 
+              backgroundColor: '#ffffff', 
+              color: '#173f34', 
+              border: '1px solid #eeece5', 
+              borderRadius: '8px', 
+              padding: '14px 24px', 
+              fontSize: '1rem', 
+              fontWeight: 700, 
+              cursor: 'pointer', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              transition: 'all 0.2s ease'
+            }}
+          >
             Report a Missing Stay
           </button>
         </div>
@@ -1816,10 +1924,127 @@ export const MyStaysPage: React.FC = () => {
                 );
               })}
               
-              {currentStays.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '60px', color: '#6e7a76', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #eeece5' }}>
-                  No reservations found in this section.
-                </div>
+              {tab === 'MISSING' ? (
+                missingStayRequests.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '16px 24px', borderRadius: '14px', border: '1px solid #eeece5', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600 }}>
+                        Showing <strong>{missingStayRequests.length}</strong> missing stay claim{missingStayRequests.length > 1 ? 's' : ''} submitted
+                      </div>
+                      <button
+                        onClick={() => setReportMissingModalOpen(true)}
+                        style={{
+                          backgroundColor: '#173f34',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '10px 18px',
+                          fontSize: '0.875rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + Report Another Stay
+                      </button>
+                    </div>
+
+                    {missingStayRequests.map((req) => (
+                      <div
+                        key={req.id}
+                        style={{
+                          backgroundColor: '#ffffff',
+                          borderRadius: '16px',
+                          border: '1px solid #eeece5',
+                          padding: '28px',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
+                              MISSING STAY CLAIM · {req.refCode}
+                            </span>
+                            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.5rem', color: '#17271f', margin: 0 }}>
+                              {req.property}
+                            </h3>
+                          </div>
+                          <span style={{
+                            backgroundColor: '#fef3c7',
+                            color: '#92400e',
+                            padding: '6px 14px',
+                            borderRadius: '9999px',
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            ● {req.status}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', backgroundColor: '#fcfbf7', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6e7a76', textTransform: 'uppercase', marginBottom: '4px' }}>Stay Dates</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#17271f' }}>{req.checkIn} → {req.checkOut}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6e7a76', textTransform: 'uppercase', marginBottom: '4px' }}>Confirmation #</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#17271f' }}>{req.confirmationNumber}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6e7a76', textTransform: 'uppercase', marginBottom: '4px' }}>Booking Channel</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#17271f' }}>{req.bookedChannel}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6e7a76', textTransform: 'uppercase', marginBottom: '4px' }}>Submitted</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#17271f' }}>{req.submittedAt}</div>
+                          </div>
+                        </div>
+
+                        {req.notes && (
+                          <div style={{ fontSize: '0.875rem', color: '#55655f', lineHeight: 1.5, backgroundColor: '#f8faf9', padding: '12px 16px', borderRadius: '8px', borderLeft: '3px solid #173f34' }}>
+                            <strong>Notes provided:</strong> {req.notes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '60px 24px', backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #eeece5' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#edf5f0', color: '#173f34', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
+                      <HelpCircle size={32} />
+                    </div>
+                    <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', color: '#17271f', margin: '0 0 10px 0' }}>
+                      No Missing Stay Requests Submitted
+                    </h3>
+                    <p style={{ color: '#6e7a76', fontSize: '1rem', maxWidth: '520px', margin: '0 auto 24px auto', lineHeight: 1.6 }}>
+                      Submit any completed stay that is not showing in My Stays. Staff will match the reservation using your verified phone number.
+                    </p>
+                    <button
+                      onClick={() => setReportMissingModalOpen(true)}
+                      style={{
+                        backgroundColor: '#173f34',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '14px 28px',
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(23,63,52,0.2)'
+                      }}
+                    >
+                      Report a Missing Stay
+                    </button>
+                  </div>
+                )
+              ) : (
+                currentStays.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '60px', color: '#6e7a76', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #eeece5' }}>
+                    No reservations found in this section.
+                  </div>
+                )
               )}
             </div>
           </>
@@ -2264,25 +2489,6 @@ export const MyStaysPage: React.FC = () => {
               {/* VIEW 3: Confirm Entire Cancellation */}
               {modalSubView === 'confirm_cancel' && (
                 <div>
-                  <button
-                    onClick={() => setModalSubView('options')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      background: 'none',
-                      border: 'none',
-                      color: '#173f34',
-                      fontWeight: 700,
-                      fontSize: '0.875rem',
-                      cursor: 'pointer',
-                      padding: 0,
-                      marginBottom: '16px'
-                    }}
-                  >
-                    <ArrowLeft size={16} /> Back to reservation options
-                  </button>
-
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                     <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '50%' }}>
                       <AlertCircle size={24} />
@@ -2344,6 +2550,267 @@ export const MyStaysPage: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* REPORT A MISSING STAY POPUP MODAL (matches screenshot) */}
+        {reportMissingModalOpen && (
+          <div 
+            className="modal-overlay" 
+            onClick={() => setReportMissingModalOpen(false)} 
+            style={{ 
+              zIndex: 1100, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '20px'
+            }}
+          >
+            <div 
+              className="modal-content" 
+              onClick={(e) => e.stopPropagation()} 
+              style={{ 
+                maxWidth: '500px', 
+                width: '100%', 
+                padding: '36px 32px 32px', 
+                borderRadius: '24px', 
+                backgroundColor: '#ffffff',
+                boxShadow: '0 24px 70px rgba(0,0,0,0.22)',
+                position: 'relative',
+                maxHeight: '92vh',
+                overflowY: 'auto'
+              }}
+            >
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                STAY ASSISTANCE
+              </div>
+
+              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2.1rem', color: '#17271f', margin: '0 0 14px 0', fontWeight: 700, lineHeight: 1.2 }}>
+                Report a Missing Stay
+              </h2>
+
+              <p style={{ fontSize: '0.9375rem', color: '#55655f', lineHeight: 1.55, margin: '0 0 20px 0' }}>
+                Submit any completed stay that is not showing in My Stays. Staff will match the reservation using your verified phone number. Eligible direct stays earn Reward Nights; third-party stays are recorded as Not Eligible.
+              </p>
+
+              {/* Signed-in member callout box */}
+              <div style={{
+                backgroundColor: '#edf5f0',
+                borderLeft: '4px solid #173f34',
+                borderRadius: '8px',
+                padding: '14px 16px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#17271f', marginBottom: '3px' }}>
+                  Signed-in member
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#17271f', lineHeight: 1.45 }}>
+                  {memberDisplayName} · {memberDisplayPhone}. Staff will use this phone number to locate and verify the reservation.
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmitMissingStay}>
+                {/* Hotel property */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#17271f', marginBottom: '6px' }}>
+                    Hotel property
+                  </label>
+                  <select
+                    value={missingProperty}
+                    onChange={(e) => setMissingProperty(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #dddbd2',
+                      backgroundColor: '#ffffff',
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      color: '#17271f',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="Evolve Hotels & Suites · Texarkana">Evolve Hotels & Suites · Texarkana</option>
+                    <option value="Evolve Uptown · Dallas">Evolve Uptown · Dallas</option>
+                    <option value="Evolve Medical Center · Houston">Evolve Medical Center · Houston</option>
+                    <option value="Evolve Riverfront · Little Rock">Evolve Riverfront · Little Rock</option>
+                    <option value="Evolve Downtown · Austin">Evolve Downtown · Austin</option>
+                  </select>
+                </div>
+
+                {/* Hotel confirmation number */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#17271f', marginBottom: '6px' }}>
+                    Hotel confirmation number
+                  </label>
+                  <input
+                    type="text"
+                    value={missingConfirmation}
+                    onChange={(e) => setMissingConfirmation(e.target.value)}
+                    placeholder="Enter confirmation number"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #dddbd2',
+                      backgroundColor: '#ffffff',
+                      fontSize: '0.95rem',
+                      color: '#17271f',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Check-in date */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#17271f', marginBottom: '6px' }}>
+                    Check-in date
+                  </label>
+                  <input
+                    type="date"
+                    value={missingCheckIn}
+                    onChange={(e) => setMissingCheckIn(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #dddbd2',
+                      backgroundColor: '#ffffff',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      color: '#17271f',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Check-out date */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#17271f', marginBottom: '6px' }}>
+                    Check-out date
+                  </label>
+                  <input
+                    type="date"
+                    value={missingCheckOut}
+                    onChange={(e) => setMissingCheckOut(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #dddbd2',
+                      backgroundColor: '#ffffff',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      color: '#17271f',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* How was it booked? */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#17271f', marginBottom: '6px' }}>
+                    How was it booked?
+                  </label>
+                  <select
+                    value={missingBookedChannel}
+                    onChange={(e) => setMissingBookedChannel(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #dddbd2',
+                      backgroundColor: '#ffffff',
+                      fontSize: '0.95rem',
+                      color: '#17271f',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="Evolve website">Evolve website</option>
+                    <option value="Evolve Guest App">Evolve Guest App</option>
+                    <option value="Hotel phone reservation">Hotel phone reservation</option>
+                    <option value="Hotel front desk / property direct">Hotel front desk / property direct</option>
+                    <option value="Booking.com / Expedia / Third-party">Booking.com / Expedia / Third-party</option>
+                  </select>
+                </div>
+
+                {/* Additional information */}
+                <div style={{ marginBottom: '22px' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#17271f', marginBottom: '6px' }}>
+                    Additional information
+                  </label>
+                  <textarea
+                    value={missingNotes}
+                    onChange={(e) => setMissingNotes(e.target.value)}
+                    placeholder="Optional details that may help staff find the stay"
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #dddbd2',
+                      backgroundColor: '#ffffff',
+                      fontSize: '0.95rem',
+                      fontFamily: 'inherit',
+                      color: '#17271f',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                {/* Submit button */}
+                <button
+                  type="submit"
+                  disabled={isSubmittingMissing}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#173f34',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '15px 20px',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    cursor: isSubmittingMissing ? 'not-allowed' : 'pointer',
+                    opacity: isSubmittingMissing ? 0.75 : 1,
+                    boxShadow: '0 4px 14px rgba(23,63,52,0.2)',
+                    marginBottom: '10px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isSubmittingMissing ? 'Submitting to Cloudbeds...' : 'Submit Missing Stay Request'}
+                </button>
+
+                {/* Cancel button */}
+                <button
+                  type="button"
+                  onClick={() => setReportMissingModalOpen(false)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ffffff',
+                    color: '#17271f',
+                    border: '1px solid #dddbd2',
+                    borderRadius: '10px',
+                    padding: '14px 20px',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Cancel
+                </button>
+              </form>
             </div>
           </div>
         )}
