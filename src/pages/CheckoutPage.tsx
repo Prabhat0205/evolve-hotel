@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   CreditCard, ShieldCheck, Lock, Calendar, Users, 
-  Sparkles, CheckCircle2, ArrowLeft, Bed, Info, LogIn, UserPlus, UserCircle2 
+  Sparkles, CheckCircle2, ArrowLeft, Bed, Info, LogIn, UserPlus, UserCircle2, Check 
 } from 'lucide-react';
 import { Reservation } from '../types';
 
@@ -64,8 +64,32 @@ export const CheckoutPage: React.FC = () => {
     bonusPoints: 0
   } : rawRate;
 
+  // Enhancement states (matches screenshot for member login)
+  const [spaAccessSelected, setSpaAccessSelected] = useState(true);
+  const [useFreeNight, setUseFreeNight] = useState(false);
+
+  // Cancellation date calculation helper (48h prior to check-in)
+  const getCancellationDateStr = (dateStr?: string) => {
+    try {
+      if (!dateStr) return 'September 17';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        d.setDate(d.getDate() - 2);
+        return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      }
+      return 'September 17';
+    } catch {
+      return 'September 17';
+    }
+  };
+
   const nights = 4;
-  const subtotal = rate.nightlyPrice * nights;
+  const freeNightDiscount = (useFreeNight && !isGuestCheckout) ? rate.nightlyPrice : 0;
+  const subtotal = Math.max(0, rate.nightlyPrice * nights - freeNightDiscount);
   const taxesAndFees = Math.round(subtotal * 0.12);
   const total = subtotal + taxesAndFees;
 
@@ -130,7 +154,7 @@ export const CheckoutPage: React.FC = () => {
         currency: 'USD',
         paymentMethod: { brand: 'amex', last4: '1004' },
         cancellationDeadline: '48 hours prior to check-in (15:00 local time)',
-        specialRequests,
+        specialRequests: `${spaAccessSelected && !isGuestCheckout ? 'Hydrotherapy Spa Access included. ' : ''}${specialRequests}`,
         guestPhone: checkoutMode === 'guest' ? phone : undefined,
         guestCode: generatedGuestCode,
         userId: currentUser ? currentUser.id : undefined
@@ -324,6 +348,118 @@ export const CheckoutPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Member Only: Enhance your stay section (matches user screenshot) */}
+                {!isGuestCheckout && (
+                  <div style={{ marginBottom: '28px', paddingBottom: '24px', borderBottom: '1px solid #eeece5' }}>
+                    <h3 style={{ fontSize: '1.45rem', color: '#17271f', margin: '0 0 6px 0', fontWeight: 700 }}>
+                      Enhance your stay
+                    </h3>
+                    <p style={{ color: '#6e7a76', fontSize: '0.9375rem', margin: '0 0 18px 0' }}>
+                      Choose any optional benefits for this stay.
+                    </p>
+
+                    {/* Option 1: Hydrotherapy Spa Access (Checked / Included) */}
+                    <div 
+                      onClick={() => setSpaAccessSelected(!spaAccessSelected)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '16px 20px',
+                        borderRadius: '14px',
+                        border: spaAccessSelected ? '2px solid #173f34' : '1.5px solid #d8d6cf',
+                        backgroundColor: spaAccessSelected ? '#edf5f0' : '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        marginBottom: '12px'
+                      }}
+                    >
+                      <div style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '5px',
+                        backgroundColor: spaAccessSelected ? '#9aa9a1' : '#ffffff',
+                        border: spaAccessSelected ? 'none' : '1.5px solid #cccccc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        {spaAccessSelected && <Check size={15} color="#ffffff" strokeWidth={3} />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#17271f' }}>
+                          Hydrotherapy Spa Access
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#55655f', marginTop: '3px' }}>
+                          Included automatically with your Evolve membership
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Option 2: Use 1 Free Night */}
+                    <div 
+                      onClick={() => {
+                        const hasRewardNight = (currentUser?.memberProfile?.unusedRewardNights || 0) > 0;
+                        const qualifyingNights = currentUser?.memberProfile?.qualifyingNightsThisYear || 4;
+                        if (hasRewardNight || qualifyingNights >= 9) {
+                          setUseFreeNight(!useFreeNight);
+                          addToast('success', useFreeNight ? 'Reward Removed' : 'Free Night Applied', useFreeNight ? 'Standard rate restored.' : `1 Free Night reward applied (-$${rate.nightlyPrice}).`);
+                        } else {
+                          addToast('info', 'Free Night Locked', `Unlock after 9 qualifying nights. You currently have ${qualifyingNights}/9 qualifying nights.`);
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '16px 20px',
+                        borderRadius: '14px',
+                        border: useFreeNight ? '2px solid #173f34' : '1.5px solid #e2ded4',
+                        backgroundColor: useFreeNight ? '#edf5f0' : '#f8f9fa',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        marginBottom: '14px'
+                      }}
+                    >
+                      <div style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '5px',
+                        backgroundColor: useFreeNight ? '#173f34' : '#ffffff',
+                        border: useFreeNight ? 'none' : '1.5px solid #cccccc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        {useFreeNight && <Check size={15} color="#ffffff" strokeWidth={3} />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: useFreeNight ? '#17271f' : '#8a9490' }}>
+                          Use 1 Free Night
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: useFreeNight ? '#17653e' : '#8a9490', marginTop: '3px' }}>
+                          {useFreeNight ? `Reward applied (-$${rate.nightlyPrice})` : 'Unlock after 9 qualifying nights'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cancellation Callout Banner */}
+                    <div style={{
+                      backgroundColor: '#fdf8ec',
+                      borderLeft: '4px solid #dda943',
+                      borderRadius: '10px',
+                      padding: '14px 18px',
+                      fontSize: '0.875rem',
+                      color: '#17271f',
+                      lineHeight: 1.5
+                    }}>
+                      <strong>Cancellation:</strong> Cancel by {getCancellationDateStr(searchDates.checkIn)} at 4:00 PM Central Time. After that deadline, the penalty is one night’s room rate plus applicable taxes.
+                    </div>
+                  </div>
+                )}
+
                 <div className="form-group">
                   <label className="form-label">Card Number</label>
                   <div style={{ position: 'relative' }}>
@@ -363,23 +499,21 @@ export const CheckoutPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{
-                  backgroundColor: '#fcf6eb',
-                  border: '1.5px solid rgba(221, 169, 67, 0.4)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  marginTop: '12px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <ShieldCheck size={18} color="#997125" />
-                    <strong style={{ color: '#17271f', fontSize: '0.875rem' }}>
-                      Free Cancellation Policy Guarantee
-                    </strong>
+                {/* For guest checkout, show cancellation banner below card */}
+                {isGuestCheckout && (
+                  <div style={{
+                    backgroundColor: '#fdf8ec',
+                    borderLeft: '4px solid #dda943',
+                    borderRadius: '10px',
+                    padding: '14px 18px',
+                    marginTop: '16px',
+                    fontSize: '0.875rem',
+                    color: '#17271f',
+                    lineHeight: 1.5
+                  }}>
+                    <strong>Cancellation:</strong> Cancel by {getCancellationDateStr(searchDates.checkIn)} at 4:00 PM Central Time. After that deadline, the penalty is one night’s room rate plus applicable taxes.
                   </div>
-                  <p style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.5, margin: 0 }}>
-                    You can cancel this reservation free of charge up to <strong>48 hours prior to check-in</strong> (15:00 local hotel time). If cancelled within 48 hours, a 1-night room charge penalty applies.
-                  </p>
-                </div>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '20px' }}>
                   <input
@@ -450,6 +584,20 @@ export const CheckoutPage: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#17653e', fontWeight: 600 }}>
                       <span>Complimentary Morning Breakfast</span>
                       <span>$0 (Included)</span>
+                    </div>
+                  )}
+                  {spaAccessSelected && !isGuestCheckout && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#17653e', fontWeight: 600 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Sparkles size={14} color="#dda943" /> Hydrotherapy Spa Access
+                      </span>
+                      <span>$0 (Included)</span>
+                    </div>
+                  )}
+                  {useFreeNight && !isGuestCheckout && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#17653e', fontWeight: 700 }}>
+                      <span>1 Free Night Reward Applied</span>
+                      <span>-${rate.nightlyPrice}</span>
                     </div>
                   )}
                   <div style={{
