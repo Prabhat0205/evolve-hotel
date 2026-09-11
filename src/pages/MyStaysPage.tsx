@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp, normalizePhone, normalizeGuestCode } from '../context/AppContext';
 import { Reservation } from '../types';
 import { 
-  AlertCircle, ShieldCheck, Sparkles, UserCheck, Lock, ArrowRight, X, ArrowLeft, Calendar, CheckCircle2
+  AlertCircle, ShieldCheck, Sparkles, UserCheck, Lock, ArrowRight, X, ArrowLeft, Calendar, CheckCircle2, CreditCard
 } from 'lucide-react';
 
 export const MyStaysPage: React.FC = () => {
@@ -17,8 +17,14 @@ export const MyStaysPage: React.FC = () => {
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
   const [optionsModalOpen, setOptionsModalOpen] = useState(false);
   const [modalSubView, setModalSubView] = useState<'options' | 'modify_dates' | 'cancel_dates' | 'confirm_cancel'>('options');
+  const [modifyStep, setModifyStep] = useState<'dates' | 'payment'>('dates');
   const [newCheckIn, setNewCheckIn] = useState('');
   const [newCheckOut, setNewCheckOut] = useState('');
+  const [useCardOnFile, setUseCardOnFile] = useState(true);
+  const [newCardNumber, setNewCardNumber] = useState('');
+  const [newCardExpiry, setNewCardExpiry] = useState('');
+  const [newCardCvc, setNewCardCvc] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const userReservations = reservations.filter(r => {
     if (currentPersona === 'guest' && activeGuestCode && activeGuestPhone) {
@@ -41,7 +47,102 @@ export const MyStaysPage: React.FC = () => {
     setNewCheckIn(res.checkInDate);
     setNewCheckOut(res.checkOutDate);
     setModalSubView('options');
+    setModifyStep('dates');
+    setUseCardOnFile(true);
+    setNewCardNumber('');
+    setNewCardExpiry('');
+    setNewCardCvc('');
+    setIsProcessingPayment(false);
     setOptionsModalOpen(true);
+  };
+
+  const calculateModificationDifference = () => {
+    if (!selectedRes || !newCheckIn || !newCheckOut) {
+      return { newNights: 0, newSubtotal: 0, newTaxes: 0, newTotal: 0, diffAmount: 0, isIncrease: false, isDecrease: false, nightsDiff: 0 };
+    }
+    const d1 = new Date(newCheckIn);
+    const d2 = new Date(newCheckOut);
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime()) || d2 <= d1) {
+      return { newNights: 0, newSubtotal: 0, newTaxes: 0, newTotal: 0, diffAmount: 0, isIncrease: false, isDecrease: false, nightsDiff: 0 };
+    }
+    const newNights = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
+    const newSubtotal = selectedRes.nightlyRate * newNights;
+    const newTaxes = Math.round(newSubtotal * 0.12);
+    const newTotal = newSubtotal + newTaxes;
+    const diffAmount = newTotal - selectedRes.totalAmount;
+    return {
+      newNights,
+      newSubtotal,
+      newTaxes,
+      newTotal,
+      diffAmount,
+      isIncrease: diffAmount > 0,
+      isDecrease: diffAmount < 0,
+      nightsDiff: newNights - selectedRes.nightsCount
+    };
+  };
+
+  const handleProceedToPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRes) return;
+    const d1 = new Date(newCheckIn);
+    const d2 = new Date(newCheckOut);
+    if (d2 <= d1) {
+      addToast('error', 'Invalid Stay Dates', 'Check-out date must be after check-in date.');
+      return;
+    }
+    setModifyStep('payment');
+  };
+
+  const handleExecuteModification = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRes) return;
+    const { newNights, newTotal, diffAmount } = calculateModificationDifference();
+
+    if (!useCardOnFile && diffAmount > 0) {
+      if (!newCardNumber || !newCardExpiry || !newCardCvc) {
+        addToast('error', 'Payment Details Missing', 'Please enter your credit card details to complete payment.');
+        return;
+      }
+    }
+
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      const updatedPaymentMethod = useCardOnFile 
+        ? (selectedRes.paymentMethod || { brand: 'amex', last4: '1004' })
+        : { brand: 'visa', last4: newCardNumber.slice(-4) || '8831' };
+
+      const updated: Reservation = {
+        ...selectedRes,
+        checkInDate: newCheckIn,
+        checkOutDate: newCheckOut,
+        nightsCount: newNights,
+        totalAmount: newTotal,
+        paymentMethod: updatedPaymentMethod
+      };
+
+      updateReservation(updated);
+      setSelectedRes(updated);
+      setIsProcessingPayment(false);
+      setOptionsModalOpen(false);
+      setModifyStep('dates');
+
+      if (diffAmount > 0) {
+        addToast(
+          'success', 
+          'Payment Authorized & Reservation Updated', 
+          `Additional charge of $${diffAmount} USD successfully processed on ${updatedPaymentMethod.brand.toUpperCase()} ending ${updatedPaymentMethod.last4}.`
+        );
+      } else if (diffAmount < 0) {
+        addToast(
+          'success', 
+          'Refund Initiated & Reservation Updated', 
+          `Refund of $${Math.abs(diffAmount)} USD issued to ${updatedPaymentMethod.brand.toUpperCase()} ending ${updatedPaymentMethod.last4}.`
+        );
+      } else {
+        addToast('success', 'Reservation Modified', `Dates updated to ${newCheckIn} → ${newCheckOut} with $0 additional charge.`);
+      }
+    }, 900);
   };
 
   const handleConfirmCancelEntire = () => {
@@ -732,93 +833,368 @@ export const MyStaysPage: React.FC = () => {
                 </div>
               )}
 
-              {/* VIEW 2: Modify Stay Dates */}
+              {/* VIEW 2: Modify Stay Dates with Additional Payment Flow */}
               {modalSubView === 'modify_dates' && (
                 <div>
-                  <button
-                    onClick={() => setModalSubView('options')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      background: 'none',
-                      border: 'none',
-                      color: '#173f34',
-                      fontWeight: 700,
-                      fontSize: '0.875rem',
-                      cursor: 'pointer',
-                      padding: 0,
-                      marginBottom: '16px'
-                    }}
-                  >
-                    <ArrowLeft size={16} /> Back to reservation options
-                  </button>
-
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
-                    CHANGE STAY DATES
-                  </span>
-                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '0 0 8px 0' }}>
-                    Modify Stay Dates
-                  </h3>
-                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '20px', lineHeight: 1.5 }}>
-                    {selectedRes.propertyName} — <strong>{selectedRes.roomName}</strong>
-                  </p>
-
-                  <form onSubmit={handleConfirmModifyDates}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>New Check-In</label>
-                        <input 
-                          type="date" 
-                          className="form-input" 
-                          value={newCheckIn} 
-                          onChange={(e) => setNewCheckIn(e.target.value)} 
-                          required 
-                          style={{ padding: '10px 12px' }}
-                        />
-                      </div>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>New Check-Out</label>
-                        <input 
-                          type="date" 
-                          className="form-input" 
-                          value={newCheckOut} 
-                          onChange={(e) => setNewCheckOut(e.target.value)} 
-                          required 
-                          style={{ padding: '10px 12px' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ backgroundColor: '#f6f4ee', borderRadius: '12px', padding: '14px 16px', marginBottom: '24px', fontSize: '0.8125rem', color: '#17271f' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ color: '#6e7a76' }}>Nightly Rate:</span>
-                        <strong>${selectedRes.nightlyRate} USD</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6e7a76' }}>Current Stay:</span>
-                        <span>{selectedRes.checkInDate} → {selectedRes.checkOutDate} ({selectedRes.nightsCount} nights)</span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <button 
-                        type="button" 
-                        onClick={() => setModalSubView('options')} 
-                        className="btn btn-outline" 
-                        style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
+                  {modifyStep === 'dates' ? (
+                    <div>
+                      <button
+                        onClick={() => setModalSubView('options')}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'none',
+                          border: 'none',
+                          color: '#173f34',
+                          fontWeight: 700,
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          padding: 0,
+                          marginBottom: '16px'
+                        }}
                       >
-                        Cancel
+                        <ArrowLeft size={16} /> Back to reservation options
                       </button>
-                      <button 
-                        type="submit" 
-                        className="btn btn-primary" 
-                        style={{ flex: 1.5, padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
-                      >
-                        Save Changes
-                      </button>
+
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
+                        STEP 1 OF 2 · DATE MODIFICATION
+                      </span>
+                      <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '0 0 6px 0' }}>
+                        Modify Stay Dates
+                      </h3>
+                      <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '18px', lineHeight: 1.5 }}>
+                        {selectedRes.propertyName} — <strong>{selectedRes.roomName}</strong>
+                      </p>
+
+                      <form onSubmit={handleProceedToPayment}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                          <div className="form-group" style={{ margin: 0 }}>
+                            <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>New Check-In</label>
+                            <input 
+                              type="date" 
+                              className="form-input" 
+                              value={newCheckIn} 
+                              onChange={(e) => setNewCheckIn(e.target.value)} 
+                              required 
+                              style={{ padding: '10px 12px' }}
+                            />
+                          </div>
+                          <div className="form-group" style={{ margin: 0 }}>
+                            <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>New Check-Out</label>
+                            <input 
+                              type="date" 
+                              className="form-input" 
+                              value={newCheckOut} 
+                              onChange={(e) => setNewCheckOut(e.target.value)} 
+                              required 
+                              style={{ padding: '10px 12px' }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Live Price Comparison & Difference Card */}
+                        {(() => {
+                          const { newNights, newTotal, diffAmount, isIncrease, isDecrease, nightsDiff } = calculateModificationDifference();
+                          return (
+                            <div style={{
+                              border: isIncrease ? '1.5px solid #f2c979' : isDecrease ? '1.5px solid #a3d9b8' : '1px solid #eeece5',
+                              backgroundColor: isIncrease ? '#fcf9f2' : isDecrease ? '#f0f7f3' : '#f8f7f4',
+                              borderRadius: '14px',
+                              padding: '16px',
+                              marginBottom: '22px'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#6e7a76', marginBottom: '6px' }}>
+                                <span>Original Stay:</span>
+                                <span>{selectedRes.nightsCount} Nights (${selectedRes.totalAmount} USD)</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#17271f', fontWeight: 700, marginBottom: '10px' }}>
+                                <span>Modified Stay:</span>
+                                <span>{newNights > 0 ? `${newNights} Nights ($${newTotal} USD)` : 'Select valid dates'}</span>
+                              </div>
+
+                              <div style={{
+                                paddingTop: '10px',
+                                borderTop: '1px dashed #dcd8cf',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <div>
+                                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: isIncrease ? '#997125' : isDecrease ? '#17653e' : '#6e7a76' }}>
+                                    {isIncrease ? 'Additional Amount Due' : isDecrease ? 'Refund Due to Original Card' : 'Price Difference'}
+                                  </span>
+                                  <div style={{ fontSize: '0.75rem', color: '#6e7a76' }}>
+                                    {isIncrease ? `+${nightsDiff} night(s) at $${selectedRes.nightlyRate}/night + taxes` : isDecrease ? `${Math.abs(nightsDiff)} fewer night(s)` : 'No charge for equal night duration'}
+                                  </div>
+                                </div>
+                                <div style={{
+                                  fontSize: '1.25rem',
+                                  fontWeight: 800,
+                                  color: isIncrease ? '#b45309' : isDecrease ? '#17653e' : '#17271f'
+                                }}>
+                                  {isIncrease ? `+$${diffAmount} USD` : isDecrease ? `-$${Math.abs(diffAmount)} USD` : '$0.00 USD'}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => setModalSubView('options')} 
+                            className="btn btn-outline" 
+                            style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            type="submit" 
+                            className="btn btn-primary" 
+                            style={{ flex: 1.6, padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                          >
+                            Continue to Payment & Review →
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                  </form>
+                  ) : (
+                    <div>
+                      {/* STEP 2: Payment & Authorization Step */}
+                      <button
+                        onClick={() => setModifyStep('dates')}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'none',
+                          border: 'none',
+                          color: '#173f34',
+                          fontWeight: 700,
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          padding: 0,
+                          marginBottom: '16px'
+                        }}
+                      >
+                        <ArrowLeft size={16} /> Back to date selection
+                      </button>
+
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
+                        STEP 2 OF 2 · AUTHORIZATION & CONFIRMATION
+                      </span>
+                      <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '0 0 6px 0' }}>
+                        Confirm Modification
+                      </h3>
+                      <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginBottom: '18px', lineHeight: 1.5 }}>
+                        Review your modification charges and authorize payment.
+                      </p>
+
+                      {(() => {
+                        const { newNights, newSubtotal, newTaxes, newTotal, diffAmount, isIncrease, isDecrease } = calculateModificationDifference();
+
+                        return (
+                          <form onSubmit={handleExecuteModification}>
+                            {/* Breakdown Summary */}
+                            <div style={{
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #eeece5',
+                              borderRadius: '14px',
+                              padding: '16px 18px',
+                              marginBottom: '16px',
+                              fontSize: '0.875rem'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6e7a76', marginBottom: '6px' }}>
+                                <span>Original Stay Total</span>
+                                <span>${selectedRes.totalAmount} USD</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6e7a76', marginBottom: '6px' }}>
+                                <span>Revised Stay ({newNights} Nights)</span>
+                                <span>${newSubtotal} + ${newTaxes} taxes</span>
+                              </div>
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                paddingTop: '8px',
+                                borderTop: '1px solid #f3f0ea',
+                                color: isIncrease ? '#b45309' : isDecrease ? '#17653e' : '#17271f',
+                                fontWeight: 800
+                              }}>
+                                <span>{isIncrease ? 'Additional Amount Due Today' : isDecrease ? 'Refund Credited to Original Card' : 'Net Adjustment Due'}</span>
+                                <span>{isIncrease ? `+$${diffAmount} USD` : isDecrease ? `-$${Math.abs(diffAmount)} USD` : '$0.00 USD'}</span>
+                              </div>
+                            </div>
+
+                            {/* Payment Method Selection (Shown when additional payment is required) */}
+                            {diffAmount > 0 && (
+                              <div style={{ marginBottom: '18px' }}>
+                                <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#17271f', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                                  Select Payment Method
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                  {/* Card on File */}
+                                  <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px 14px',
+                                    borderRadius: '12px',
+                                    border: useCardOnFile ? '1.5px solid #173f34' : '1px solid #d8d6cf',
+                                    backgroundColor: useCardOnFile ? '#f0f5f2' : '#ffffff',
+                                    cursor: 'pointer'
+                                  }}>
+                                    <input 
+                                      type="radio" 
+                                      name="modifyPaymentMethod" 
+                                      checked={useCardOnFile} 
+                                      onChange={() => setUseCardOnFile(true)} 
+                                    />
+                                    <CreditCard size={20} color="#173f34" />
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#17271f' }}>
+                                        Card on File ({selectedRes.paymentMethod?.brand?.toUpperCase() || 'AMEX'} ending {selectedRes.paymentMethod?.last4 || '1004'})
+                                      </div>
+                                      <div style={{ fontSize: '0.75rem', color: '#6e7a76' }}>
+                                        Expires 10/28 · Used for original booking
+                                      </div>
+                                    </div>
+                                  </label>
+
+                                  {/* New Card Option */}
+                                  <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px 14px',
+                                    borderRadius: '12px',
+                                    border: !useCardOnFile ? '1.5px solid #173f34' : '1px solid #d8d6cf',
+                                    backgroundColor: !useCardOnFile ? '#f0f5f2' : '#ffffff',
+                                    cursor: 'pointer'
+                                  }}>
+                                    <input 
+                                      type="radio" 
+                                      name="modifyPaymentMethod" 
+                                      checked={!useCardOnFile} 
+                                      onChange={() => setUseCardOnFile(false)} 
+                                    />
+                                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#17271f' }}>
+                                      Use a Different Credit or Debit Card
+                                    </div>
+                                  </label>
+
+                                  {!useCardOnFile && (
+                                    <div style={{
+                                      backgroundColor: '#faf9f6',
+                                      border: '1px solid #eeece5',
+                                      borderRadius: '12px',
+                                      padding: '14px',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '10px'
+                                    }}>
+                                      <div>
+                                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Card Number</label>
+                                        <input 
+                                          type="text" 
+                                          className="form-input" 
+                                          placeholder="4000 1234 5678 9010" 
+                                          value={newCardNumber} 
+                                          onChange={(e) => setNewCardNumber(e.target.value)} 
+                                          required={!useCardOnFile}
+                                          style={{ padding: '8px 10px', fontSize: '0.875rem' }}
+                                        />
+                                      </div>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                        <div>
+                                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Expiry (MM/YY)</label>
+                                          <input 
+                                            type="text" 
+                                            className="form-input" 
+                                            placeholder="MM/YY" 
+                                            value={newCardExpiry} 
+                                            onChange={(e) => setNewCardExpiry(e.target.value)} 
+                                            required={!useCardOnFile}
+                                            style={{ padding: '8px 10px', fontSize: '0.875rem' }}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="form-label" style={{ fontSize: '0.75rem' }}>CVC</label>
+                                          <input 
+                                            type="text" 
+                                            className="form-input" 
+                                            placeholder="123" 
+                                            value={newCardCvc} 
+                                            onChange={(e) => setNewCardCvc(e.target.value)} 
+                                            required={!useCardOnFile}
+                                            style={{ padding: '8px 10px', fontSize: '0.875rem' }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Refund explanation if stay shortened */}
+                            {diffAmount < 0 && (
+                              <div style={{
+                                backgroundColor: '#f0f7f3',
+                                border: '1px solid #a3d9b8',
+                                borderRadius: '12px',
+                                padding: '14px 16px',
+                                marginBottom: '18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                              }}>
+                                <CheckCircle2 size={20} color="#17653e" />
+                                <div style={{ fontSize: '0.8125rem', color: '#17271f', lineHeight: 1.4 }}>
+                                  A refund of <strong>${Math.abs(diffAmount)} USD</strong> will be automatically credited back to your {selectedRes.paymentMethod?.brand?.toUpperCase() || 'AMEX'} ending in {selectedRes.paymentMethod?.last4 || '1004'}.
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Security Badge */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#6e7a76', marginBottom: '18px' }}>
+                              <ShieldCheck size={15} color="#17653e" />
+                              <span>256-Bit SSL Encrypted • Instant digital voucher re-dispatched</span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                              <button 
+                                type="button" 
+                                onClick={() => setModifyStep('dates')} 
+                                className="btn btn-outline" 
+                                style={{ flex: 1, padding: '13px', fontSize: '0.95rem' }}
+                                disabled={isProcessingPayment}
+                              >
+                                Back
+                              </button>
+                              <button 
+                                type="submit" 
+                                className="btn btn-primary" 
+                                style={{ flex: 1.7, padding: '13px', fontSize: '0.95rem', fontWeight: 700 }}
+                                disabled={isProcessingPayment}
+                              >
+                                {isProcessingPayment ? (
+                                  'Authorizing Payment...'
+                                ) : diffAmount > 0 ? (
+                                  `Pay $${diffAmount} USD & Confirm`
+                                ) : diffAmount < 0 ? (
+                                  `Confirm & Process Refund ($${Math.abs(diffAmount)})`
+                                ) : (
+                                  'Confirm Modification ($0 Due)'
+                                )}
+                              </button>
+                            </div>
+                          </form>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               )}
 
