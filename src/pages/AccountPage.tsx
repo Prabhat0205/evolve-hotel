@@ -2,14 +2,76 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   User as UserIcon, CreditCard, ShieldCheck, Mail, 
-  Phone, Plus, Check, Star, Lock, Heart, Settings 
+  Phone, Plus, Check, Star, Lock, Heart, Settings,
+  Award, TrendingUp, ArrowDownRight, ArrowUpRight, BedDouble, Calendar, CheckCircle2, Clock
 } from 'lucide-react';
-
+import { MemberRewardTransaction } from '../types/admin';
 import { mockPersonas } from '../data/mockUsers';
+
+const defaultMemberTransactions: MemberRewardTransaction[] = [
+  {
+    id: 'tx-101',
+    date: 'Sep 29, 2026',
+    activity: 'Points Redeemed',
+    stayOrBooking: 'EV-BK-4019',
+    points: -40,
+    status: 'Redeemed',
+    notes: 'Points redeemed for suite upgrade & dining folio'
+  },
+  {
+    id: 'tx-102',
+    date: 'Sep 28, 2026',
+    activity: 'Points Credited',
+    stayOrBooking: 'CB-10245',
+    nights: 3,
+    points: 3,
+    status: 'Credited',
+    notes: 'Completed 3-night stay at The Grand Manor'
+  },
+  {
+    id: 'tx-103',
+    date: 'Sep 15, 2026',
+    activity: 'Points Credited',
+    stayOrBooking: 'CB-10122',
+    nights: 2,
+    points: 2,
+    status: 'Credited',
+    notes: 'Completed 2-night stay at Cliffside Haven'
+  },
+  {
+    id: 'tx-104',
+    date: 'Aug 20, 2026',
+    activity: 'Points Credited',
+    stayOrBooking: 'CB-9821',
+    nights: 5,
+    points: 5,
+    status: 'Credited',
+    notes: 'Completed 5-night stay at Alpine Chalet'
+  },
+  {
+    id: 'tx-105',
+    date: 'Jul 10, 2026',
+    activity: 'Points Credited',
+    stayOrBooking: 'CB-9410',
+    nights: 115,
+    points: 115,
+    status: 'Credited',
+    notes: 'Historical verified completed stays'
+  }
+];
 
 export const AccountPage: React.FC = () => {
   const { currentUser, addToast } = useApp();
   const user = currentUser || mockPersonas['member_prestige'];
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'rewards' | 'payment'>('profile');
+  const [rewardsFilter, setRewardsFilter] = useState<'ALL' | 'CREDITED' | 'REDEEMED'>('ALL');
+
+  // Rewards calculation
+  const totalPointsEarned = 125;
+  const pointsRedeemed = 40;
+  // Available = Total Earned - Points Redeemed (calculated dynamically)
+  const pointsAvailable = totalPointsEarned - pointsRedeemed;
 
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
@@ -67,139 +129,683 @@ export const AccountPage: React.FC = () => {
     addToast('success', 'Payment Method Added', 'Card successfully verified and saved.');
   };
 
+  const filteredTransactions = defaultMemberTransactions.filter(tx => {
+    if (rewardsFilter === 'CREDITED') return tx.activity === 'Points Credited';
+    if (rewardsFilter === 'REDEEMED') return tx.activity === 'Points Redeemed';
+    return true;
+  });
+
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '36px 20px 80px' }}>
-      <div className="app-container" style={{ maxWidth: '1000px' }}>
+      <div className="app-container" style={{ maxWidth: '1050px' }}>
         {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
-          <span className="eyebrow-text">GUEST SETTINGS</span>
+        <div style={{ marginBottom: '28px' }}>
+          <span className="eyebrow-text">GUEST SETTINGS & REWARDS</span>
           <h1 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', color: '#17271f' }}>
-            Profile & Hospitality Preferences
+            Member Profile & Account
           </h1>
           <p style={{ color: '#6e7a76', fontSize: '1rem', marginTop: '6px' }}>
-            Manage verified contact methods, saved cards for 1-click booking, and room comfort settings.
+            Manage your personal profile, hospitality preferences, and member reward points balance.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
-          {/* Column 1: Personal Information */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-            <div className="evolve-card" style={{ padding: '28px' }}>
-              <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
-                Personal Information
-              </h3>
+        {/* Section Navigation Tabs */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '28px',
+          borderBottom: '1px solid #e2ddd5',
+          paddingBottom: '12px',
+          overflowX: 'auto'
+        }}>
+          <button
+            onClick={() => setActiveTab('profile')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              backgroundColor: activeTab === 'profile' ? '#173f34' : 'transparent',
+              color: activeTab === 'profile' ? '#ffffff' : '#6e7a76',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <UserIcon size={16} /> Profile & Details
+          </button>
 
-              <form onSubmit={handleSaveProfile}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <button
+            onClick={() => setActiveTab('rewards')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              backgroundColor: activeTab === 'rewards' ? '#173f34' : 'transparent',
+              color: activeTab === 'rewards' ? '#ffffff' : '#6e7a76',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Award size={16} /> Rewards & Points
+            <span style={{
+              backgroundColor: activeTab === 'rewards' ? '#dda943' : '#e6e2d8',
+              color: activeTab === 'rewards' ? '#17271f' : '#6e7a76',
+              fontSize: '0.75rem',
+              padding: '2px 8px',
+              borderRadius: '999px',
+              fontWeight: 800
+            }}>
+              {pointsAvailable} pts
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payment')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              backgroundColor: activeTab === 'payment' ? '#173f34' : 'transparent',
+              color: activeTab === 'payment' ? '#ffffff' : '#6e7a76',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <CreditCard size={16} /> Payment & Security
+          </button>
+        </div>
+
+        {/* TAB 1: PROFILE & PERSONAL DETAILS */}
+        {activeTab === 'profile' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              <div className="evolve-card" style={{ padding: '28px' }}>
+                <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
+                  Personal Information
+                </h3>
+
+                <form onSubmit={handleSaveProfile}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label">First Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Last Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div className="form-group">
-                    <label className="form-label">First Name</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="form-label">Email Address</label>
+                      <span style={{ fontSize: '0.75rem', color: '#17653e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={12} /> Verified
+                      </span>
+                    </div>
                     <input
-                      type="text"
+                      type="email"
                       className="form-input"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="form-group">
-                    <label className="form-label">Last Name</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="form-label">Mobile Phone</label>
+                      <span style={{ fontSize: '0.75rem', color: user.isPhoneVerified ? '#17653e' : '#997125', fontWeight: 700 }}>
+                        {user.isPhoneVerified ? '✓ Verified SMS' : 'Pending Verification'}
+                      </span>
+                    </div>
                     <input
-                      type="text"
+                      type="tel"
                       className="form-input"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                       required
                     />
                   </div>
-                </div>
+                  <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #eeece5' }} />
+                  
+                  <h4 style={{ fontSize: '1rem', color: '#17271f', marginBottom: '16px' }}>Identification Details</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Valid ID Type</label>
+                      <select className="form-input" value={idType} onChange={(e) => setIdType(e.target.value)}>
+                        <option value="PASSPORT">Passport</option>
+                        <option value="DRIVERS_LICENSE">Driver's License</option>
+                        <option value="NATIONAL_ID">National ID</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">ID Number</label>
+                      <input type="text" className="form-input" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+                    </div>
+                  </div>
 
-                <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label className="form-label">Email Address</label>
-                    <span style={{ fontSize: '0.75rem', color: '#17653e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Check size={12} /> Verified
-                    </span>
+                  <h4 style={{ fontSize: '1rem', color: '#17271f', marginBottom: '16px' }}>Residential Address</h4>
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="form-label">Street Address</label>
+                    <input type="text" className="form-input" value={address} onChange={(e) => setAddress(e.target.value)} />
                   </div>
-                  <input
-                    type="email"
-                    className="form-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label">City</label>
+                      <input type="text" className="form-input" value={city} onChange={(e) => setCity(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">State / Province</label>
+                      <input type="text" className="form-input" value={stateProv} onChange={(e) => setStateProv(e.target.value)} />
+                    </div>
+                  </div>
 
-                <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label className="form-label">Mobile Phone</label>
-                    <span style={{ fontSize: '0.75rem', color: user.isPhoneVerified ? '#17653e' : '#997125', fontWeight: 700 }}>
-                      {user.isPhoneVerified ? '✓ Verified SMS' : 'Pending Verification'}
-                    </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Postal Code</label>
+                      <input type="text" className="form-input" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Country</label>
+                      <input type="text" className="form-input" value={country} onChange={(e) => setCountry(e.target.value)} />
+                    </div>
                   </div>
-                  <input
-                    type="tel"
-                    className="form-input"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                  />
-                </div>
-                <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #eeece5' }} />
-                
-                <h4 style={{ fontSize: '1rem', color: '#17271f', marginBottom: '16px' }}>Identification Details</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Valid ID Type</label>
-                    <select className="form-input" value={idType} onChange={(e) => setIdType(e.target.value)}>
-                      <option value="PASSPORT">Passport</option>
-                      <option value="DRIVERS_LICENSE">Driver's License</option>
-                      <option value="NATIONAL_ID">National ID</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">ID Number</label>
-                    <input type="text" className="form-input" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
-                  </div>
-                </div>
-
-                <h4 style={{ fontSize: '1rem', color: '#17271f', marginBottom: '16px' }}>Residential Address</h4>
-                <div className="form-group" style={{ marginBottom: '14px' }}>
-                  <label className="form-label">Street Address</label>
-                  <input type="text" className="form-input" value={address} onChange={(e) => setAddress(e.target.value)} />
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                  <div className="form-group">
-                    <label className="form-label">City</label>
-                    <input type="text" className="form-input" value={city} onChange={(e) => setCity(e.target.value)} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">State / Province</label>
-                    <input type="text" className="form-input" value={stateProv} onChange={(e) => setStateProv(e.target.value)} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Postal Code</label>
-                    <input type="text" className="form-input" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Country</label>
-                    <input type="text" className="form-input" value={country} onChange={(e) => setCountry(e.target.value)} />
-                  </div>
-                </div>
-                <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: '12px' }}>
-                  Save Profile Details
-                </button>
-              </form>
+                  <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: '12px' }}>
+                    Save Profile Details
+                  </button>
+                </form>
+              </div>
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              <div className="evolve-card" style={{ padding: '28px' }}>
+                <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
+                  Stay & Room Preferences
+                </h3>
+                <form onSubmit={handleSavePreferences}>
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label">Preferred Floor Level</label>
+                    <select className="form-input" value={floor} onChange={(e) => setFloor(e.target.value as any)}>
+                      <option value="HIGH">High Floor (Panoramic Views)</option>
+                      <option value="LOW">Ground / Low Floor (Fast Accessibility)</option>
+                      <option value="NO_PREFERENCE">No Preference</option>
+                    </select>
+                  </div>
 
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label">Bed Setup</label>
+                    <select className="form-input" value={bed} onChange={(e) => setBed(e.target.value as any)}>
+                      <option value="KING">King Bed</option>
+                      <option value="TWIN">Two Twin Beds</option>
+                      <option value="NO_PREFERENCE">Standard Allocation</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label">Pillow Selection</label>
+                    <select className="form-input" value={pillow} onChange={(e) => setPillow(e.target.value as any)}>
+                      <option value="FEATHER">Goose Feather & Down</option>
+                      <option value="FOAM">Ergonomic Memory Foam</option>
+                      <option value="HYPOALLERGENIC">Hypoallergenic Microfiber</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '20px', marginBottom: '24px' }}>
+                    <input
+                      type="checkbox"
+                      id="quietRoom"
+                      checked={quiet}
+                      onChange={(e) => setQuiet(e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: '#173f34' }}
+                    />
+                    <label htmlFor="quietRoom" style={{ fontSize: '0.875rem', color: '#17271f', fontWeight: 600, cursor: 'pointer' }}>
+                      Prioritize quiet room away from elevators and service areas
+                    </label>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary btn-full">
+                    Save Preferences
+                  </button>
+                </form>
+              </div>
+
+              {/* Quick Rewards Teaser */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #eeece5',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    MEMBER REWARDS BALANCE
+                  </span>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#17271f', marginTop: '4px' }}>
+                    {pointsAvailable} Points Available
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#6e7a76', marginTop: '2px' }}>
+                    {totalPointsEarned} earned · {pointsRedeemed} redeemed
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('rewards')}
+                  className="btn btn-outline"
+                  style={{ fontSize: '0.875rem', padding: '8px 16px' }}
+                >
+                  View Rewards →
+                </button>
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* Column 2: Saved Payment Methods */}
+        {/* TAB 2: DEDICATED REWARDS SECTION */}
+        {activeTab === 'rewards' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            {/* 1. Rewards Summary Cards */}
+            <div>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+                    Rewards Points Summary
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
+                    Points earned from qualified completed stays and available for member redemptions.
+                  </p>
+                </div>
+                <span style={{
+                  fontSize: '0.8125rem',
+                  backgroundColor: '#f0ede6',
+                  color: '#173f34',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <Award size={14} color="#dda943" /> Tier: {user.memberProfile?.tier || 'PRESTIGE'}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+                {/* Card 1: Total Points Earned */}
+                <div style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  border: '1px solid #eeece5',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Total Points Earned
+                      </span>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(23, 101, 62, 0.1)',
+                        color: '#17653e',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <ArrowUpRight size={20} />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
+                      {totalPointsEarned}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
+                    Earned through qualified completed stays
+                  </div>
+                </div>
+
+                {/* Card 2: Points Redeemed */}
+                <div style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  border: '1px solid #eeece5',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Points Redeemed
+                      </span>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(153, 113, 37, 0.1)',
+                        color: '#997125',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <ArrowDownRight size={20} />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
+                      {pointsRedeemed}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
+                    Points already used for bookings & stays
+                  </div>
+                </div>
+
+                {/* Card 3: Points Available / Remaining */}
+                <div style={{
+                  backgroundColor: '#173f34',
+                  color: '#ffffff',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  border: '1px solid #173f34',
+                  boxShadow: '0 4px 16px rgba(23, 63, 52, 0.15)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '-15px',
+                    right: '-15px',
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(221, 169, 67, 0.15)',
+                    pointerEvents: 'none'
+                  }} />
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8125rem', color: '#dda943', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Points Available / Remaining
+                      </span>
+                      <span style={{
+                        fontSize: '0.6875rem',
+                        backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                        color: '#ffffff',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontWeight: 700
+                      }}>
+                        CALCULATED
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>
+                      {pointsAvailable}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    marginTop: '16px',
+                    paddingTop: '14px',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+                    fontSize: '0.8125rem',
+                    color: '#e2ddd5',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span>{totalPointsEarned} Earned − {pointsRedeemed} Redeemed</span>
+                    <span style={{ color: '#dda943', fontWeight: 700 }}>Active</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Rewards Points History */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              border: '1px solid #eeece5',
+              padding: '24px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+            }}>
+              {/* Header and Filter */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px',
+                marginBottom: '20px'
+              }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+                    Rewards Points History
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
+                    Complete audit trail of earned stay credits and redeemed points.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', backgroundColor: '#f6f3ec', padding: '4px', borderRadius: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setRewardsFilter('ALL')}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: rewardsFilter === 'ALL' ? '#ffffff' : 'transparent',
+                      color: rewardsFilter === 'ALL' ? '#17271f' : '#6e7a76',
+                      boxShadow: rewardsFilter === 'ALL' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+                    }}
+                  >
+                    All ({defaultMemberTransactions.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRewardsFilter('CREDITED')}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: rewardsFilter === 'CREDITED' ? '#ffffff' : 'transparent',
+                      color: rewardsFilter === 'CREDITED' ? '#17653e' : '#6e7a76',
+                      boxShadow: rewardsFilter === 'CREDITED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+                    }}
+                  >
+                    Points Credited ({defaultMemberTransactions.filter(t => t.activity === 'Points Credited').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRewardsFilter('REDEEMED')}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: rewardsFilter === 'REDEEMED' ? '#ffffff' : 'transparent',
+                      color: rewardsFilter === 'REDEEMED' ? '#997125' : '#6e7a76',
+                      boxShadow: rewardsFilter === 'REDEEMED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+                    }}
+                  >
+                    Points Redeemed ({defaultMemberTransactions.filter(t => t.activity === 'Points Redeemed').length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Transaction Table */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #eeece5' }}>
+                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Date
+                      </th>
+                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Activity
+                      </th>
+                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Stay / Booking
+                      </th>
+                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Nights
+                      </th>
+                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>
+                        Points
+                      </th>
+                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map((tx) => {
+                      const isCredited = tx.activity === 'Points Credited';
+                      return (
+                        <tr key={tx.id} style={{ borderBottom: '1px solid #f6f3ec', transition: 'background-color 0.15s ease' }}>
+                          <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Calendar size={14} color="#6e7a76" />
+                              {tx.date}
+                            </div>
+                          </td>
+
+                          <td style={{ padding: '16px 14px', fontSize: '0.875rem' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              fontSize: '0.8125rem',
+                              backgroundColor: isCredited ? 'rgba(23, 101, 62, 0.08)' : 'rgba(153, 113, 37, 0.08)',
+                              color: isCredited ? '#17653e' : '#997125'
+                            }}>
+                              {isCredited ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                              {tx.activity}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f' }}>
+                            <div style={{ fontWeight: 700, fontFamily: 'monospace', color: '#173f34' }}>
+                              {tx.stayOrBooking}
+                            </div>
+                            {tx.notes && (
+                              <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>
+                                {tx.notes}
+                              </div>
+                            )}
+                          </td>
+
+                          <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#6e7a76' }}>
+                            {tx.nights ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: '#17271f' }}>
+                                <BedDouble size={14} color="#6e7a76" /> {tx.nights} {tx.nights === 1 ? 'night' : 'nights'}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#aaa' }}>—</span>
+                            )}
+                          </td>
+
+                          <td style={{ padding: '16px 14px', fontSize: '1rem', fontWeight: 800, textAlign: 'right' }}>
+                            <span style={{ color: isCredited ? '#17653e' : '#b44a22' }}>
+                              {tx.points > 0 ? `+${tx.points}` : tx.points}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: '16px 14px', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '3px 10px',
+                              borderRadius: '999px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              backgroundColor: tx.status === 'Credited' ? '#eaf5ee' : tx.status === 'Redeemed' ? '#fdf5e6' : '#f0f0f0',
+                              color: tx.status === 'Credited' ? '#17653e' : tx.status === 'Redeemed' ? '#997125' : '#666'
+                            }}>
+                              {tx.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Cloudbeds stay rule notice */}
+              <div style={{
+                marginTop: '20px',
+                padding: '14px 18px',
+                backgroundColor: '#f6f3ec',
+                borderRadius: '10px',
+                border: '1px solid #eeece5',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <CheckCircle2 size={18} color="#17653e" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.5 }}>
+                  <strong style={{ color: '#17271f' }}>Cloudbeds Stay Calculation Rule:</strong> Reward points are calculated automatically based on qualified nights from completed Cloudbeds stays (e.g., <strong>3-night completed stay → +3 points</strong>). Points are credited immediately upon confirmed checkout.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: PAYMENT & SECURITY */}
+        {activeTab === 'payment' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
             <div className="evolve-card" style={{ padding: '28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0 }}>
@@ -284,7 +890,8 @@ export const AccountPage: React.FC = () => {
               backgroundColor: '#faf9f5',
               borderRadius: '16px',
               padding: '20px',
-              border: '1px solid #eeece5'
+              border: '1px solid #eeece5',
+              height: 'fit-content'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontWeight: 700, fontSize: '0.875rem', marginBottom: '6px' }}>
                 <Lock size={16} /> Two-Factor Authentication Guard
@@ -294,7 +901,7 @@ export const AccountPage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ADD CARD MODAL */}
         {addCardModal && (

@@ -77,8 +77,10 @@ export const AuthModal: React.FC = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      const fallbackCustId = `CUST-${Math.floor(1000 + Math.random() * 9000)}`;
       const userToLogin = pendingUser || {
         id: `member-${Date.now()}`,
+        customerId: fallbackCustId,
         firstName: firstName || 'Alexander',
         lastName: lastName || 'Wright',
         email: email || 'alexander.wright@luxury.io',
@@ -87,7 +89,7 @@ export const AuthModal: React.FC = () => {
         isPhoneVerified: true,
         isMember: true,
         memberProfile: {
-          memberId: `EV-${Math.floor(100000 + Math.random() * 900000)}`,
+          memberId: fallbackCustId,
           tier: 'PRESTIGE',
           unusedRewardNights: 7,
           qualifyingNightsThisYear: 28,

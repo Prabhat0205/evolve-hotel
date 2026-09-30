@@ -30,6 +30,7 @@ export interface MemberProfile {
 
 export interface User {
   id: string;
+  customerId?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -119,6 +120,7 @@ export interface Reservation {
   assignedRoomNumber?: string;
   cancellationDeadline: string;
   specialRequests?: string;
+  guestName?: string;
   guestPhone?: string;
   guestCode?: string;
   userId?: string;

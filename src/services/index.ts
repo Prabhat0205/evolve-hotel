@@ -65,8 +65,11 @@ export const authService = {
     }
 
     // 3. New dynamic user (auto-register with provided password)
+    const randomCustDigits = Math.floor(1000 + Math.random() * 9000);
+    const dynamicCustomerId = `CUST-${randomCustDigits}`;
     const newUser: User = {
       id: `user-${Date.now()}`,
+      customerId: dynamicCustomerId,
       firstName: 'Guest',
       lastName: 'Member',
       email: cleanEmail,
@@ -75,7 +78,7 @@ export const authService = {
       isPhoneVerified: false,
       isMember: true,
       memberProfile: {
-        memberId: `EV-${Math.floor(100000 + Math.random() * 900000)}`,
+        memberId: dynamicCustomerId,
         tier: 'MEMBER',
         unusedRewardNights: 0,
         qualifyingNightsThisYear: 0,
@@ -105,8 +108,11 @@ export const authService = {
   async signUp(userData: Partial<User>, joinRewards: boolean, password?: string): Promise<User> {
     await delay(250);
     const cleanEmail = (userData.email || 'guest@example.com').trim().toLowerCase();
+    const uniqueDigits = Math.floor(1000 + Math.random() * 9000);
+    const assignedCustomerId = `CUST-${uniqueDigits}`;
     const newUser: User = {
       id: `user-${Date.now()}`,
+      customerId: assignedCustomerId,
       firstName: userData.firstName || 'New',
       lastName: userData.lastName || 'Guest',
       email: cleanEmail,
@@ -115,7 +121,7 @@ export const authService = {
       isPhoneVerified: false,
       isMember: joinRewards,
       memberProfile: joinRewards ? {
-        memberId: `EV-${Math.floor(100000 + Math.random() * 900000)}`,
+        memberId: assignedCustomerId,
         tier: 'MEMBER',
         unusedRewardNights: 1, // 1 welcome reward night
         qualifyingNightsThisYear: 1,

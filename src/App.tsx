@@ -17,9 +17,19 @@ import { InStayBreakfastPage } from './pages/InStayBreakfastPage';
 import { AccountPage } from './pages/AccountPage';
 import { SupportPage } from './pages/SupportPage';
 import { CorporateBookingPage } from './pages/CorporateBookingPage';
+import { AdminPortal } from './pages/admin/AdminPortal';
 
 const AppContent: React.FC = () => {
   const { currentRoute } = useApp();
+
+  if (currentRoute === 'admin') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <AdminPortal />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   const renderCurrentPage = () => {
     switch (currentRoute) {

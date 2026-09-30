@@ -23,7 +23,22 @@ export type AppRoute =
   | 'in-stay-breakfast' 
   | 'profile' 
   | 'support'
-  | 'corporate-booking';
+  | 'corporate-booking'
+  | 'admin';
+
+export const isCurrentPathAdmin = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  return (
+    path === '/admin' || 
+    path.startsWith('/admin/') || 
+    hash === '#admin' || 
+    hash.startsWith('#/admin') || 
+    hash.startsWith('#admin/')
+  );
+};
+
 
 export interface ToastMessage {
   id: string;
@@ -128,8 +143,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Navigation state
-  const [currentRoute, setCurrentRoute] = useState<AppRoute>('landing');
+  const getInitialRoute = (): AppRoute => {
+    if (isCurrentPathAdmin()) return 'admin';
+    if (typeof window !== 'undefined') {
+      const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      const validRoutes: AppRoute[] = [
+        'landing', 'search', 'property-detail', 'checkout', 'confirmation', 
+        'stays', 'membership', 'rewards-catalog', 'in-stay-breakfast', 
+        'profile', 'support', 'corporate-booking'
+      ];
+      if (validRoutes.includes(cleanPath as AppRoute)) {
+        return cleanPath as AppRoute;
+      }
+    }
+    return 'landing';
+  };
+
+  const [currentRoute, setCurrentRoute] = useState<AppRoute>(getInitialRoute);
   const [routeParams, setRouteParams] = useState<any>({});
+
+  // Sync state when URL / popstate changes
+  useEffect(() => {
+    const handleLocationChange = () => {
+      if (isCurrentPathAdmin()) {
+        setCurrentRoute('admin');
+      } else {
+        const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+        const validRoutes: AppRoute[] = [
+          'landing', 'search', 'property-detail', 'checkout', 'confirmation', 
+          'stays', 'membership', 'rewards-catalog', 'in-stay-breakfast', 
+          'profile', 'support', 'corporate-booking'
+        ];
+        if (validRoutes.includes(cleanPath as AppRoute)) {
+          setCurrentRoute(cleanPath as AppRoute);
+        } else {
+          setCurrentRoute('landing');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
 
   // Persona & User state: Default to unauthenticated visitor for landing page!
   const [currentPersona, setCurrentPersona] = useState<string>(() => loadFromStorage('evolve_currentPersona_v2', 'visitor'));
@@ -329,6 +388,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const navigateTo = (route: AppRoute, params: any = {}) => {
     setCurrentRoute(route);
     setRouteParams(params);
+    if (typeof window !== 'undefined') {
+      if (route === 'admin') {
+        const adminPath = params?.tab ? `/admin/${params.tab}` : '/admin';
+        if (window.location.pathname !== adminPath && window.location.hash !== '#admin') {
+          window.history.pushState(null, '', adminPath);
+        }
+      } else {
+        const targetUrl = route === 'landing' ? '/' : `/${route}`;
+        if (window.location.pathname !== targetUrl) {
+          window.history.pushState(null, '', targetUrl);
+        }
+      }
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

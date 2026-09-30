@@ -46,3 +46,10 @@ npm run build
 # Preview production build
 npm run preview
 ```
+
+---
+
+## Complete Project Documentation
+
+For in-depth architecture details, state management patterns, directory trees, data contracts, and design token specifications, see [PROJECT_DOCUMENTATION.md](file:///Users/temporary/Documents/Evolve%20frontend%20WEB/PROJECT_DOCUMENTATION.md).
+

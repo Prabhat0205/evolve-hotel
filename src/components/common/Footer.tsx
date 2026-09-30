@@ -218,6 +218,25 @@ export const Footer: React.FC = () => {
             <span>Cancellation Policies</span>
             <span>Accessibility</span>
             <span>Security & 2FA</span>
+            <a
+              href="/admin"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('admin');
+              }}
+              style={{
+                textDecoration: 'none',
+                color: '#dda943',
+                font: 'inherit',
+                cursor: 'pointer',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              Admin Portal
+            </a>
           </div>
         </div>
       </div>
