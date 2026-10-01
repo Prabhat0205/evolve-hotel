@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { mockBreakfastMenu } from '../../data/mockBreakfast';
-import { BreakfastItem } from '../../types';
 import {
   KitchenOrderRecord,
   KitchenOrderStatus,
@@ -20,14 +19,15 @@ import {
   ChefHat, Clock, AlertTriangle, CheckCircle, CheckCircle2,
   Flame, Coffee, Utensils, Search, Filter, Volume2, VolumeX,
   Printer, ArrowLeft, LogOut, Check, RefreshCw, X, ShieldAlert,
-  SlidersHorizontal, Sparkles, Send, Bell
+  SlidersHorizontal, Sparkles, Send, Eye, ShieldCheck, CheckSquare,
+  Square, Menu, LayoutGrid, Columns, Table as TableIcon, Mail, Lock
 } from 'lucide-react';
 
 export const KitchenPortal: React.FC = () => {
   const { navigateTo, addToast, activeBreakfastOrder } = useApp();
 
   // -------------------------------------------------------------------------
-  // AUTHENTICATION STATE
+  // 1. AUTHENTICATION STATE
   // -------------------------------------------------------------------------
   const [currentUser, setCurrentUser] = useState<KitchenStaffUser | null>(() => {
     try {
@@ -59,7 +59,7 @@ export const KitchenPortal: React.FC = () => {
 
       setCurrentUser(matched);
       localStorage.setItem('evolve_kitchen_auth_user', JSON.stringify(matched));
-      addToast('success', 'Kitchen Staff Signed In', `Welcome Chef ${matched.name} to Evolve Kitchen Portal.`);
+      addToast('success', 'Staff Signed In', `Welcome Chef ${matched.name} to Evolve Kitchen.`);
     } else {
       setLoginError('Invalid credentials. Use prabhat.appzoro@gmail.com and password: 123456');
     }
@@ -68,21 +68,21 @@ export const KitchenPortal: React.FC = () => {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('evolve_kitchen_auth_user');
-    addToast('info', 'Logged Out', 'Signed out from Kitchen Staff Portal.');
+    addToast('info', 'Logged Out', 'Signed out from Kitchen Staff Terminal.');
   };
 
   // -------------------------------------------------------------------------
-  // ORDERS & SYSTEM STATE
+  // 2. ORDERS & SYSTEM DATA
   // -------------------------------------------------------------------------
   const [orders, setOrders] = useState<KitchenOrderRecord[]>(() => {
     try {
-      const saved = localStorage.getItem('evolve_kitchen_orders_v1');
+      const saved = localStorage.getItem('evolve_kitchen_orders_v2');
       if (saved) return JSON.parse(saved);
     } catch {}
     return initialKitchenOrders;
   });
 
-  // Sync with guest order placed via in-stay breakfast page if exists
+  // Sync active guest order if placed in guest portal
   useEffect(() => {
     if (activeBreakfastOrder) {
       setOrders((prev) => {
@@ -122,11 +122,11 @@ export const KitchenPortal: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('evolve_kitchen_orders_v1', JSON.stringify(orders));
+      localStorage.setItem('evolve_kitchen_orders_v2', JSON.stringify(orders));
     } catch {}
   }, [orders]);
 
-  // Live Clock
+  // Live Digital Clock
   const [currentTimeStr, setCurrentTimeStr] = useState<string>('');
   useEffect(() => {
     const updateTime = () => {
@@ -140,21 +140,49 @@ export const KitchenPortal: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // UI Controls
+  // Audio Chime Synthesizer for Kitchen Notifications
+  const [audioAlertEnabled, setAudioAlertEnabled] = useState<boolean>(true);
+  const playKitchenChime = (type: 'ready' | 'alert') => {
+    if (!audioAlertEnabled) return;
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'ready') {
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      } else {
+        osc.frequency.setValueAtTime(740, ctx.currentTime);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      }
+    } catch {}
+  };
+
+  // UI Navigation, Views & Filtering
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<KitchenTab>('live_kds');
+  const [viewMode, setViewMode] = useState<'kanban' | 'grid' | 'table'>('kanban');
   const [selectedStation, setSelectedStation] = useState<KitchenStation>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | KitchenOrderStatus>('ALL');
   const [allergiesOnly, setAllergiesOnly] = useState<boolean>(false);
-  const [audioAlertEnabled, setAudioAlertEnabled] = useState<boolean>(true);
 
-  // Selected Order for Full Modal View
+  // Selected Order for KOT Modal
   const [selectedOrder, setSelectedOrder] = useState<KitchenOrderRecord | null>(null);
 
   // 86 / Sold Out Inventory State
   const [inventory86List, setInventory86List] = useState<Record<string, boolean>>({
-    'bf-03': false, // Pancakes available
-    'bf-06': false, // Green Vitality available
+    'bf-03': false,
+    'bf-06': false,
   });
 
   const toggle86Item = (itemId: string, itemName: string) => {
@@ -163,14 +191,14 @@ export const KitchenPortal: React.FC = () => {
       addToast(
         updated ? 'warning' : 'success',
         updated ? `Item 86'd: ${itemName}` : `Item Restocked: ${itemName}`,
-        updated ? `${itemName} is now marked SOLD OUT for guests.` : `${itemName} is back on breakfast menu.`
+        updated ? `${itemName} marked SOLD OUT for guests.` : `${itemName} is available again.`
       );
       return { ...prev, [itemId]: updated };
     });
   };
 
   // -------------------------------------------------------------------------
-  // KDS ORDER BUMP / STATUS ACTIONS
+  // 3. ORDER ACTIONS (ONE-TAP PROGRESSION)
   // -------------------------------------------------------------------------
   const handleAdvanceOrderStatus = (orderId: string, nextStatus?: KitchenOrderStatus) => {
     setOrders((prev) =>
@@ -206,7 +234,14 @@ export const KitchenPortal: React.FC = () => {
 
     const targetOrd = orders.find((o) => o.id === orderId);
     if (targetOrd) {
-      addToast('success', 'KDS Ticket Updated', `${targetOrd.orderNumber} (${targetOrd.roomNumber}) marked ${nextStatus || 'progressed'}.`);
+      if (nextStatus === 'READY' || (!nextStatus && targetOrd.status === 'BEING_PREPARED')) {
+        playKitchenChime('ready');
+      }
+      addToast(
+        'success',
+        'Order Status Advanced',
+        `${targetOrd.roomNumber} (${targetOrd.orderNumber}) is now ${nextStatus || 'progressed'}.`
+      );
     }
   };
 
@@ -226,8 +261,54 @@ export const KitchenPortal: React.FC = () => {
     );
   };
 
+  // Add a quick simulation ticket
+  const handleAddSampleOrder = () => {
+    const randomRoom = `Suite ${Math.floor(100 + Math.random() * 800)}`;
+    const randomTicket = `BF-${Math.floor(7800 + Math.random() * 200)}`;
+    const newOrder: KitchenOrderRecord = {
+      id: `kord-sim-${Date.now()}`,
+      orderNumber: randomTicket,
+      roomNumber: randomRoom,
+      guestName: 'Lady Catherine Windsor',
+      guestTier: 'Prestige',
+      tableOrRoomType: 'Heritage Balcony Suite',
+      deliverySlot: '08:45 AM - 09:15 AM',
+      orderPlacedAt: '08:20 AM',
+      estimatedDeliveryTime: '08:55 AM',
+      status: 'RECEIVED',
+      items: [
+        {
+          id: `ki-sim-1-${Date.now()}`,
+          item: mockBreakfastMenu[0],
+          quantity: 2,
+          specialInstructions: 'Poached medium-firm, caviar on side.',
+          station: 'HOT_LINE',
+          isPrepared: false,
+        },
+        {
+          id: `ki-sim-2-${Date.now()}`,
+          item: mockBreakfastMenu[5],
+          quantity: 1,
+          specialInstructions: 'Extra cold pressed ginger shot.',
+          station: 'BARISTA',
+          isPrepared: false,
+        },
+      ],
+      dietaryNotes: ['Lactose-free'],
+      allergies: ['Shellfish / Crustaceans'],
+      specialInstructions: 'Guest requests white linen presentation tray.',
+      elapsedMinutes: 2,
+      targetMinutes: 20,
+      isUrgent: false,
+    };
+
+    setOrders((prev) => [newOrder, ...prev]);
+    playKitchenChime('alert');
+    addToast('info', 'New Guest Ticket', `${randomRoom} placed breakfast order ${randomTicket}.`);
+  };
+
   // -------------------------------------------------------------------------
-  // STATS & FILTERED DATA
+  // 4. STATS & FILTERED DATA
   // -------------------------------------------------------------------------
   const shiftStats: KitchenShiftStats = useMemo(() => {
     const totalActive = orders.filter((o) => o.status !== 'DELIVERED').length;
@@ -241,8 +322,14 @@ export const KitchenPortal: React.FC = () => {
       cookingNow,
       readyForPickup,
       deliveredToday,
-      avgPrepMinutes: 16,
+      avgPrepMinutes: 15,
     };
+  }, [orders]);
+
+  const allergyAlertCount = useMemo(() => {
+    return orders.filter(
+      (o) => o.status !== 'DELIVERED' && o.allergies && o.allergies.length > 0
+    ).length;
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
@@ -250,9 +337,6 @@ export const KitchenPortal: React.FC = () => {
       // Tab matching
       if (activeTab === 'delivered_archive' && ord.status !== 'DELIVERED') return false;
       if (activeTab === 'live_kds' && ord.status === 'DELIVERED') return false;
-
-      // Status filter
-      if (statusFilter !== 'ALL' && ord.status !== statusFilter) return false;
 
       // Station filter
       if (selectedStation !== 'ALL') {
@@ -277,161 +361,209 @@ export const KitchenPortal: React.FC = () => {
 
       return true;
     });
-  }, [orders, activeTab, statusFilter, selectedStation, allergiesOnly, searchQuery]);
+  }, [orders, activeTab, selectedStation, allergiesOnly, searchQuery]);
+
+  // Kanban Columns Data
+  const receivedOrders = useMemo(
+    () => filteredOrders.filter((o) => o.status === 'RECEIVED'),
+    [filteredOrders]
+  );
+  const cookingOrders = useMemo(
+    () => filteredOrders.filter((o) => o.status === 'BEING_PREPARED'),
+    [filteredOrders]
+  );
+  const readyOrders = useMemo(
+    () => filteredOrders.filter((o) => o.status === 'READY'),
+    [filteredOrders]
+  );
 
   // -------------------------------------------------------------------------
-  // RENDER: LOGIN SCREEN (IF NOT AUTHENTICATED)
+  // 5. RENDER: LOGIN SCREEN (SPLIT-SCREEN ADMIN LUXURY THEME)
   // -------------------------------------------------------------------------
   if (!currentUser) {
     return (
-      <div className="kitchen-login-wrapper">
-        <div className="kitchen-login-card">
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #10b981 0%, #064e3b 100%)',
-              color: '#ffffff',
-              marginBottom: '14px',
-              boxShadow: '0 8px 24px rgba(16, 185, 129, 0.35)'
-            }}>
-              <ChefHat size={34} />
-            </div>
-            <span style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              Evolve Luxury Hotels
-            </span>
-            <h2 style={{ margin: '4px 0 8px 0', fontSize: '1.65rem', fontWeight: 800, color: '#ffffff' }}>
-              Kitchen Display System (KDS)
-            </h2>
-            <p style={{ margin: 0, fontSize: '0.90rem', color: '#94a3b8' }}>
-              Tablet & Staff Portal for In-Stay Breakfast Order Management
-            </p>
-          </div>
+      <div className="kitchen-login-split-wrapper">
+        {/* Left Side: Luxury Culinary Brand Banner */}
+        <div
+          className="kitchen-hero-side"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1800&q=85')`,
+          }}
+        >
+          <div className="kitchen-hero-overlay" />
 
-          {loginError && (
-            <div style={{
-              backgroundColor: '#450a0a',
-              border: '1px solid #ef4444',
-              color: '#fca5a5',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              marginBottom: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <AlertTriangle size={16} />
-              <span>{loginError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleLoginSubmit}>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '0.80rem', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Kitchen Staff Email
-              </label>
-              <input
-                type="email"
-                className="kitchen-login-input"
-                placeholder="prabhat.appzoro@gmail.com"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.80rem', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Passcode / Password
-                </label>
-                <span style={{ fontSize: '0.75rem', color: '#38bdf8' }}>Demo: 123456</span>
+          <div className="kitchen-hero-content">
+            {/* Header Brand Badge */}
+            <div className="kitchen-brand-header">
+              <div className="kitchen-brand-icon">
+                <ChefHat size={26} color="#17271f" />
               </div>
-              <input
-                type="password"
-                className="kitchen-login-input"
-                placeholder="••••••"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-              />
+              <div className="kitchen-brand-titles">
+                <span className="kitchen-brand-name">EVOLVE</span>
+                <span className="kitchen-brand-badge">Hotels & Resorts • Kitchen & Breakfast Suite</span>
+              </div>
             </div>
 
-            <button type="submit" className="kitchen-login-btn">
-              Sign In to Kitchen Terminal
-            </button>
-          </form>
+            {/* Central Hero Headline */}
+            <div className="kitchen-hero-body">
+              <div className="kitchen-eyebrow-pill">
+                <Sparkles size={14} color="#dda943" />
+                <span>Next-Gen Kitchen Display & Expediting</span>
+              </div>
 
-          {/* Quick Demo Fill Buttons */}
-          <div style={{ marginTop: '22px', borderTop: '1px solid #1e293b', paddingTop: '16px' }}>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase' }}>
-              One-Tap Quick Role Login
+              <h1 className="kitchen-hero-heading">
+                Culinary Precision & Room Service Flow
+              </h1>
+
+              <p className="kitchen-hero-text">
+                Manage morning breakfast prep rails, monitor dietary allergen alerts, route tickets to specific stations, and coordinate runner deliveries with zero confusion.
+              </p>
+
+              {/* Feature Pills */}
+              <div className="kitchen-feature-grid">
+                <div className="kitchen-feature-pill">
+                  <div className="kitchen-feature-icon">
+                    <Columns size={18} />
+                  </div>
+                  <span className="kitchen-feature-label">Live KDS Rail</span>
+                </div>
+                <div className="kitchen-feature-pill">
+                  <div className="kitchen-feature-icon">
+                    <AlertTriangle size={18} />
+                  </div>
+                  <span className="kitchen-feature-label">Allergy Sentinel</span>
+                </div>
+                <div className="kitchen-feature-pill">
+                  <div className="kitchen-feature-icon">
+                    <SlidersHorizontal size={18} />
+                  </div>
+                  <span className="kitchen-feature-label">86 Item Control</span>
+                </div>
+                <div className="kitchen-feature-pill">
+                  <div className="kitchen-feature-icon">
+                    <Coffee size={18} />
+                  </div>
+                  <span className="kitchen-feature-label">Station Routing</span>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginEmail('prabhat.appzoro@gmail.com');
-                  setLoginPassword('123456');
-                }}
-                style={{
-                  padding: '8px',
-                  borderRadius: '6px',
-                  background: '#1e293b',
-                  border: '1px solid #334155',
-                  color: '#cbd5e1',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Chef Prabhat (Lead)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginEmail('mateo.kitchen@evolvehotel.com');
-                  setLoginPassword('123456');
-                }}
-                style={{
-                  padding: '8px',
-                  borderRadius: '6px',
-                  background: '#1e293b',
-                  border: '1px solid #334155',
-                  color: '#cbd5e1',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Chef Mateo (Hot Line)
-              </button>
+
+            {/* Bottom Note */}
+            <div style={{ fontSize: '0.78rem', color: '#9bb1a8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={16} color="#dda943" />
+              <span>Dedicated Kitchen Terminal • Tablet & Touch-First Operations</span>
             </div>
           </div>
+        </div>
 
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <button
-              type="button"
-              onClick={() => navigateTo('landing')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
+        {/* Right Side: Clean White Login Card */}
+        <div className="kitchen-login-side">
+          <div className="kitchen-login-container">
+            <div className="kitchen-form-header">
+              <span className="kitchen-form-eyebrow">STAFF ACCESS</span>
+              <h2 className="kitchen-form-title">Kitchen Terminal Sign In</h2>
+              <p className="kitchen-form-desc">
+                Sign in with your kitchen staff credentials to access live breakfast tickets and station controls.
+              </p>
+            </div>
+
+            {loginError && (
+              <div style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#991b1b',
+                padding: '12px 14px',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                marginBottom: '18px',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <ArrowLeft size={14} />
-              <span>Back to Main Hotel Website</span>
-            </button>
+                gap: '8px'
+              }}>
+                <AlertTriangle size={16} />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLoginSubmit}>
+              <div className="kitchen-form-group">
+                <label className="kitchen-form-label">Staff Email Address</label>
+                <div className="kitchen-input-wrapper">
+                  <Mail size={18} className="kitchen-input-icon" />
+                  <input
+                    type="email"
+                    className="kitchen-input"
+                    placeholder="prabhat.appzoro@gmail.com"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="kitchen-form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="kitchen-form-label" style={{ margin: 0 }}>Passcode / Password</label>
+                  <span style={{ fontSize: '0.75rem', color: '#b3832c', fontWeight: 800 }}>Default: 123456</span>
+                </div>
+                <div className="kitchen-input-wrapper">
+                  <Lock size={18} className="kitchen-input-icon" />
+                  <input
+                    type="password"
+                    className="kitchen-input"
+                    placeholder="••••••"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="kitchen-submit-btn">
+                <span>Sign In to Kitchen Terminal</span>
+              </button>
+            </form>
+
+            {/* Quick One-Tap Staff Selector */}
+            <div className="kitchen-demo-box">
+              <div className="kitchen-demo-header">
+                <span className="kitchen-demo-title">
+                  <ChefHat size={14} color="#dda943" />
+                  Quick One-Tap Shift Log In
+                </span>
+                <span className="kitchen-demo-badge">DEMO ACCESS</span>
+              </div>
+              <div className="kitchen-demo-grid">
+                <button
+                  type="button"
+                  className="kitchen-demo-card"
+                  onClick={() => {
+                    setLoginEmail('prabhat.appzoro@gmail.com');
+                    setLoginPassword('123456');
+                  }}
+                >
+                  <div>
+                    <span className="kitchen-demo-role-name">Chef Prabhat</span>
+                    <span className="kitchen-demo-desc">Executive Kitchen Lead • All Stations</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#173f34' }}>Tap to Fill →</span>
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-demo-card"
+                  onClick={() => {
+                    setLoginEmail('mateo.kitchen@evolvehotel.com');
+                    setLoginPassword('123456');
+                  }}
+                >
+                  <div>
+                    <span className="kitchen-demo-role-name">Chef Mateo Vance</span>
+                    <span className="kitchen-demo-desc">Hot Line Lead • Eggs & Griddles</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#173f34' }}>Tap to Fill →</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -439,614 +571,623 @@ export const KitchenPortal: React.FC = () => {
   }
 
   // -------------------------------------------------------------------------
-  // RENDER: MAIN KITCHEN DISPLAY SYSTEM (KDS) & TABLET PORTAL
+  // 6. RENDER: MAIN KITCHEN APP (MATCHING ADMIN OPS SIDEBAR & WORKSPACE)
   // -------------------------------------------------------------------------
   return (
-    <div className="kitchen-app-root">
-      {/* 1. Header Bar */}
-      <header className="kitchen-header">
-        <div className="kitchen-header-left">
-          <div className="kitchen-logo-badge">
-            <ChefHat size={22} color="#10b981" />
-            <div>
-              <h1>Evolve Kitchen</h1>
-            </div>
-          </div>
-          <div style={{ display: 'none', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.80rem', color: '#94a3b8', fontWeight: 600 }}>Station:</span>
-            <span className="kitchen-station-pill">{selectedStation}</span>
-          </div>
-        </div>
-
-        <div className="kitchen-header-right">
-          {/* Live Kitchen Clock */}
-          <div className="kitchen-clock-display" title="Kitchen Standard Time">
-            <Clock size={16} />
-            <span>{currentTimeStr || '08:00 AM'}</span>
-          </div>
-
-          {/* Sound Alert Toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              setAudioAlertEnabled(!audioAlertEnabled);
-              addToast('info', audioAlertEnabled ? 'Chime Muted' : 'Chime Active', audioAlertEnabled ? 'Order audio chime muted.' : 'Audio chime enabled for new tickets.');
-            }}
-            title={audioAlertEnabled ? 'Audio Chime Enabled' : 'Audio Chime Muted'}
-            style={{
-              background: audioAlertEnabled ? '#1e293b' : '#3f1818',
-              border: '1px solid #334155',
-              color: audioAlertEnabled ? '#38bdf8' : '#f87171',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.82rem',
-              fontWeight: 700
-            }}
-          >
-            {audioAlertEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span style={{ display: 'none' }}>Chime</span>
-          </button>
-
-          {/* User Profile Pill */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#1e293b',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            border: '1px solid #334155'
-          }}>
-            <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              backgroundColor: '#10b981',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '0.85rem'
-            }}>
-              {currentUser.name.charAt(0)}
-            </div>
-            <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
-                {currentUser.name}
+    <div className="kitchen-ops-layout">
+      {/* ===================================================================
+          LEFT DARK EMERALD SIDEBAR (IDENTICAL TO ADMIN SIDEBAR)
+      =================================================================== */}
+      <aside className={`kitchen-ops-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <div>
+          {/* Operations Brand Title with Gold Eyebrow and Hamburger Menu Button */}
+          {!isSidebarCollapsed ? (
+            <div className="kitchen-ops-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <span className="kitchen-ops-brand-eyebrow">EVOLVE HOTEL OPERATIONS</span>
+                <h2 className="kitchen-ops-title">Kitchen KDS</h2>
               </div>
-              <div style={{ fontSize: '0.70rem', color: '#10b981', fontWeight: 600 }}>
-                {currentUser.roleTitle}
-              </div>
+              <button
+                type="button"
+                className="kitchen-ops-toggle-btn"
+                onClick={() => setIsSidebarCollapsed(true)}
+                title="Collapse Sidebar"
+                aria-label="Collapse Sidebar"
+              >
+                <Menu size={18} />
+              </button>
             </div>
-          </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <button
+                type="button"
+                className="kitchen-ops-toggle-btn"
+                onClick={() => setIsSidebarCollapsed(false)}
+                title="Expand Sidebar"
+                aria-label="Expand Sidebar"
+              >
+                <Menu size={18} />
+              </button>
+            </div>
+          )}
 
-          {/* Exit / Logout */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Sign Out Kitchen Terminal"
-            style={{
-              background: '#241b1b',
-              border: '1px solid #4a2828',
-              color: '#f87171',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.82rem',
-              fontWeight: 700
-            }}
-          >
-            <LogOut size={16} />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </header>
-
-      {/* 2. KPI / Shift Metrics Bar */}
-      <div className="kitchen-stats-ribbon">
-        <div className="kitchen-stat-card">
-          <span className="kitchen-stat-label">Active Orders</span>
-          <div className="kitchen-stat-value" style={{ color: '#38bdf8' }}>
-            <Utensils size={20} />
-            <span>{shiftStats.totalActive}</span>
-          </div>
-        </div>
-
-        <div className="kitchen-stat-card">
-          <span className="kitchen-stat-label">Cooking Now</span>
-          <div className="kitchen-stat-value" style={{ color: '#f59e0b' }}>
-            <Flame size={20} />
-            <span>{shiftStats.cookingNow}</span>
-          </div>
-        </div>
-
-        <div className="kitchen-stat-card">
-          <span className="kitchen-stat-label">Ready For Delivery</span>
-          <div className="kitchen-stat-value" style={{ color: '#10b981' }}>
-            <CheckCircle2 size={20} />
-            <span>{shiftStats.readyForPickup}</span>
-          </div>
-        </div>
-
-        <div className="kitchen-stat-card">
-          <span className="kitchen-stat-label">Queue / Received</span>
-          <div className="kitchen-stat-value" style={{ color: '#a78bfa' }}>
-            <Clock size={20} />
-            <span>{shiftStats.pendingQueue}</span>
-          </div>
-        </div>
-
-        <div className="kitchen-stat-card">
-          <span className="kitchen-stat-label">Delivered Today</span>
-          <div className="kitchen-stat-value" style={{ color: '#94a3b8' }}>
-            <Check size={20} />
-            <span>{shiftStats.deliveredToday}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Navigation Tabs Bar (Touch Optimized for Tablet) */}
-      <div className="kitchen-nav-bar">
-        <div className="kitchen-tabs-group">
-          <button
-            type="button"
-            className={`kitchen-tab-btn ${activeTab === 'live_kds' ? 'active' : ''}`}
-            onClick={() => setActiveTab('live_kds')}
-          >
-            <Flame size={18} />
-            <span>Live KDS Board</span>
-            <span className="kitchen-tab-badge">{shiftStats.totalActive}</span>
-          </button>
-
-          <button
-            type="button"
-            className={`kitchen-tab-btn ${activeTab === 'orders_queue' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders_queue')}
-          >
-            <Utensils size={18} />
-            <span>Orders Queue Table</span>
-          </button>
-
-          <button
-            type="button"
-            className={`kitchen-tab-btn ${activeTab === 'inventory_86' ? 'active' : ''}`}
-            onClick={() => setActiveTab('inventory_86')}
-          >
-            <SlidersHorizontal size={18} />
-            <span>86 List / Menu Stock</span>
-          </button>
-
-          <button
-            type="button"
-            className={`kitchen-tab-btn ${activeTab === 'delivered_archive' ? 'active' : ''}`}
-            onClick={() => setActiveTab('delivered_archive')}
-          >
-            <CheckCircle size={18} />
-            <span>Delivered History ({shiftStats.deliveredToday})</span>
-          </button>
-        </div>
-
-        {/* Station Selector Buttons */}
-        <div className="kitchen-station-filters">
-          <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-            Station:
-          </span>
-          {(['ALL', 'HOT_LINE', 'COLD_BAKERY', 'BARISTA'] as KitchenStation[]).map((station) => (
-            <button
-              key={station}
-              type="button"
-              className={`kitchen-station-btn ${selectedStation === station ? 'active' : ''}`}
-              onClick={() => setSelectedStation(station)}
-            >
-              {station === 'ALL' ? 'All Stations' : station.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. Filter & Search Controls */}
-      <div style={{
-        padding: '12px 20px',
-        backgroundColor: '#0e1626',
-        borderBottom: '1px solid #1e293b',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
-        {/* Search */}
-        <div style={{
-          position: 'relative',
-          minWidth: '240px',
-          maxWidth: '380px',
-          flex: 1
-        }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-          <input
-            type="text"
-            placeholder="Search room #, guest name, or item..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px 10px 36px',
-              borderRadius: '8px',
-              background: '#182235',
-              border: '1px solid #28374f',
-              color: '#ffffff',
-              fontSize: '0.88rem',
-              outline: 'none'
-            }}
-          />
-          {searchQuery && (
+          {/* Navigation Links */}
+          <nav className="kitchen-ops-nav">
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              className={`kitchen-ops-nav-item ${activeTab === 'live_kds' ? 'active' : ''}`}
+              onClick={() => setActiveTab('live_kds')}
+              title="Live KDS Board"
             >
-              ✕
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Flame size={18} />
+                {!isSidebarCollapsed && <span>Live KDS Board</span>}
+              </div>
+              {!isSidebarCollapsed && <span className="kitchen-nav-badge">{shiftStats.totalActive}</span>}
             </button>
+
+            <button
+              type="button"
+              className={`kitchen-ops-nav-item ${activeTab === 'orders_queue' ? 'active' : ''}`}
+              onClick={() => setActiveTab('orders_queue')}
+              title="Orders Table View"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <TableIcon size={18} />
+                {!isSidebarCollapsed && <span>Orders Table</span>}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`kitchen-ops-nav-item ${activeTab === 'inventory_86' ? 'active' : ''}`}
+              onClick={() => setActiveTab('inventory_86')}
+              title="86 Menu Stock Control"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <SlidersHorizontal size={18} />
+                {!isSidebarCollapsed && <span>86 Menu Stock</span>}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`kitchen-ops-nav-item ${activeTab === 'delivered_archive' ? 'active' : ''}`}
+              onClick={() => setActiveTab('delivered_archive')}
+              title="Delivered Orders Log"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CheckCircle size={18} />
+                {!isSidebarCollapsed && <span>Delivered Log</span>}
+              </div>
+              {!isSidebarCollapsed && <span style={{ fontSize: '0.72rem', color: '#9bb1a8' }}>{shiftStats.deliveredToday}</span>}
+            </button>
+          </nav>
+
+          {/* Sidebar Station Filter Section */}
+          {!isSidebarCollapsed && (
+            <div className="kitchen-station-sidebar-box">
+              <span className="kitchen-station-sidebar-title">Prep Station Filter</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {(['ALL', 'HOT_LINE', 'COLD_BAKERY', 'BARISTA'] as KitchenStation[]).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    className={`kitchen-station-item ${selectedStation === st ? 'active' : ''}`}
+                    onClick={() => setSelectedStation(st)}
+                  >
+                    {st === 'ALL' ? (
+                      <Utensils size={14} />
+                    ) : st === 'HOT_LINE' ? (
+                      <Flame size={14} />
+                    ) : st === 'COLD_BAKERY' ? (
+                      <ChefHat size={14} />
+                    ) : (
+                      <Coffee size={14} />
+                    )}
+                    <span>
+                      {st === 'ALL'
+                        ? 'All Stations'
+                        : st === 'HOT_LINE'
+                        ? 'Hot Kitchen Line'
+                        : st === 'COLD_BAKERY'
+                        ? 'Bakery & Pastry'
+                        : 'Barista & Beverages'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Quick Filter Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Bottom Profile Card in Sidebar */}
+        <div className="kitchen-ops-profile-card">
+          <div className="kitchen-ops-profile-info">
+            <div className="kitchen-ops-avatar" title={currentUser.name}>
+              {currentUser.name.charAt(0)}
+            </div>
+            {!isSidebarCollapsed && (
+              <div>
+                <div className="kitchen-ops-name">{currentUser.name}</div>
+                <div className="kitchen-ops-role-badge">
+                  {currentUser.roleTitle.toUpperCase()}
+                </div>
+              </div>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => setAllergiesOnly(!allergiesOnly)}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '6px',
-              border: allergiesOnly ? '1.5px solid #ef4444' : '1px solid #334155',
-              backgroundColor: allergiesOnly ? '#450a0a' : '#1e293b',
-              color: allergiesOnly ? '#fca5a5' : '#cbd5e1',
-              fontSize: '0.80rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+            className="kitchen-ops-logout-btn"
+            onClick={handleLogout}
+            title="Sign Out Kitchen Terminal"
           >
-            <AlertTriangle size={14} color={allergiesOnly ? '#ef4444' : '#f59e0b'} />
-            <span>Allergy Alerts Only</span>
+            <LogOut size={16} />
           </button>
+        </div>
+      </aside>
 
-          {/* Quick Status Buttons */}
-          {(['ALL', 'RECEIVED', 'BEING_PREPARED', 'READY'] as const).map((st) => (
+      {/* ===================================================================
+          MAIN WORKSPACE (MATCHING ADMIN OPS MAIN WORKSPACE)
+      =================================================================== */}
+      <main className="kitchen-ops-main">
+        {/* Workspace Top Header */}
+        <div className="kitchen-ops-header-row">
+          <div>
+            <span className="kitchen-ops-eyebrow">
+              KITCHEN DISPLAY SYSTEM • MORNING SERVICE (06:30 - 11:30)
+            </span>
+            <h1 className="kitchen-ops-heading">
+              Breakfast Orders & Kitchen Expediting
+            </h1>
+            <p className="kitchen-ops-subheading">
+              Tap any ticket to start cooking, mark ready for delivery, or check critical dietary allergen flags.
+            </p>
+          </div>
+
+          <div className="kitchen-header-actions">
+            {/* Live Clock Box */}
+            <div className="kitchen-clock-box" title="Kitchen Time">
+              <Clock size={16} color="#dda943" />
+              <span>{currentTimeStr || '08:00 AM'}</span>
+            </div>
+
+            {/* Audio Alert Chime Toggle */}
             <button
-              key={st}
               type="button"
-              onClick={() => setStatusFilter(st)}
+              className={`kitchen-icon-btn ${audioAlertEnabled ? 'active' : ''}`}
+              onClick={() => {
+                setAudioAlertEnabled(!audioAlertEnabled);
+                if (!audioAlertEnabled) playKitchenChime('ready');
+                addToast(
+                  'info',
+                  audioAlertEnabled ? 'Chime Muted' : 'Chime Active',
+                  audioAlertEnabled ? 'Order sound muted.' : 'Order sound chime active.'
+                );
+              }}
+              title={audioAlertEnabled ? 'Audio Alert Chime Active' : 'Audio Alert Chime Muted'}
+            >
+              {audioAlertEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              <span>{audioAlertEnabled ? 'Sound ON' : 'Muted'}</span>
+            </button>
+
+            {/* View Mode Toggle (Only when in live_kds tab) */}
+            {activeTab === 'live_kds' && (
+              <div className="kitchen-view-mode-group">
+                <button
+                  type="button"
+                  className={`kitchen-view-mode-btn ${viewMode === 'kanban' ? 'active' : ''}`}
+                  onClick={() => setViewMode('kanban')}
+                  title="3-Column Kanban Board (New -> Cooking -> Ready)"
+                >
+                  <Columns size={15} />
+                  <span>Kanban Rails</span>
+                </button>
+                <button
+                  type="button"
+                  className={`kitchen-view-mode-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                  title="Grid Ticket Cards"
+                >
+                  <LayoutGrid size={15} />
+                  <span>Grid Cards</span>
+                </button>
+              </div>
+            )}
+
+            {/* Add Test Ticket Button (Great for testing live flow!) */}
+            <button
+              type="button"
+              className="kitchen-icon-btn"
+              onClick={handleAddSampleOrder}
+              title="Simulate Guest Order"
+            >
+              <Sparkles size={15} color="#b3832c" />
+              <span>+ New Ticket</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Shift KPI Metrics Ribbon (Admin Metric Card Style) */}
+        <div className="kitchen-metrics-grid">
+          <div className="kitchen-metric-card">
+            <div className="kitchen-metric-content">
+              <span className="kitchen-metric-label">Active Orders</span>
+              <span className="kitchen-metric-num">{shiftStats.totalActive}</span>
+            </div>
+            <div className="kitchen-metric-icon-box" style={{ background: '#edf5f1', color: '#173f34' }}>
+              <Utensils size={22} />
+            </div>
+          </div>
+
+          <div className="kitchen-metric-card">
+            <div className="kitchen-metric-content">
+              <span className="kitchen-metric-label">Cooking Now</span>
+              <span className="kitchen-metric-num" style={{ color: '#d97706' }}>
+                {shiftStats.cookingNow}
+              </span>
+            </div>
+            <div className="kitchen-metric-icon-box" style={{ background: '#fef3c7', color: '#d97706' }}>
+              <Flame size={22} />
+            </div>
+          </div>
+
+          <div className="kitchen-metric-card">
+            <div className="kitchen-metric-content">
+              <span className="kitchen-metric-label">Ready for Runner</span>
+              <span className="kitchen-metric-num" style={{ color: '#16a34a' }}>
+                {shiftStats.readyForPickup}
+              </span>
+            </div>
+            <div className="kitchen-metric-icon-box" style={{ background: '#dcfce7', color: '#16a34a' }}>
+              <CheckCircle2 size={22} />
+            </div>
+          </div>
+
+          <div className="kitchen-metric-card">
+            <div className="kitchen-metric-content">
+              <span className="kitchen-metric-label">Queue / Received</span>
+              <span className="kitchen-metric-num" style={{ color: '#0284c7' }}>
+                {shiftStats.pendingQueue}
+              </span>
+            </div>
+            <div className="kitchen-metric-icon-box" style={{ background: '#e0f2fe', color: '#0284c7' }}>
+              <Clock size={22} />
+            </div>
+          </div>
+
+          <div className="kitchen-metric-card">
+            <div className="kitchen-metric-content">
+              <span className="kitchen-metric-label">Allergy Flags</span>
+              <span className="kitchen-metric-num" style={{ color: allergyAlertCount > 0 ? '#dc2626' : '#64748b' }}>
+                {allergyAlertCount}
+              </span>
+            </div>
+            <div className="kitchen-metric-icon-box" style={{ background: allergyAlertCount > 0 ? '#fee2e2' : '#f1f5f9', color: allergyAlertCount > 0 ? '#dc2626' : '#64748b' }}>
+              <AlertTriangle size={22} />
+            </div>
+          </div>
+        </div>
+
+        {/* Filter & Search Bar */}
+        <div className="kitchen-controls-bar">
+          <div className="kitchen-search-box">
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input
+              type="text"
+              className="kitchen-search-input"
+              placeholder="Search room #, guest name, ticket #, or dish..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Quick Filter Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setAllergiesOnly(!allergiesOnly)}
               style={{
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: statusFilter === st ? '1px solid #10b981' : '1px solid #334155',
-                backgroundColor: statusFilter === st ? '#064e3b' : '#1e293b',
-                color: statusFilter === st ? '#34d399' : '#94a3b8',
-                fontSize: '0.80rem',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                border: allergiesOnly ? '1.5px solid #ef4444' : '1px solid #d4ded9',
+                backgroundColor: allergiesOnly ? '#fee2e2' : '#ffffff',
+                color: allergiesOnly ? '#991b1b' : '#374151',
+                fontSize: '0.82rem',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
             >
-              {st === 'ALL' ? 'All Statuses' : st.replace('_', ' ')}
+              <AlertTriangle size={15} color={allergiesOnly ? '#ef4444' : '#d97706'} />
+              <span>Allergy Alerts Only ({allergyAlertCount})</span>
             </button>
-          ))}
-        </div>
-      </div>
 
-      {/* 5. Main Content Area */}
-      <main className="kitchen-content-area">
-        {/* VIEW 1: LIVE KDS DISPLAY BOARD (TABLET OPTIMIZED GRID) */}
+            {/* Station Pills (On tablet or when sidebar is collapsed) */}
+            {(['ALL', 'HOT_LINE', 'COLD_BAKERY', 'BARISTA'] as KitchenStation[]).map((station) => (
+              <button
+                key={station}
+                type="button"
+                onClick={() => setSelectedStation(station)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: selectedStation === station ? '1.5px solid #17271f' : '1px solid #d4ded9',
+                  backgroundColor: selectedStation === station ? '#17271f' : '#ffffff',
+                  color: selectedStation === station ? '#ffffff' : '#475569',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {station === 'ALL'
+                  ? 'All Stations'
+                  : station === 'HOT_LINE'
+                  ? 'Hot Line'
+                  : station === 'COLD_BAKERY'
+                  ? 'Bakery'
+                  : 'Barista'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ===================================================================
+            VIEW 1: LIVE KDS BOARD (KANBAN 3-COLUMN OR GRID)
+        =================================================================== */}
         {activeTab === 'live_kds' && (
           <div>
-            {filteredOrders.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: '#131c2d',
-                borderRadius: '12px',
-                border: '1.5px dashed #28374f'
-              }}>
-                <ChefHat size={48} color="#64748b" style={{ margin: '0 auto 16px auto', display: 'block' }} />
-                <h3 style={{ margin: '0 0 6px 0', fontSize: '1.25rem', color: '#ffffff' }}>No Orders in this View</h3>
-                <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.90rem' }}>
-                  All orders for this station or filter are completed. New guest breakfast orders will appear here automatically.
-                </p>
+            {viewMode === 'kanban' ? (
+              /* KANBAN 3-COLUMN VIEW (SUPER SIMPLE FOR KITCHEN UNDERSTANDING) */
+              <div className="kitchen-kanban-board">
+                {/* COLUMN 1: NEW / QUEUE */}
+                <div className="kitchen-kanban-col">
+                  <div className="kitchen-kanban-header">
+                    <div>
+                      <div className="kitchen-col-title-group">
+                        <span className="kitchen-col-dot" style={{ backgroundColor: '#0284c7' }} />
+                        <h3 className="kitchen-col-title">1. New Orders</h3>
+                        <span className="kitchen-col-count-badge" style={{ backgroundColor: '#0284c7' }}>
+                          {receivedOrders.length}
+                        </span>
+                      </div>
+                      <div className="kitchen-col-sub">Waiting to start cooking</div>
+                    </div>
+                  </div>
+
+                  <div className="kitchen-col-cards-list">
+                    {receivedOrders.length === 0 ? (
+                      <div className="kitchen-col-empty-card">
+                        ✓ No pending tickets in queue
+                      </div>
+                    ) : (
+                      receivedOrders.map((ord) => renderOrderCard(ord))
+                    )}
+                  </div>
+                </div>
+
+                {/* COLUMN 2: COOKING NOW */}
+                <div className="kitchen-kanban-col">
+                  <div className="kitchen-kanban-header">
+                    <div>
+                      <div className="kitchen-col-title-group">
+                        <span className="kitchen-col-dot" style={{ backgroundColor: '#d97706' }} />
+                        <h3 className="kitchen-col-title">2. In The Pan / Cooking</h3>
+                        <span className="kitchen-col-count-badge" style={{ backgroundColor: '#d97706' }}>
+                          {cookingOrders.length}
+                        </span>
+                      </div>
+                      <div className="kitchen-col-sub">Active preparation on station</div>
+                    </div>
+                  </div>
+
+                  <div className="kitchen-col-cards-list">
+                    {cookingOrders.length === 0 ? (
+                      <div className="kitchen-col-empty-card">
+                        ✓ No tickets currently cooking
+                      </div>
+                    ) : (
+                      cookingOrders.map((ord) => renderOrderCard(ord))
+                    )}
+                  </div>
+                </div>
+
+                {/* COLUMN 3: READY TO SERVE */}
+                <div className="kitchen-kanban-col">
+                  <div className="kitchen-kanban-header">
+                    <div>
+                      <div className="kitchen-col-title-group">
+                        <span className="kitchen-col-dot" style={{ backgroundColor: '#16a34a' }} />
+                        <h3 className="kitchen-col-title">3. Plated & Ready</h3>
+                        <span className="kitchen-col-count-badge" style={{ backgroundColor: '#16a34a' }}>
+                          {readyOrders.length}
+                        </span>
+                      </div>
+                      <div className="kitchen-col-sub">Waiting for runner / butler</div>
+                    </div>
+                  </div>
+
+                  <div className="kitchen-col-cards-list">
+                    {readyOrders.length === 0 ? (
+                      <div className="kitchen-col-empty-card">
+                        ✓ No tickets waiting for pickup
+                      </div>
+                    ) : (
+                      readyOrders.map((ord) => renderOrderCard(ord))
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="kitchen-grid-container">
-                {filteredOrders.map((order) => {
-                  const isCooking = order.status === 'BEING_PREPARED';
-                  const isReady = order.status === 'READY';
-                  const hasAllergies = order.allergies && order.allergies.length > 0;
-
-                  return (
-                    <div
-                      key={order.id}
-                      className={`kds-card status-${order.status} ${order.isUrgent || hasAllergies ? 'urgent-ticket' : ''}`}
-                    >
-                      {/* Ticket Header */}
-                      <div className="kds-card-header">
-                        <div>
-                          <div className="kds-room-badge">{order.roomNumber}</div>
-                          <div className="kds-ticket-number">{order.orderNumber} • {order.tableOrRoomType || 'Suite'}</div>
-                        </div>
-
-                        {/* Prep Timer */}
-                        <div className={`kds-timer-pill ${order.elapsedMinutes > 18 ? 'timer-urgent' : order.elapsedMinutes > 12 ? 'timer-warning' : 'timer-normal'}`}>
-                          <Clock size={13} />
-                          <span>{order.elapsedMinutes}m / {order.targetMinutes}m</span>
-                        </div>
-                      </div>
-
-                      {/* Ticket Body */}
-                      <div className="kds-card-body">
-                        {/* Guest & Slot */}
-                        <div className="kds-guest-row">
-                          <span className="kds-guest-name">
-                            {order.guestName}
-                            {order.guestTier && (
-                              <span style={{ fontSize: '0.70rem', color: '#d97706', marginLeft: '6px', fontWeight: 800 }}>
-                                ★ {order.guestTier}
-                              </span>
-                            )}
-                          </span>
-                          <span className="kds-delivery-slot">Delivery: {order.deliverySlot}</span>
-                        </div>
-
-                        {/* Allergy Warning Banner */}
-                        {hasAllergies && (
-                          <div className="kds-allergy-alert">
-                            <AlertTriangle size={15} />
-                            <span>{order.allergies?.join(' • ')}</span>
-                          </div>
-                        )}
-
-                        {/* Dietary Tags */}
-                        {order.dietaryNotes && order.dietaryNotes.length > 0 && (
-                          <div className="kds-dietary-tags">
-                            {order.dietaryNotes.map((note, idx) => (
-                              <span key={idx} className="kds-dietary-badge">
-                                {note}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Items Checklist (Click item to mark done on tablet) */}
-                        <div className="kds-items-list">
-                          {order.items.map((it) => (
-                            <div
-                              key={it.id}
-                              className={`kds-item-row ${it.isPrepared ? 'prepared' : ''}`}
-                              onClick={() => toggleItemPrepared(order.id, it.id)}
-                              title="Tap item to mark prepared"
-                            >
-                              <span className="kds-item-qty">{it.quantity}x</span>
-                              <div className="kds-item-details">
-                                <div className="kds-item-name">{it.item.name}</div>
-                                {it.specialInstructions && (
-                                  <div className="kds-item-note">Note: {it.specialInstructions}</div>
-                                )}
-                              </div>
-                              {it.isPrepared ? (
-                                <Check size={16} color="#10b981" />
-                              ) : (
-                                <span style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1.5px solid #475569', display: 'inline-block' }} />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {order.specialInstructions && (
-                          <div style={{
-                            fontSize: '0.78rem',
-                            color: '#94a3b8',
-                            fontStyle: 'italic',
-                            padding: '6px 8px',
-                            background: '#111926',
-                            borderRadius: '4px',
-                            borderLeft: '3px solid #38bdf8'
-                          }}>
-                            "{order.specialInstructions}"
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Ticket Footer (Bump Action Buttons) */}
-                      <div className="kds-card-footer">
-                        {order.status === 'RECEIVED' ? (
-                          <button
-                            type="button"
-                            className="kds-bump-btn start-prep"
-                            onClick={() => handleAdvanceOrderStatus(order.id, 'BEING_PREPARED')}
-                          >
-                            <Flame size={18} />
-                            <span>Start Cooking</span>
-                          </button>
-                        ) : order.status === 'BEING_PREPARED' ? (
-                          <button
-                            type="button"
-                            className="kds-bump-btn mark-ready"
-                            onClick={() => handleAdvanceOrderStatus(order.id, 'READY')}
-                          >
-                            <CheckCircle2 size={18} />
-                            <span>Mark Ready</span>
-                          </button>
-                        ) : order.status === 'READY' ? (
-                          <button
-                            type="button"
-                            className="kds-bump-btn complete"
-                            onClick={() => handleAdvanceOrderStatus(order.id, 'DELIVERED')}
-                          >
-                            <Send size={16} />
-                            <span>Complete / Delivered</span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="kds-bump-btn complete"
-                            disabled
-                          >
-                            <Check size={16} />
-                            <span>Completed</span>
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          className="kds-details-btn"
-                          title="View Full Ticket Details"
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <Utensils size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              /* GRID CARDS VIEW */
+              <div className="kitchen-grid-view">
+                {filteredOrders.length === 0 ? (
+                  <div style={{
+                    gridColumn: '1 / -1',
+                    textAlign: 'center',
+                    padding: '60px 20px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1.5px dashed #cbd5e1'
+                  }}>
+                    <ChefHat size={48} color="#94a3b8" style={{ margin: '0 auto 16px auto', display: 'block' }} />
+                    <h3 style={{ margin: '0 0 6px 0', fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', color: '#17271f' }}>
+                      No Active Tickets Found
+                    </h3>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.90rem' }}>
+                      There are no active orders matching your current station or search filters.
+                    </p>
+                  </div>
+                ) : (
+                  filteredOrders.map((ord) => renderOrderCard(ord))
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* VIEW 2: ORDERS QUEUE TABLE */}
+        {/* ===================================================================
+            VIEW 2: ORDERS QUEUE TABLE (MATCHING ADMIN DASHBOARD LISTINGS)
+        =================================================================== */}
         {activeTab === 'orders_queue' && (
-          <div style={{
-            background: '#131c2d',
-            borderRadius: '12px',
-            border: '1.5px solid #28374f',
-            overflow: 'hidden'
-          }}>
+          <div className="kitchen-table-card">
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+              <table className="kitchen-table">
                 <thead>
-                  <tr style={{ background: '#0e1626', borderBottom: '2px solid #28374f', color: '#94a3b8', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    <th style={{ padding: '14px 18px' }}>Room</th>
-                    <th style={{ padding: '14px 18px' }}>Ticket #</th>
-                    <th style={{ padding: '14px 18px' }}>Guest Name</th>
-                    <th style={{ padding: '14px 18px' }}>Delivery Slot</th>
-                    <th style={{ padding: '14px 18px' }}>Items Summary</th>
-                    <th style={{ padding: '14px 18px' }}>Allergies / Notes</th>
-                    <th style={{ padding: '14px 18px' }}>Status</th>
-                    <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
+                  <tr>
+                    <th>Room / Suite</th>
+                    <th>Ticket #</th>
+                    <th>Guest Name</th>
+                    <th>Delivery Slot</th>
+                    <th>Items Summary</th>
+                    <th>Allergies / Flags</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((ord, idx) => (
-                    <tr
-                      key={ord.id}
-                      style={{
-                        borderBottom: idx !== filteredOrders.length - 1 ? '1px solid #1e293b' : 'none',
-                        background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
-                      }}
-                    >
-                      <td style={{ padding: '14px 18px', fontWeight: 800, color: '#ffffff', fontSize: '1.05rem' }}>
-                        {ord.roomNumber}
-                      </td>
-                      <td style={{ padding: '14px 18px', color: '#38bdf8', fontWeight: 700 }}>
-                        {ord.orderNumber}
-                      </td>
-                      <td style={{ padding: '14px 18px', color: '#f1f5f9', fontWeight: 600 }}>
-                        {ord.guestName}
-                      </td>
-                      <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>
-                        <span style={{ background: '#1e293b', padding: '3px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
-                          {ord.deliverySlot}
-                        </span>
-                      </td>
-                      <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>
-                        {ord.items.map((i) => `${i.quantity}x ${i.item.name}`).join(', ')}
-                      </td>
-                      <td style={{ padding: '14px 18px' }}>
-                        {ord.allergies && ord.allergies.length > 0 ? (
-                          <span style={{ background: '#7f1d1d', color: '#fca5a5', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>
-                            {ord.allergies.join(', ')}
-                          </span>
-                        ) : ord.dietaryNotes && ord.dietaryNotes.length > 0 ? (
-                          <span style={{ color: '#34d399', fontSize: '0.78rem' }}>
-                            {ord.dietaryNotes.join(', ')}
-                          </span>
-                        ) : (
-                          <span style={{ color: '#64748b' }}>None</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '14px 18px' }}>
-                        <select
-                          value={ord.status}
-                          onChange={(e) => handleAdvanceOrderStatus(ord.id, e.target.value as KitchenOrderStatus)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.80rem',
-                            fontWeight: 800,
-                            border: '1px solid #334155',
-                            background: ord.status === 'READY' ? '#064e3b' : ord.status === 'BEING_PREPARED' ? '#78350f' : ord.status === 'DELIVERED' ? '#1e293b' : '#0c4a6e',
-                            color: ord.status === 'READY' ? '#34d399' : ord.status === 'BEING_PREPARED' ? '#fbbf24' : ord.status === 'DELIVERED' ? '#94a3b8' : '#38bdf8',
-                            cursor: 'pointer',
-                            outline: 'none'
-                          }}
-                        >
-                          <option value="RECEIVED">RECEIVED (Queue)</option>
-                          <option value="BEING_PREPARED">BEING PREPARED (Cooking)</option>
-                          <option value="READY">READY FOR PICKUP</option>
-                          <option value="DELIVERED">DELIVERED</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrder(ord)}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            background: '#1e293b',
-                            border: '1px solid #3b4e6d',
-                            color: '#ffffff',
-                            fontSize: '0.80rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Details
-                        </button>
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                        No orders matching your filters.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredOrders.map((ord) => (
+                      <tr key={ord.id}>
+                        <td style={{ fontWeight: 800, fontSize: '1rem', color: '#17271f' }}>
+                          {ord.roomNumber}
+                        </td>
+                        <td style={{ fontWeight: 700, color: '#17271f' }}>
+                          {ord.orderNumber}
+                        </td>
+                        <td style={{ fontWeight: 600 }}>
+                          {ord.guestName}
+                        </td>
+                        <td>
+                          <span style={{ background: '#edf4f0', padding: '3px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#17271f', border: '1px solid #c2e0d1' }}>
+                            {ord.deliverySlot}
+                          </span>
+                        </td>
+                        <td style={{ color: '#475569', fontSize: '0.85rem' }}>
+                          {ord.items.map((i) => `${i.quantity}x ${i.item.name}`).join(', ')}
+                        </td>
+                        <td>
+                          {ord.allergies && ord.allergies.length > 0 ? (
+                            <span style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+                              {ord.allergies.join(', ')}
+                            </span>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontSize: '0.80rem' }}>None</span>
+                          )}
+                        </td>
+                        <td>
+                          <select
+                            value={ord.status}
+                            onChange={(e) => handleAdvanceOrderStatus(ord.id, e.target.value as KitchenOrderStatus)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              fontSize: '0.80rem',
+                              fontWeight: 700,
+                              border: '1px solid #cbd5e1',
+                              background: ord.status === 'READY' ? '#dcfce7' : ord.status === 'BEING_PREPARED' ? '#fef3c7' : ord.status === 'DELIVERED' ? '#f1f5f9' : '#e0f2fe',
+                              color: ord.status === 'READY' ? '#15803d' : ord.status === 'BEING_PREPARED' ? '#92400e' : ord.status === 'DELIVERED' ? '#475569' : '#0369a1',
+                              cursor: 'pointer',
+                              outline: 'none'
+                            }}
+                          >
+                            <option value="RECEIVED">RECEIVED (Queue)</option>
+                            <option value="BEING_PREPARED">BEING PREPARED (Cooking)</option>
+                            <option value="READY">READY FOR PICKUP</option>
+                            <option value="DELIVERED">DELIVERED</option>
+                          </select>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder(ord)}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              background: '#ffffff',
+                              border: '1.5px solid #17271f',
+                              color: '#17271f',
+                              fontSize: '0.80rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Eye size={13} />
+                            <span>View Ticket</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* VIEW 3: MENU 86 & STOCK CONTROL */}
+        {/* ===================================================================
+            VIEW 3: 86 STOCK & MENU CONTROL
+        =================================================================== */}
         {activeTab === 'inventory_86' && (
           <div style={{
-            background: '#131c2d',
+            background: '#ffffff',
             borderRadius: '12px',
-            border: '1.5px solid #28374f',
-            padding: '24px'
+            border: '1px solid #e1e7e4',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
           }}>
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>
-                Breakfast Menu Availability (86 Control)
+            <div style={{ marginBottom: '22px' }}>
+              <span className="kitchen-ops-eyebrow">STOCK & AVAILABILITY</span>
+              <h3 style={{ margin: '4px 0 6px 0', fontFamily: 'Playfair Display, serif', fontSize: '1.65rem', fontWeight: 700, color: '#17271f' }}>
+                Breakfast Item Availability (86 Control)
               </h3>
-              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.90rem' }}>
-                Toggle items out of stock in real-time. Sold-out dishes will be disabled immediately in the guest-side in-stay breakfast portal.
+              <p style={{ margin: 0, color: '#55665e', fontSize: '0.92rem' }}>
+                Toggle items out of stock in real-time. Sold-out dishes will immediately show as unavailable in the guest suite in-stay breakfast portal.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
               {mockBreakfastMenu.map((item) => {
                 const is86 = Boolean(inventory86List[item.id]);
 
@@ -1054,36 +1195,37 @@ export const KitchenPortal: React.FC = () => {
                   <div
                     key={item.id}
                     style={{
-                      background: is86 ? '#201616' : '#182235',
-                      border: is86 ? '1.5px solid #7f1d1d' : '1.5px solid #2b3952',
+                      background: is86 ? '#fff5f5' : '#f8fafc',
+                      border: is86 ? '1.5px solid #fca5a5' : '1.5px solid #e2e8f0',
                       borderRadius: '10px',
-                      padding: '16px',
+                      padding: '18px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      gap: '12px'
+                      gap: '14px'
                     }}
                   >
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#b3832c', textTransform: 'uppercase' }}>
                           {item.category.replace('_', ' ')}
                         </span>
                         <span style={{
                           fontSize: '0.75rem',
-                          fontWeight: 800,
-                          padding: '2px 8px',
+                          fontWeight: 700,
+                          padding: '3px 8px',
                           borderRadius: '4px',
-                          background: is86 ? '#7f1d1d' : '#064e3b',
-                          color: is86 ? '#fca5a5' : '#34d399'
+                          background: is86 ? '#fee2e2' : '#dcfce7',
+                          color: is86 ? '#991b1b' : '#15803d',
+                          border: is86 ? '1px solid #fca5a5' : '1px solid #bbf7d0'
                         }}>
                           {is86 ? '86 / SOLD OUT' : 'AVAILABLE'}
                         </span>
                       </div>
-                      <h4 style={{ margin: '6px 0 4px 0', fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
+                      <h4 style={{ margin: '8px 0 4px 0', fontSize: '1.1rem', fontWeight: 700, color: '#17271f' }}>
                         {item.name}
                       </h4>
-                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#55665e', lineHeight: 1.45 }}>
                         {item.description}
                       </p>
                     </div>
@@ -1093,13 +1235,13 @@ export const KitchenPortal: React.FC = () => {
                       onClick={() => toggle86Item(item.id, item.name)}
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
+                        padding: '11px 14px',
                         borderRadius: '6px',
-                        fontWeight: 800,
-                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        fontSize: '0.88rem',
                         cursor: 'pointer',
                         border: 'none',
-                        background: is86 ? '#10b981' : '#ef4444',
+                        background: is86 ? '#17271f' : '#dc2626',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
@@ -1126,26 +1268,32 @@ export const KitchenPortal: React.FC = () => {
           </div>
         )}
 
-        {/* VIEW 4: DELIVERED ARCHIVE */}
+        {/* ===================================================================
+            VIEW 4: DELIVERED ARCHIVE
+        =================================================================== */}
         {activeTab === 'delivered_archive' && (
           <div style={{
-            background: '#131c2d',
+            background: '#ffffff',
             borderRadius: '12px',
-            border: '1.5px solid #28374f',
-            padding: '24px'
+            border: '1px solid #e1e7e4',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>
-              Completed & Delivered Breakfast Orders ({orders.filter((o) => o.status === 'DELIVERED').length})
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <span className="kitchen-ops-eyebrow">HISTORICAL DISPATCH LOG</span>
+              <h3 style={{ margin: '4px 0 0 0', fontFamily: 'Playfair Display, serif', fontSize: '1.65rem', fontWeight: 700, color: '#17271f' }}>
+                Completed Breakfast Orders Today ({orders.filter((o) => o.status === 'DELIVERED').length})
+              </h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {orders.filter((o) => o.status === 'DELIVERED').map((ord) => (
                 <div
                   key={ord.id}
                   style={{
                     padding: '14px 18px',
                     borderRadius: '8px',
-                    background: '#182235',
-                    border: '1px solid #28374f',
+                    background: '#f8fafc',
+                    border: '1px solid #edf2f7',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -1155,13 +1303,13 @@ export const KitchenPortal: React.FC = () => {
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <strong style={{ fontSize: '1.15rem', color: '#ffffff' }}>{ord.roomNumber}</strong>
-                      <span style={{ color: '#38bdf8', fontSize: '0.82rem', fontWeight: 700 }}>{ord.orderNumber}</span>
-                      <span style={{ color: '#10b981', fontSize: '0.78rem', fontWeight: 800, background: '#064e3b', padding: '2px 8px', borderRadius: '4px' }}>
+                      <strong style={{ fontSize: '1.15rem', color: '#17271f' }}>{ord.roomNumber}</strong>
+                      <span style={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>{ord.orderNumber}</span>
+                      <span style={{ color: '#15803d', fontSize: '0.75rem', fontWeight: 700, background: '#dcfce7', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bbf7d0' }}>
                         DELIVERED
                       </span>
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.84rem', marginTop: '4px' }}>
+                    <div style={{ color: '#55665e', fontSize: '0.85rem', marginTop: '4px' }}>
                       {ord.guestName} • Delivery Window: {ord.deliverySlot} • Items: {ord.items.map((i) => `${i.quantity}x ${i.item.name}`).join(', ')}
                     </div>
                   </div>
@@ -1172,15 +1320,15 @@ export const KitchenPortal: React.FC = () => {
                     style={{
                       padding: '8px 14px',
                       borderRadius: '6px',
-                      background: '#1e293b',
-                      border: '1px solid #475569',
-                      color: '#cbd5e1',
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      color: '#17271f',
                       fontSize: '0.80rem',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    Re-open to Kitchen
+                    Re-open Ticket
                   </button>
                 </div>
               ))}
@@ -1189,15 +1337,15 @@ export const KitchenPortal: React.FC = () => {
         )}
       </main>
 
-      {/* ---------------------------------------------------------------------
-          MODAL: FULL ORDER TICKET DETAILS & PRINT
-      --------------------------------------------------------------------- */}
+      {/* ===================================================================
+          MODAL: FULL KITCHEN ORDER TICKET (KOT)
+      =================================================================== */}
       {selectedOrder && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(5, 10, 20, 0.75)',
-          backdropFilter: 'blur(5px)',
+          backgroundColor: 'rgba(14, 26, 20, 0.65)',
+          backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1205,30 +1353,30 @@ export const KitchenPortal: React.FC = () => {
           padding: '20px'
         }}>
           <div style={{
-            backgroundColor: '#141e30',
-            borderRadius: '16px',
-            border: '2px solid #2d3e5b',
+            backgroundColor: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e1e7e4',
             width: '100%',
             maxWidth: '620px',
             maxHeight: '90vh',
             overflowY: 'auto',
             padding: '28px',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)'
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)'
           }}>
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div>
-                <span style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Kitchen Order Ticket (KOT)
+                <span style={{ fontSize: '0.75rem', color: '#b3832c', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  KITCHEN ORDER TICKET (KOT)
                 </span>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: '1.65rem', fontWeight: 800, color: '#ffffff' }}>
+                <h3 style={{ margin: '4px 0 0 0', fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 700, color: '#17271f' }}>
                   {selectedOrder.roomNumber} • {selectedOrder.orderNumber}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedOrder(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.4rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1.4rem', cursor: 'pointer' }}
               >
                 ✕
               </button>
@@ -1236,54 +1384,68 @@ export const KitchenPortal: React.FC = () => {
 
             {/* Order Details Bar */}
             <div style={{
-              background: '#0e1626',
-              borderRadius: '8px',
-              padding: '14px 16px',
+              background: '#f8fafc',
+              borderRadius: '10px',
+              padding: '16px',
               marginBottom: '20px',
-              border: '1px solid #1e293b',
+              border: '1px solid #e1e7e4',
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '12px',
               fontSize: '0.85rem'
             }}>
               <div>
-                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 700 }}>GUEST</span>
-                <strong style={{ color: '#ffffff' }}>{selectedOrder.guestName} ({selectedOrder.guestTier || 'Standard'})</strong>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>GUEST</span>
+                <strong style={{ color: '#17271f' }}>{selectedOrder.guestName} ({selectedOrder.guestTier || 'Standard VIP'})</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 700 }}>DELIVERY WINDOW</span>
-                <strong style={{ color: '#38bdf8' }}>{selectedOrder.deliverySlot}</strong>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>DELIVERY WINDOW</span>
+                <strong style={{ color: '#17271f' }}>{selectedOrder.deliverySlot}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 700 }}>TIME ELAPSED</span>
-                <strong style={{ color: '#fbbf24' }}>{selectedOrder.elapsedMinutes} mins (Target: {selectedOrder.targetMinutes}m)</strong>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>TIME ELAPSED</span>
+                <strong style={{ color: '#92400e' }}>{selectedOrder.elapsedMinutes} mins (Target: {selectedOrder.targetMinutes}m)</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 700 }}>CURRENT STATUS</span>
-                <strong style={{ color: '#10b981' }}>{selectedOrder.status}</strong>
+                <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>CURRENT STAGE</span>
+                <span style={{
+                  display: 'inline-block',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  backgroundColor: selectedOrder.status === 'READY' ? '#dcfce7' : selectedOrder.status === 'BEING_PREPARED' ? '#fef9c3' : '#e0f2fe',
+                  color: selectedOrder.status === 'READY' ? '#15803d' : selectedOrder.status === 'BEING_PREPARED' ? '#854d0e' : '#0369a1'
+                }}>
+                  {selectedOrder.status}
+                </span>
               </div>
             </div>
 
             {/* Allergies / Special Alerts */}
             {selectedOrder.allergies && selectedOrder.allergies.length > 0 && (
               <div style={{
-                background: '#450a0a',
-                border: '1.5px solid #ef4444',
-                color: '#fca5a5',
+                background: '#fee2e2',
+                border: '1px solid #fca5a5',
+                color: '#991b1b',
                 padding: '10px 14px',
                 borderRadius: '8px',
                 marginBottom: '18px',
-                fontWeight: 800,
-                fontSize: '0.85rem'
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}>
-                ⚠️ CRITICAL ALLERGIES: {selectedOrder.allergies.join(' • ')}
+                <AlertTriangle size={16} />
+                <span>CRITICAL ALLERGIES: {selectedOrder.allergies.join(' • ')}</span>
               </div>
             )}
 
             {/* Item Breakdown */}
             <div style={{ marginBottom: '22px' }}>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 10px 0' }}>
-                Course & Item Preparation Checklist
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#17271f', textTransform: 'uppercase', margin: '0 0 10px 0', letterSpacing: '0.04em' }}>
+                Course & Item Preparation Checklist (Tap to Strike)
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedOrder.items.map((it) => (
@@ -1293,37 +1455,38 @@ export const KitchenPortal: React.FC = () => {
                     style={{
                       padding: '12px 14px',
                       borderRadius: '8px',
-                      background: it.isPrepared ? '#0b1120' : '#182438',
-                      border: '1px solid #28374f',
+                      background: it.isPrepared ? '#f8fafc' : '#ffffff',
+                      border: '1px solid #e2e8f0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      opacity: it.isPrepared ? 0.6 : 1
+                      cursor: 'pointer'
                     }}
                   >
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ background: '#0284c7', color: '#ffffff', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', fontSize: '0.82rem' }}>
+                        <span style={{ background: '#17271f', color: '#ffffff', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', fontSize: '0.82rem' }}>
                           {it.quantity}x
                         </span>
-                        <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>{it.item.name}</strong>
+                        <strong style={{ color: it.isPrepared ? '#64748b' : '#17271f', fontSize: '0.95rem', textDecoration: it.isPrepared ? 'line-through' : 'none' }}>
+                          {it.item.name}
+                        </strong>
                       </div>
                       {it.specialInstructions && (
-                        <div style={{ fontSize: '0.80rem', color: '#fbbf24', marginTop: '4px', marginLeft: '34px' }}>
-                          Instruction: {it.specialInstructions}
+                        <div style={{ fontSize: '0.80rem', color: '#b45309', marginTop: '4px', marginLeft: '34px', fontWeight: 600 }}>
+                          Note: {it.specialInstructions}
                         </div>
                       )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
                         {it.station}
                       </span>
                       {it.isPrepared ? (
-                        <CheckCircle2 size={20} color="#10b981" />
+                        <CheckCircle2 size={20} color="#16a34a" />
                       ) : (
-                        <span style={{ width: '20px', height: '20px', borderRadius: '4px', border: '2px solid #475569', display: 'inline-block' }} />
+                        <span style={{ width: '20px', height: '20px', borderRadius: '4px', border: '2px solid #cbd5e1', display: 'inline-block' }} />
                       )}
                     </div>
                   </div>
@@ -1332,7 +1495,7 @@ export const KitchenPortal: React.FC = () => {
             </div>
 
             {/* Actions Row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid #222f46', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid #e5e7eb', paddingTop: '18px' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -1340,12 +1503,12 @@ export const KitchenPortal: React.FC = () => {
                 }}
                 style={{
                   padding: '10px 16px',
-                  borderRadius: '8px',
-                  background: '#1e293b',
-                  border: '1px solid #334155',
-                  color: '#cbd5e1',
+                  borderRadius: '6px',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  color: '#17271f',
                   fontSize: '0.85rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -1362,19 +1525,39 @@ export const KitchenPortal: React.FC = () => {
                   onClick={() => setSelectedOrder(null)}
                   style={{
                     padding: '10px 16px',
-                    borderRadius: '8px',
-                    background: '#1e293b',
-                    border: '1px solid #334155',
-                    color: '#94a3b8',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#64748b',
                     fontSize: '0.85rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >
                   Close
                 </button>
 
-                {selectedOrder.status !== 'READY' && (
+                {selectedOrder.status === 'RECEIVED' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAdvanceOrderStatus(selectedOrder.id, 'BEING_PREPARED');
+                      setSelectedOrder(null);
+                    }}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '6px',
+                      background: '#17271f',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Start Cooking 🔥
+                  </button>
+                ) : selectedOrder.status === 'BEING_PREPARED' ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -1383,16 +1566,36 @@ export const KitchenPortal: React.FC = () => {
                     }}
                     style={{
                       padding: '10px 18px',
-                      borderRadius: '8px',
-                      background: '#10b981',
+                      borderRadius: '6px',
+                      background: '#16a34a',
                       border: 'none',
                       color: '#ffffff',
                       fontSize: '0.85rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    Mark Ready for Pickup
+                    Mark Ready for Pickup 🔔
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAdvanceOrderStatus(selectedOrder.id, 'DELIVERED');
+                      setSelectedOrder(null);
+                    }}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '6px',
+                      background: '#17271f',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Dispatch / Delivered ✅
                   </button>
                 )}
               </div>
@@ -1402,6 +1605,163 @@ export const KitchenPortal: React.FC = () => {
       )}
     </div>
   );
+
+  // -------------------------------------------------------------------------
+  // 7. HELPER: RENDER INDIVIDUAL TICKET CARD
+  // -------------------------------------------------------------------------
+  function renderOrderCard(order: KitchenOrderRecord) {
+    const hasAllergies = order.allergies && order.allergies.length > 0;
+    const isReady = order.status === 'READY';
+    const isCooking = order.status === 'BEING_PREPARED';
+    const isNew = order.status === 'RECEIVED';
+
+    return (
+      <div
+        key={order.id}
+        className={`kds-card ${order.isUrgent || hasAllergies ? 'urgent' : ''}`}
+      >
+        {/* Ticket Header */}
+        <div className="kds-card-header">
+          <div>
+            <div className="kds-room-badge">
+              <span>{order.roomNumber}</span>
+            </div>
+            <div className="kds-ticket-id">
+              {order.orderNumber} • {order.tableOrRoomType || 'Suite'}
+            </div>
+          </div>
+
+          {/* Timer Pill */}
+          <div
+            className={`kds-timer-pill ${
+              order.elapsedMinutes > 18
+                ? 'timer-red'
+                : isReady
+                ? 'timer-green'
+                : isCooking
+                ? 'timer-amber'
+                : 'timer-blue'
+            }`}
+          >
+            <Clock size={12} />
+            <span>
+              {isReady
+                ? 'Ready'
+                : `${order.elapsedMinutes}m / ${order.targetMinutes}m`}
+            </span>
+          </div>
+        </div>
+
+        {/* Ticket Body */}
+        <div className="kds-card-body">
+          {/* Guest Line */}
+          <div className="kds-guest-line">
+            <span className="kds-guest-name">{order.guestName}</span>
+            <span className="kds-slot-badge">{order.deliverySlot}</span>
+          </div>
+
+          {/* Allergy Callout Banner */}
+          {hasAllergies && (
+            <div className="kds-allergy-banner">
+              <AlertTriangle size={15} />
+              <span>ALLERGY: {order.allergies?.join(' • ')}</span>
+            </div>
+          )}
+
+          {/* Items Checklist (Tap to Strike) */}
+          <div className="kds-items-list">
+            {order.items.map((it) => (
+              <div
+                key={it.id}
+                className={`kds-item-row ${it.isPrepared ? 'done' : ''}`}
+                onClick={() => toggleItemPrepared(order.id, it.id)}
+                title="Tap item to mark prepared"
+              >
+                <span className="kds-item-qty">{it.quantity}x</span>
+                <div className="kds-item-info">
+                  <div className="kds-item-name">{it.item.name}</div>
+                  {it.specialInstructions && (
+                    <div className="kds-item-instruction">
+                      Note: {it.specialInstructions}
+                    </div>
+                  )}
+                </div>
+                {it.isPrepared ? (
+                  <Check size={16} color="#16a34a" />
+                ) : (
+                  <span
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '4px',
+                      border: '1.5px solid #cbd5e1',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Guest Note */}
+          {order.specialInstructions && (
+            <div className="kds-special-note">"{order.specialInstructions}"</div>
+          )}
+        </div>
+
+        {/* Ticket Footer / Action Buttons */}
+        <div className="kds-card-footer">
+          {isNew ? (
+            <button
+              type="button"
+              className="kds-action-btn btn-cook"
+              onClick={() => handleAdvanceOrderStatus(order.id, 'BEING_PREPARED')}
+            >
+              <Flame size={16} />
+              <span>Start Cooking</span>
+            </button>
+          ) : isCooking ? (
+            <button
+              type="button"
+              className="kds-action-btn btn-ready"
+              onClick={() => handleAdvanceOrderStatus(order.id, 'READY')}
+            >
+              <CheckCircle2 size={16} />
+              <span>Mark Ready</span>
+            </button>
+          ) : isReady ? (
+            <button
+              type="button"
+              className="kds-action-btn btn-dispatch"
+              onClick={() => handleAdvanceOrderStatus(order.id, 'DELIVERED')}
+            >
+              <Send size={15} />
+              <span>Hand Off to Runner</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="kds-action-btn btn-dispatch"
+              disabled
+            >
+              <Check size={15} />
+              <span>Completed</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="kds-inspect-btn"
+            title="Inspect Full Ticket"
+            onClick={() => setSelectedOrder(order)}
+          >
+            <Eye size={17} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default KitchenPortal;
