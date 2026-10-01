@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { mockBreakfastMenu } from '../../data/mockBreakfast';
 import {
@@ -17,17 +17,18 @@ import {
 import './kitchen.css';
 import {
   ChefHat, Clock, AlertTriangle, CheckCircle, CheckCircle2,
-  Flame, Coffee, Utensils, Search, Filter, Volume2, VolumeX,
-  Printer, ArrowLeft, LogOut, Check, RefreshCw, X, ShieldAlert,
-  SlidersHorizontal, Sparkles, Send, Eye, ShieldCheck, CheckSquare,
-  Square, Menu, LayoutGrid, Columns, Table as TableIcon, Mail, Lock
+  Flame, Coffee, Utensils, Search, Volume2, VolumeX,
+  Printer, ArrowLeft, LogOut, Check, X, ShieldAlert,
+  SlidersHorizontal, Sparkles, Send, Eye, ShieldCheck,
+  Menu, LayoutGrid, Columns, Table as TableIcon, Mail, Lock,
+  KeyRound, HelpCircle, ArrowRight
 } from 'lucide-react';
 
 export const KitchenPortal: React.FC = () => {
   const { navigateTo, addToast, activeBreakfastOrder } = useApp();
 
   // -------------------------------------------------------------------------
-  // 1. AUTHENTICATION STATE
+  // 1. AUTHENTICATION & MULTI-STEP 2FA STATE
   // -------------------------------------------------------------------------
   const [currentUser, setCurrentUser] = useState<KitchenStaffUser | null>(() => {
     try {
@@ -38,18 +39,88 @@ export const KitchenPortal: React.FC = () => {
     }
   });
 
+  // Landing Auth Flow Stages: 'landing' | 'credentials' | '2fa' | 'register'
+  const [authStage, setAuthStage] = useState<'landing' | 'credentials' | '2fa' | 'register'>('landing');
+
+  // Step 1: Credentials
   const [loginEmail, setLoginEmail] = useState<string>('prabhat.appzoro@gmail.com');
   const [loginPassword, setLoginPassword] = useState<string>('123456');
-  const [loginError, setLoginError] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // Step 2: 2FA Digits (6 Digits)
+  const [otpDigits, setOtpDigits] = useState<string[]>(['1', '2', '3', '4', '5', '6']);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Registration modal state
+  const [registerName, setRegisterName] = useState<string>('');
+  const [registerEmail, setRegisterEmail] = useState<string>('');
+  const [registerStation, setRegisterStation] = useState<KitchenStation>('HOT_LINE');
+
+  // Handle Step 1: Submit Email + Password -> Advance to 2FA
+  const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
+    setAuthError('');
 
     if (
       (loginEmail.trim().toLowerCase() === 'prabhat.appzoro@gmail.com' && loginPassword === '123456') ||
       loginPassword === '123456'
     ) {
+      setAuthStage('2fa');
+      addToast(
+        'info',
+        '2FA Passcode Dispatched',
+        `A 6-digit verification code (123456) was dispatched to ${loginEmail}.`
+      );
+    } else {
+      setAuthError('Invalid email or password. Use prabhat.appzoro@gmail.com and password: 123456');
+    }
+  };
+
+  // Handle OTP digit typing with auto-advance
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      // Paste handling
+      const pasted = value.replace(/\D/g, '').slice(0, 6);
+      if (pasted.length > 0) {
+        const newDigits = [...otpDigits];
+        for (let i = 0; i < 6; i++) {
+          newDigits[i] = pasted[i] || '';
+        }
+        setOtpDigits(newDigits);
+        const nextIdx = Math.min(pasted.length, 5);
+        otpInputRefs.current[nextIdx]?.focus();
+      }
+      return;
+    }
+
+    const cleanChar = value.replace(/\D/g, '');
+    const newDigits = [...otpDigits];
+    newDigits[index] = cleanChar;
+    setOtpDigits(newDigits);
+
+    if (cleanChar && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Handle Step 2: Verify 2FA Code -> Land on Main Page
+  const handleVerify2FASubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+
+    const fullCode = otpDigits.join('');
+    if (fullCode.length !== 6) {
+      setAuthError('Please enter all 6 digits of the verification code.');
+      return;
+    }
+
+    if (fullCode === '123456' || fullCode.length === 6) {
       const matched = kitchenStaffTeam.find(
         (s) => s.email.toLowerCase() === loginEmail.trim().toLowerCase()
       ) || {
@@ -59,20 +130,54 @@ export const KitchenPortal: React.FC = () => {
 
       setCurrentUser(matched);
       localStorage.setItem('evolve_kitchen_auth_user', JSON.stringify(matched));
-      addToast('success', 'Staff Signed In', `Welcome Chef ${matched.name} to Evolve Kitchen.`);
+      setAuthStage('landing');
+      addToast(
+        'success',
+        '2FA Verified Successfully',
+        `Welcome Chef ${matched.name} to Evolve Kitchen Terminal.`
+      );
     } else {
-      setLoginError('Invalid credentials. Use prabhat.appzoro@gmail.com and password: 123456');
+      setAuthError('Invalid 2FA code. Please use demo code: 123456');
     }
+  };
+
+  const handleResend2FA = () => {
+    setOtpDigits(['1', '2', '3', '4', '5', '6']);
+    setAuthError('');
+    addToast('info', 'Code Resent', `A new verification code (123456) was dispatched to ${loginEmail}.`);
+  };
+
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerName.trim() || !registerEmail.trim()) {
+      setAuthError('Please provide your name and email address.');
+      return;
+    }
+
+    const newStaff: KitchenStaffUser = {
+      id: `staff-${Date.now()}`,
+      name: registerName.trim(),
+      email: registerEmail.trim(),
+      role: 'line_cook',
+      roleTitle: 'Kitchen Staff',
+      station: registerStation,
+    };
+
+    setCurrentUser(newStaff);
+    localStorage.setItem('evolve_kitchen_auth_user', JSON.stringify(newStaff));
+    setAuthStage('landing');
+    addToast('success', 'Staff Badge Created', `Welcome Chef ${newStaff.name} to the team!`);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('evolve_kitchen_auth_user');
+    setAuthStage('landing');
     addToast('info', 'Logged Out', 'Signed out from Kitchen Staff Terminal.');
   };
 
   // -------------------------------------------------------------------------
-  // 2. ORDERS & SYSTEM DATA
+  // 2. LIVE ORDERS & SYSTEM DATA
   // -------------------------------------------------------------------------
   const [orders, setOrders] = useState<KitchenOrderRecord[]>(() => {
     try {
@@ -140,7 +245,7 @@ export const KitchenPortal: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Audio Chime Synthesizer for Kitchen Notifications
+  // Audio Chime Synthesizer
   const [audioAlertEnabled, setAudioAlertEnabled] = useState<boolean>(true);
   const playKitchenChime = (type: 'ready' | 'alert') => {
     if (!audioAlertEnabled) return;
@@ -152,8 +257,8 @@ export const KitchenPortal: React.FC = () => {
       gain.connect(ctx.destination);
 
       if (type === 'ready') {
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
         osc.start();
@@ -198,7 +303,7 @@ export const KitchenPortal: React.FC = () => {
   };
 
   // -------------------------------------------------------------------------
-  // 3. ORDER ACTIONS (ONE-TAP PROGRESSION)
+  // 3. ORDER STATUS PROGRESSION (ONE-TAP ACTIONS)
   // -------------------------------------------------------------------------
   const handleAdvanceOrderStatus = (orderId: string, nextStatus?: KitchenOrderStatus) => {
     setOrders((prev) =>
@@ -261,7 +366,7 @@ export const KitchenPortal: React.FC = () => {
     );
   };
 
-  // Add a quick simulation ticket
+  // Add a sample ticket for instant live testing
   const handleAddSampleOrder = () => {
     const randomRoom = `Suite ${Math.floor(100 + Math.random() * 800)}`;
     const randomTicket = `BF-${Math.floor(7800 + Math.random() * 200)}`;
@@ -334,22 +439,18 @@ export const KitchenPortal: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((ord) => {
-      // Tab matching
       if (activeTab === 'delivered_archive' && ord.status !== 'DELIVERED') return false;
       if (activeTab === 'live_kds' && ord.status === 'DELIVERED') return false;
 
-      // Station filter
       if (selectedStation !== 'ALL') {
         const hasStationItem = ord.items.some((it) => it.station === selectedStation);
         if (!hasStationItem) return false;
       }
 
-      // Allergies only
       if (allergiesOnly && (!ord.allergies || ord.allergies.length === 0)) {
         return false;
       }
 
-      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesRoom = ord.roomNumber.toLowerCase().includes(q);
@@ -363,7 +464,6 @@ export const KitchenPortal: React.FC = () => {
     });
   }, [orders, activeTab, selectedStation, allergiesOnly, searchQuery]);
 
-  // Kanban Columns Data
   const receivedOrders = useMemo(
     () => filteredOrders.filter((o) => o.status === 'RECEIVED'),
     [filteredOrders]
@@ -378,194 +478,513 @@ export const KitchenPortal: React.FC = () => {
   );
 
   // -------------------------------------------------------------------------
-  // 5. RENDER: LOGIN SCREEN (SPLIT-SCREEN ADMIN LUXURY THEME)
+  // 5. RENDER: KITCHEN PARTNER LANDING PAGE (MATCHING ATTACHED ZOMATO DESIGN)
   // -------------------------------------------------------------------------
   if (!currentUser) {
     return (
-      <div className="kitchen-login-split-wrapper">
-        {/* Left Side: Luxury Culinary Brand Banner */}
-        <div
-          className="kitchen-hero-side"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1800&q=85')`,
-          }}
-        >
-          <div className="kitchen-hero-overlay" />
+      <div className="kitchen-partner-landing">
+        {/* Top Header with Bold Brand Logo (matching screenshot) */}
+        <header className="kitchen-partner-header">
+          <div className="kitchen-partner-logo">
+            <span className="kitchen-partner-brand-text">evolve</span>
+            <span className="kitchen-partner-brand-badge">Kitchen Partner</span>
+          </div>
 
-          <div className="kitchen-hero-content">
-            {/* Header Brand Badge */}
-            <div className="kitchen-brand-header">
-              <div className="kitchen-brand-icon">
-                <ChefHat size={26} color="#17271f" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              type="button"
+              className="kitchen-partner-top-link"
+              onClick={() => navigateTo('landing')}
+              title="Return to Hotel Website"
+            >
+              <ArrowLeft size={15} />
+              <span>Guest Site</span>
+            </button>
+            <button
+              type="button"
+              className="kitchen-partner-top-link"
+              onClick={() => {
+                setLoginEmail('prabhat.appzoro@gmail.com');
+                setLoginPassword('123456');
+                setAuthStage('credentials');
+              }}
+              title="Kitchen Lead Access"
+            >
+              <HelpCircle size={15} />
+              <span>Shift Support</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Centered Body with Chef Cooking Illustration & CTA Buttons */}
+        <main className="kitchen-partner-body">
+          {/* Chef Cooking at Stove & Work Table Vector Illustration */}
+          <div className="kitchen-chef-illustration-box">
+            <svg
+              className="kitchen-chef-svg"
+              viewBox="0 0 500 320"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Kitchen Background Floor & Wall Line */}
+              <line x1="20" y1="280" x2="480" y2="280" stroke="#E2E8F0" strokeWidth="2.5" strokeDasharray="6 6" />
+
+              {/* Prep Counter Table (Right) */}
+              <rect x="250" y="170" width="180" height="12" rx="3" fill="#C5D3E8" />
+              <line x1="265" y1="182" x2="265" y2="280" stroke="#94A3B8" strokeWidth="4" />
+              <line x1="415" y1="182" x2="415" y2="280" stroke="#94A3B8" strokeWidth="4" />
+              <line x1="265" y1="230" x2="415" y2="230" stroke="#CBD5E1" strokeWidth="2" />
+
+              {/* Cutting board and breakfast items on table */}
+              <rect x="275" y="162" width="46" height="8" rx="2" fill="#E2E8F0" />
+              <circle cx="288" cy="158" r="4.5" fill="#EF4444" />
+              <circle cx="298" cy="157" r="5" fill="#F59E0B" />
+              <circle cx="308" cy="159" r="4" fill="#10B981" />
+
+              {/* Paper Bag for Delivery on Table */}
+              <path d="M355 130 H395 L390 170 H360 Z" fill="#C99632" />
+              <rect x="368" y="145" width="14" height="18" rx="2" fill="#B3832C" />
+              <circle cx="375" cy="154" r="3" fill="#FDF6EB" />
+
+              {/* Kitchen Stove (Left) */}
+              <rect x="110" y="180" width="105" height="100" rx="8" fill="#CBD5E1" />
+              <rect x="115" y="185" width="95" height="90" rx="6" fill="#E2E8F0" />
+              {/* Oven Glass Door */}
+              <rect x="125" y="205" width="75" height="60" rx="4" fill="#FFFFFF" stroke="#94A3B8" strokeWidth="2" />
+              <rect x="135" y="215" width="55" height="40" rx="3" fill="#F1F5F9" />
+              {/* 4 Dials / Knobs */}
+              <circle cx="132" cy="195" r="4" fill="#64748B" />
+              <circle cx="152" cy="195" r="4" fill="#64748B" />
+              <circle cx="172" cy="195" r="4" fill="#64748B" />
+              <circle cx="192" cy="195" r="4" fill="#64748B" />
+
+              {/* Frying Pan & Flame on Cooktop */}
+              {/* Stove burner grate */}
+              <ellipse cx="160" cy="180" rx="22" ry="5" fill="#64748B" />
+              {/* Frying Pan */}
+              <rect x="140" y="165" width="40" height="15" rx="3" fill="#475569" />
+              <line x1="180" y1="172" x2="215" y2="160" stroke="#334155" strokeWidth="4.5" strokeLinecap="round" />
+              {/* Rising Flame / Steam from Pan */}
+              <path d="M152 165 C150 148, 160 142, 158 132 C165 140, 168 150, 162 165 Z" fill="#F97316" opacity="0.9" />
+              <path d="M162 165 C160 152, 170 148, 168 138 C174 145, 176 154, 172 165 Z" fill="#EAB308" opacity="0.95" />
+              <path d="M156 165 C154 156, 162 153, 160 144 C164 150, 166 156, 163 165 Z" fill="#EF4444" opacity="0.8" />
+
+              {/* Chef Character (Center) */}
+              {/* Legs */}
+              <line x1="228" y1="240" x2="225" y2="280" stroke="#1E293B" strokeWidth="12" strokeLinecap="round" />
+              <line x1="248" y1="240" x2="252" y2="280" stroke="#1E293B" strokeWidth="12" strokeLinecap="round" />
+              {/* Shoes */}
+              <ellipse cx="223" cy="281" rx="8" ry="3" fill="#D97706" />
+              <ellipse cx="254" cy="281" rx="8" ry="3" fill="#D97706" />
+
+              {/* Chef Body & Apron */}
+              <path d="M220 180 Q238 175 256 180 L254 245 Q238 248 222 245 Z" fill="#F43F5E" />
+              <rect x="226" y="186" width="24" height="42" rx="3" fill="#FB7185" />
+              <line x1="238" y1="180" x2="238" y2="155" stroke="#FFFFFF" strokeWidth="3" />
+
+              {/* White Chef Tunic Collar & Neck */}
+              <rect x="232" y="150" width="14" height="16" rx="2" fill="#F87171" />
+              <circle cx="239" cy="144" r="14" fill="#FBCFE8" />
+
+              {/* Chef Face & Hair */}
+              <path d="M228 138 Q239 130 250 138" stroke="#0284C7" strokeWidth="5" strokeLinecap="round" />
+              {/* Blue Chef Hat */}
+              <path d="M228 132 C222 120, 230 108, 239 108 C248 108, 256 120, 250 132 Z" fill="#0284C7" />
+              <ellipse cx="239" cy="132" rx="14" ry="4" fill="#0369A1" />
+
+              {/* Left Arm Holding Spatula towards Pan */}
+              <path d="M225 180 Q195 185 168 168" stroke="#FBCFE8" strokeWidth="9" strokeLinecap="round" />
+              <path d="M168 168 L155 160" stroke="#D97706" strokeWidth="4" strokeLinecap="round" />
+
+              {/* Right Arm resting towards table */}
+              <path d="M252 180 Q268 190 282 178" stroke="#FBCFE8" strokeWidth="9" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Heading (matching Zomato Restaurant Partner dashboard style) */}
+          <h2 className="kitchen-partner-title">
+            Evolve Restaurant Partner dashboard
+          </h2>
+          <p className="kitchen-partner-subtitle">
+            Breakfast order dispatch and real-time kitchen display system for suites & guest dining.
+          </p>
+
+          {/* Action Buttons: Login (Primary Blue) & Register (Outline) */}
+          <div className="kitchen-partner-actions">
+            <button
+              type="button"
+              className="kitchen-btn-primary-login"
+              onClick={() => {
+                setAuthError('');
+                setAuthStage('credentials');
+              }}
+            >
+              Login
+            </button>
+
+            <button
+              type="button"
+              className="kitchen-btn-secondary-register"
+              onClick={() => {
+                setAuthError('');
+                setAuthStage('register');
+              }}
+            >
+              Register
+            </button>
+          </div>
+        </main>
+
+        {/* -------------------------------------------------------------------
+            MODAL 1: STEP 1 - EMAIL & PASSWORD CREDENTIALS
+        ------------------------------------------------------------------- */}
+        {authStage === 'credentials' && (
+          <div className="kitchen-auth-backdrop">
+            <div className="kitchen-auth-modal">
+              {/* Modal Header */}
+              <div className="kitchen-auth-modal-header">
+                <button
+                  type="button"
+                  className="kitchen-auth-back-btn"
+                  onClick={() => setAuthStage('landing')}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back to Landing</span>
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-auth-close-btn"
+                  onClick={() => setAuthStage('landing')}
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <div className="kitchen-brand-titles">
-                <span className="kitchen-brand-name">EVOLVE</span>
-                <span className="kitchen-brand-badge">Hotels & Resorts • Kitchen & Breakfast Suite</span>
-              </div>
-            </div>
 
-            {/* Central Hero Headline */}
-            <div className="kitchen-hero-body">
-              <div className="kitchen-eyebrow-pill">
-                <Sparkles size={14} color="#dda943" />
-                <span>Next-Gen Kitchen Display & Expediting</span>
+              {/* Step Indicator */}
+              <div className="kitchen-auth-step-indicator">
+                <div className="kitchen-step-dot active">1</div>
+                <div className="kitchen-step-connector" />
+                <div className="kitchen-step-dot inactive">2</div>
               </div>
 
-              <h1 className="kitchen-hero-heading">
-                Culinary Precision & Room Service Flow
-              </h1>
+              <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: '#f0f5f2',
+                  color: '#17271f',
+                  margin: '0 auto 12px auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <ChefHat size={26} color="#17271f" />
+                </div>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontWeight: 800, color: '#17271f' }}>
+                  Kitchen Staff Sign In
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                  Step 1: Enter your staff email & password to request a 2FA code.
+                </p>
+              </div>
 
-              <p className="kitchen-hero-text">
-                Manage morning breakfast prep rails, monitor dietary allergen alerts, route tickets to specific stations, and coordinate runner deliveries with zero confusion.
-              </p>
+              {authError && (
+                <div style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <AlertTriangle size={16} />
+                  <span>{authError}</span>
+                </div>
+              )}
 
-              {/* Feature Pills */}
-              <div className="kitchen-feature-grid">
-                <div className="kitchen-feature-pill">
-                  <div className="kitchen-feature-icon">
-                    <Columns size={18} />
+              <form onSubmit={handleCredentialsSubmit}>
+                <div className="kitchen-modal-input-group">
+                  <label className="kitchen-modal-label">Staff Email Address</label>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <Mail size={16} style={{ position: 'absolute', left: '12px', color: '#64748b' }} />
+                    <input
+                      type="email"
+                      className="kitchen-modal-input"
+                      style={{ paddingLeft: '38px' }}
+                      placeholder="prabhat.appzoro@gmail.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                  <span className="kitchen-feature-label">Live KDS Rail</span>
                 </div>
-                <div className="kitchen-feature-pill">
-                  <div className="kitchen-feature-icon">
-                    <AlertTriangle size={18} />
+
+                <div className="kitchen-modal-input-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label className="kitchen-modal-label" style={{ margin: 0 }}>Password</label>
+                    <span style={{ fontSize: '0.75rem', color: '#b3832c', fontWeight: 800 }}>Pass: 123456</span>
                   </div>
-                  <span className="kitchen-feature-label">Allergy Sentinel</span>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <Lock size={16} style={{ position: 'absolute', left: '12px', color: '#64748b' }} />
+                    <input
+                      type="password"
+                      className="kitchen-modal-input"
+                      style={{ paddingLeft: '38px' }}
+                      placeholder="••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="kitchen-feature-pill">
-                  <div className="kitchen-feature-icon">
-                    <SlidersHorizontal size={18} />
-                  </div>
-                  <span className="kitchen-feature-label">86 Item Control</span>
+
+                <button type="submit" className="kitchen-modal-submit-btn">
+                  <span>Continue to 2FA Code</span>
+                  <ArrowRight size={16} />
+                </button>
+              </form>
+
+              {/* Quick One-Tap Staff Selector */}
+              <div className="kitchen-demo-box">
+                <div className="kitchen-demo-header">
+                  <span className="kitchen-demo-title">
+                    <ChefHat size={13} color="#dda943" />
+                    Quick One-Tap Credentials
+                  </span>
+                  <span className="kitchen-demo-badge">DEMO</span>
                 </div>
-                <div className="kitchen-feature-pill">
-                  <div className="kitchen-feature-icon">
-                    <Coffee size={18} />
-                  </div>
-                  <span className="kitchen-feature-label">Station Routing</span>
+                <div className="kitchen-demo-grid">
+                  <button
+                    type="button"
+                    className="kitchen-demo-card"
+                    onClick={() => {
+                      setLoginEmail('prabhat.appzoro@gmail.com');
+                      setLoginPassword('123456');
+                    }}
+                  >
+                    <div>
+                      <span className="kitchen-demo-role-name">Chef Prabhat</span>
+                      <span className="kitchen-demo-desc">Executive Kitchen Lead • All Stations</span>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#173f34' }}>Fill →</span>
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Bottom Note */}
-            <div style={{ fontSize: '0.78rem', color: '#9bb1a8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={16} color="#dda943" />
-              <span>Dedicated Kitchen Terminal • Tablet & Touch-First Operations</span>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Right Side: Clean White Login Card */}
-        <div className="kitchen-login-side">
-          <div className="kitchen-login-container">
-            <div className="kitchen-form-header">
-              <span className="kitchen-form-eyebrow">STAFF ACCESS</span>
-              <h2 className="kitchen-form-title">Kitchen Terminal Sign In</h2>
-              <p className="kitchen-form-desc">
-                Sign in with your kitchen staff credentials to access live breakfast tickets and station controls.
-              </p>
-            </div>
-
-            {loginError && (
-              <div style={{
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#991b1b',
-                padding: '12px 14px',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                marginBottom: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <AlertTriangle size={16} />
-                <span>{loginError}</span>
+        {/* -------------------------------------------------------------------
+            MODAL 2: STEP 2 - EMAIL 2FA VERIFICATION CODE
+        ------------------------------------------------------------------- */}
+        {authStage === '2fa' && (
+          <div className="kitchen-auth-backdrop">
+            <div className="kitchen-auth-modal">
+              {/* Modal Header */}
+              <div className="kitchen-auth-modal-header">
+                <button
+                  type="button"
+                  className="kitchen-auth-back-btn"
+                  onClick={() => setAuthStage('credentials')}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Change Email</span>
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-auth-close-btn"
+                  onClick={() => setAuthStage('landing')}
+                >
+                  <X size={18} />
+                </button>
               </div>
-            )}
 
-            <form onSubmit={handleLoginSubmit}>
-              <div className="kitchen-form-group">
-                <label className="kitchen-form-label">Staff Email Address</label>
-                <div className="kitchen-input-wrapper">
-                  <Mail size={18} className="kitchen-input-icon" />
+              {/* Step Indicator */}
+              <div className="kitchen-auth-step-indicator">
+                <div className="kitchen-step-dot completed">✓</div>
+                <div className="kitchen-step-connector completed" />
+                <div className="kitchen-step-dot active">2</div>
+              </div>
+
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: '#fef6e7',
+                  color: '#b3832c',
+                  margin: '0 auto 12px auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <KeyRound size={26} color="#b3832c" />
+                </div>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontWeight: 800, color: '#17271f' }}>
+                  Two-Factor Email Code
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                  We sent a 6-digit security code to:
+                </p>
+                <strong style={{ display: 'block', color: '#17271f', fontSize: '0.90rem', marginTop: '2px' }}>
+                  {loginEmail}
+                </strong>
+              </div>
+
+              {/* Demo Notice Banner */}
+              <div className="kitchen-2fa-info-banner">
+                <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <strong>Demo 2FA Code: 123456</strong>
+                  <div style={{ fontSize: '0.78rem', marginTop: '2px', color: '#15803d' }}>
+                    Enter 123456 or keep pre-filled to verify access.
+                  </div>
+                </div>
+              </div>
+
+              {authError && (
+                <div style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <AlertTriangle size={16} />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleVerify2FASubmit}>
+                {/* 6 Digit OTP Inputs */}
+                <div className="kitchen-otp-container">
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        otpInputRefs.current[index] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      className="kitchen-otp-box"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '0.82rem' }}>
+                  <span style={{ color: '#64748b' }}>Didn't receive the email?</span>
+                  <button
+                    type="button"
+                    onClick={handleResend2FA}
+                    style={{ background: 'none', border: 'none', color: '#173f34', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                  >
+                    Resend Code
+                  </button>
+                </div>
+
+                <button type="submit" className="kitchen-modal-submit-btn">
+                  <CheckCircle size={17} />
+                  <span>Verify & Enter Kitchen KDS</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* -------------------------------------------------------------------
+            MODAL 3: STAFF REGISTRATION / ONBOARDING
+        ------------------------------------------------------------------- */}
+        {authStage === 'register' && (
+          <div className="kitchen-auth-backdrop">
+            <div className="kitchen-auth-modal">
+              <div className="kitchen-auth-modal-header">
+                <button
+                  type="button"
+                  className="kitchen-auth-back-btn"
+                  onClick={() => setAuthStage('landing')}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back to Landing</span>
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-auth-close-btn"
+                  onClick={() => setAuthStage('landing')}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontWeight: 800, color: '#17271f' }}>
+                  Register Kitchen Staff
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                  Join the Evolve culinary team to access morning breakfast station orders.
+                </p>
+              </div>
+
+              <form onSubmit={handleRegisterSubmit}>
+                <div className="kitchen-modal-input-group">
+                  <label className="kitchen-modal-label">Full Name & Chef Title</label>
+                  <input
+                    type="text"
+                    className="kitchen-modal-input"
+                    placeholder="e.g. Chef Aliyah Noor"
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="kitchen-modal-input-group">
+                  <label className="kitchen-modal-label">Hotel Staff Email</label>
                   <input
                     type="email"
-                    className="kitchen-input"
-                    placeholder="prabhat.appzoro@gmail.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="kitchen-modal-input"
+                    placeholder="aliyah@evolvehotel.com"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
                     required
                   />
                 </div>
-              </div>
 
-              <div className="kitchen-form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label className="kitchen-form-label" style={{ margin: 0 }}>Passcode / Password</label>
-                  <span style={{ fontSize: '0.75rem', color: '#b3832c', fontWeight: 800 }}>Default: 123456</span>
+                <div className="kitchen-modal-input-group">
+                  <label className="kitchen-modal-label">Assigned Station</label>
+                  <select
+                    className="kitchen-modal-input"
+                    value={registerStation}
+                    onChange={(e) => setRegisterStation(e.target.value as KitchenStation)}
+                  >
+                    <option value="HOT_LINE">Hot Kitchen Line (Eggs & Griddle)</option>
+                    <option value="COLD_BAKERY">Bakery & Pastry (Bowls & Breads)</option>
+                    <option value="BARISTA">Barista & Beverages (Juices & Coffee)</option>
+                    <option value="ALL">All Stations (Expeditor / Lead)</option>
+                  </select>
                 </div>
-                <div className="kitchen-input-wrapper">
-                  <Lock size={18} className="kitchen-input-icon" />
-                  <input
-                    type="password"
-                    className="kitchen-input"
-                    placeholder="••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
 
-              <button type="submit" className="kitchen-submit-btn">
-                <span>Sign In to Kitchen Terminal</span>
-              </button>
-            </form>
-
-            {/* Quick One-Tap Staff Selector */}
-            <div className="kitchen-demo-box">
-              <div className="kitchen-demo-header">
-                <span className="kitchen-demo-title">
-                  <ChefHat size={14} color="#dda943" />
-                  Quick One-Tap Shift Log In
-                </span>
-                <span className="kitchen-demo-badge">DEMO ACCESS</span>
-              </div>
-              <div className="kitchen-demo-grid">
-                <button
-                  type="button"
-                  className="kitchen-demo-card"
-                  onClick={() => {
-                    setLoginEmail('prabhat.appzoro@gmail.com');
-                    setLoginPassword('123456');
-                  }}
-                >
-                  <div>
-                    <span className="kitchen-demo-role-name">Chef Prabhat</span>
-                    <span className="kitchen-demo-desc">Executive Kitchen Lead • All Stations</span>
-                  </div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#173f34' }}>Tap to Fill →</span>
+                <button type="submit" className="kitchen-modal-submit-btn">
+                  <span>Register & Open Terminal</span>
                 </button>
-                <button
-                  type="button"
-                  className="kitchen-demo-card"
-                  onClick={() => {
-                    setLoginEmail('mateo.kitchen@evolvehotel.com');
-                    setLoginPassword('123456');
-                  }}
-                >
-                  <div>
-                    <span className="kitchen-demo-role-name">Chef Mateo Vance</span>
-                    <span className="kitchen-demo-desc">Hot Line Lead • Eggs & Griddles</span>
-                  </div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#173f34' }}>Tap to Fill →</span>
-                </button>
-              </div>
+              </form>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -795,7 +1214,7 @@ export const KitchenPortal: React.FC = () => {
               </div>
             )}
 
-            {/* Add Test Ticket Button (Great for testing live flow!) */}
+            {/* Add Test Ticket Button */}
             <button
               type="button"
               className="kitchen-icon-btn"
@@ -914,7 +1333,7 @@ export const KitchenPortal: React.FC = () => {
               <span>Allergy Alerts Only ({allergyAlertCount})</span>
             </button>
 
-            {/* Station Pills (On tablet or when sidebar is collapsed) */}
+            {/* Station Pills */}
             {(['ALL', 'HOT_LINE', 'COLD_BAKERY', 'BARISTA'] as KitchenStation[]).map((station) => (
               <button
                 key={station}
@@ -950,7 +1369,7 @@ export const KitchenPortal: React.FC = () => {
         {activeTab === 'live_kds' && (
           <div>
             {viewMode === 'kanban' ? (
-              /* KANBAN 3-COLUMN VIEW (SUPER SIMPLE FOR KITCHEN UNDERSTANDING) */
+              /* KANBAN 3-COLUMN VIEW */
               <div className="kitchen-kanban-board">
                 {/* COLUMN 1: NEW / QUEUE */}
                 <div className="kitchen-kanban-col">

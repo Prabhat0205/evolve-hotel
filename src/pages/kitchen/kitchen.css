@@ -1,302 +1,345 @@
 /* ==========================================================================
-   EVOLVE HOTELS & RESORTS — KITCHEN DISPLAY SYSTEM & STAFF PORTAL
+   EVOLVE HOTELS & RESORTS — KITCHEN DISPLAY SYSTEM & PARTNER PORTAL
    THEMED EXACTLY LIKE THE ADMIN PORTAL (LUXURY DEEP EMERALD, GOLD, CLEAN LIGHT WORKSPACE)
-   OPTIMIZED FOR TABLET (TOUCH-FIRST), DESKTOP, AND MOBILE
+   FEATURING CLEAN PARTNER LANDING, EMAIL + PASSWORD, EMAIL 2FA, AND LIVE KDS
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   SPLIT-SCREEN LOGIN FOR KITCHEN STAFF (IDENTICAL LUXURY ADMIN DESIGN)
+   1. KITCHEN PARTNER LANDING PAGE (MATCHING ZOMATO PARTNER STYLE)
    -------------------------------------------------------------------------- */
-.kitchen-login-split-wrapper {
+.kitchen-partner-landing {
   min-height: 100vh;
   width: 100%;
   display: flex;
-  background-color: var(--color-bg, #f6f3ec);
-  font-family: var(--font-body, -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif);
-  color: var(--color-text-primary, #17271f);
+  flex-direction: column;
+  background-color: #f7f9f8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
+  color: #17271f;
   overflow-x: hidden;
 }
 
-/* Left Hero Banner */
-.kitchen-hero-side {
-  flex: 1.15;
-  min-height: 100vh;
-  position: relative;
+/* Top Navigation Bar */
+.kitchen-partner-header {
+  height: 64px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5ebe7;
+  padding: 0 40px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: space-between;
-  padding: 48px 56px;
-  background-size: cover;
-  background-position: center;
-  overflow: hidden;
-  color: #ffffff;
+  box-sizing: border-box;
 }
 
-.kitchen-hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    145deg,
-    rgba(14, 26, 21, 0.94) 0%,
-    rgba(23, 63, 52, 0.88) 55%,
-    rgba(14, 26, 21, 0.95) 100%
-  );
-  backdrop-filter: blur(1.5px);
-  z-index: 1;
-}
-
-.kitchen-hero-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: space-between;
-}
-
-/* Left Brand Header */
-.kitchen-brand-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.kitchen-brand-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #dda943 0%, #c99632 100%);
-  color: #17271f;
-  font-family: var(--font-heading, 'Playfair Display', serif);
-  font-weight: 800;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 14px rgba(221, 169, 67, 0.35);
-}
-
-.kitchen-brand-titles {
-  display: flex;
-  flex-direction: column;
-}
-
-.kitchen-brand-name {
-  font-family: var(--font-heading, 'Playfair Display', serif);
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #ffffff;
-  line-height: 1.1;
-}
-
-.kitchen-brand-badge {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #dda943;
-  margin-top: 3px;
-}
-
-/* Hero Center Copy */
-.kitchen-hero-body {
-  max-width: 580px;
-  margin: 40px 0;
-}
-
-.kitchen-eyebrow-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  background: rgba(221, 169, 67, 0.15);
-  border: 1px solid rgba(221, 169, 67, 0.35);
-  color: #f7d58d;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  margin-bottom: 20px;
-}
-
-.kitchen-hero-heading {
-  font-family: var(--font-heading, 'Playfair Display', serif);
-  font-size: clamp(2rem, 3.2vw, 3rem);
-  font-weight: 700;
-  line-height: 1.18;
-  color: #ffffff;
-  margin-bottom: 18px;
-}
-
-.kitchen-hero-text {
-  font-size: 1.05rem;
-  line-height: 1.6;
-  color: #d1dad6;
-  margin-bottom: 36px;
-}
-
-/* Operational Highlights Cards */
-.kitchen-feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 12px;
-}
-
-.kitchen-feature-pill {
+.kitchen-partner-logo {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  backdrop-filter: blur(8px);
-  transition: background 0.15s ease, transform 0.15s ease;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.kitchen-feature-pill:hover {
-  background: rgba(255, 255, 255, 0.14);
-  transform: translateY(-2px);
+.kitchen-partner-brand-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: #17271f;
+  line-height: 1;
 }
 
-.kitchen-feature-icon {
-  color: #dda943;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.kitchen-feature-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-/* Right Side: Login Form (Admin Form Style) */
-.kitchen-login-side {
-  flex: 0.95;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 56px;
-  background-color: #ffffff;
-}
-
-.kitchen-login-container {
-  width: 100%;
-  max-width: 440px;
-}
-
-.kitchen-form-header {
-  margin-bottom: 28px;
-}
-
-.kitchen-form-eyebrow {
-  display: inline-block;
-  font-size: 0.75rem;
+.kitchen-partner-brand-badge {
+  font-size: 0.6875rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #997125;
-  margin-bottom: 6px;
+  background: #fdf6e9;
+  border: 1px solid #fae2b8;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
-.kitchen-form-title {
-  font-family: var(--font-heading, 'Playfair Display', serif);
-  font-size: 2.1rem;
-  font-weight: 700;
-  color: #17271f;
-  margin: 0 0 8px 0;
-  line-height: 1.2;
-}
-
-.kitchen-form-desc {
-  font-size: 0.9375rem;
+.kitchen-partner-top-link {
+  font-size: 0.85rem;
+  font-weight: 600;
   color: #55665e;
-  line-height: 1.5;
-  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
 }
 
-.kitchen-form-group {
+.kitchen-partner-top-link:hover {
+  color: #17271f;
+}
+
+/* Centered Landing Body */
+.kitchen-partner-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Chef Illustration Container */
+.kitchen-chef-illustration-box {
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.kitchen-chef-svg {
+  width: 100%;
+  height: auto;
+  max-height: 230px;
+  filter: drop-shadow(0 8px 16px rgba(23, 39, 31, 0.06));
+}
+
+/* Title & Subtitle */
+.kitchen-partner-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.01em;
+}
+
+.kitchen-partner-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  max-width: 440px;
+  margin: 0 0 28px 0;
+  line-height: 1.5;
+}
+
+/* Action Buttons (Login & Register) */
+.kitchen-partner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 320px;
+  max-width: 100%;
+}
+
+.kitchen-btn-primary-login {
+  width: 100%;
+  padding: 13px 24px;
+  background-color: #1a67ed;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 10px rgba(26, 103, 237, 0.22);
+}
+
+.kitchen-btn-primary-login:hover {
+  background-color: #1555c7;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(26, 103, 237, 0.32);
+}
+
+.kitchen-btn-secondary-register {
+  width: 100%;
+  padding: 12px 24px;
+  background-color: #ffffff;
+  color: #1a67ed;
+  border: 1.5px solid #1a67ed;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kitchen-btn-secondary-register:hover {
+  background-color: #eff6ff;
+  border-color: #1555c7;
+}
+
+/* --------------------------------------------------------------------------
+   2. AUTH MODAL: STEP 1 (EMAIL + PASS) & STEP 2 (EMAIL 2FA)
+   -------------------------------------------------------------------------- */
+.kitchen-auth-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(14, 26, 21, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.kitchen-auth-modal {
+  background-color: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e1e7e4;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+  padding: 32px 30px;
+  box-sizing: border-box;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.kitchen-auth-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 20px;
 }
 
-.kitchen-form-label {
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #17271f;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 8px;
-}
-
-.kitchen-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.kitchen-input-icon {
-  position: absolute;
-  left: 14px;
-  color: #6e7a76;
-  pointer-events: none;
-}
-
-.kitchen-input {
-  width: 100%;
-  padding: 13px 14px 13px 44px;
-  border-radius: 8px;
-  border: 1.5px solid #d4ded9;
-  background-color: #ffffff;
-  color: #17271f;
-  font-size: 0.95rem;
-  font-family: inherit;
-  box-sizing: border-box;
-  transition: all 0.15s ease;
-  min-height: 48px;
-}
-
-.kitchen-input:focus {
-  outline: none;
-  border-color: #173f34;
-  box-shadow: 0 0 0 3px rgba(23, 63, 52, 0.12);
-}
-
-.kitchen-submit-btn {
-  width: 100%;
-  padding: 14px 20px;
-  border-radius: 8px;
-  background: #17271f;
-  color: #ffffff;
+.kitchen-auth-back-btn {
+  background: none;
   border: none;
-  font-size: 1rem;
+  color: #55665e;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+.kitchen-auth-back-btn:hover {
+  color: #17271f;
+}
+
+.kitchen-auth-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 10px;
-  box-shadow: 0 4px 14px rgba(23, 63, 52, 0.22);
+}
+
+.kitchen-auth-close-btn:hover {
+  color: #17271f;
+  background-color: #f1f5f9;
+}
+
+.kitchen-auth-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.kitchen-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.80rem;
+  font-weight: 800;
   transition: all 0.15s ease;
-  min-height: 50px;
-  margin-top: 10px;
 }
 
-.kitchen-submit-btn:hover {
-  background: #173f34;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(23, 63, 52, 0.3);
+.kitchen-step-dot.active {
+  background-color: #17271f;
+  color: #ffffff;
 }
 
-/* Quick One-Tap Staff Select Box */
+.kitchen-step-dot.completed {
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+.kitchen-step-dot.inactive {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+.kitchen-step-connector {
+  width: 32px;
+  height: 2px;
+  background-color: #e2e8f0;
+}
+
+.kitchen-step-connector.completed {
+  background-color: #16a34a;
+}
+
+/* 2FA Digit Input Grid */
+.kitchen-otp-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.kitchen-otp-box {
+  width: 48px;
+  height: 56px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #17271f;
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.kitchen-otp-box:focus {
+  border-color: #173f34;
+  box-shadow: 0 0 0 3px rgba(23, 63, 52, 0.12);
+}
+
+.kitchen-2fa-info-banner {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: #166534;
+}
+
+/* Demo Role Accounts Quick-Select Drawer */
 .kitchen-demo-box {
-  margin-top: 26px;
-  padding: 16px;
+  margin-top: 24px;
+  padding: 14px;
   background: #f7f9f8;
   border: 1px dashed #d6cebf;
   border-radius: 10px;
@@ -306,13 +349,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .kitchen-demo-title {
-  font-size: 0.78125rem;
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #17271f;
   display: flex;
@@ -322,7 +365,7 @@
 
 .kitchen-demo-badge {
   font-size: 0.6875rem;
-  padding: 2px 8px;
+  padding: 2px 7px;
   background: #fcf6eb;
   color: #8c6317;
   border-radius: 4px;
@@ -332,7 +375,7 @@
 .kitchen-demo-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .kitchen-demo-card {
@@ -340,7 +383,7 @@
   background: #ffffff;
   border: 1px solid #e1e7e4;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
@@ -355,21 +398,77 @@
 }
 
 .kitchen-demo-role-name {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #17271f;
   display: block;
 }
 
 .kitchen-demo-desc {
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   color: #55665e;
   display: block;
-  margin-top: 2px;
+  margin-top: 1px;
+}
+
+/* Form inputs & buttons inside modal */
+.kitchen-modal-input-group {
+  margin-bottom: 16px;
+}
+
+.kitchen-modal-label {
+  display: block;
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: #17271f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.kitchen-modal-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #d4ded9;
+  background-color: #ffffff;
+  color: #17271f;
+  font-size: 0.92rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.kitchen-modal-input:focus {
+  border-color: #173f34;
+  box-shadow: 0 0 0 3px rgba(23, 63, 52, 0.1);
+}
+
+.kitchen-modal-submit-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  background-color: #17271f;
+  color: #ffffff;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  margin-top: 12px;
+}
+
+.kitchen-modal-submit-btn:hover {
+  background-color: #173f34;
+  transform: translateY(-1px);
 }
 
 /* --------------------------------------------------------------------------
-   OPERATIONS DASHBOARD LAYOUT (SAME THEME AS ADMIN OPS SIDEBAR & WORKSPACE)
+   3. OPERATIONS DASHBOARD LAYOUT (SAME THEME AS ADMIN OPS SIDEBAR & WORKSPACE)
    -------------------------------------------------------------------------- */
 .kitchen-ops-layout {
   display: flex;
@@ -377,7 +476,7 @@
   width: 100%;
   background-color: #f7f9f8;
   color: #17271f;
-  font-family: var(--font-body, -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif);
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
 }
 
 /* Left Dark Emerald Sidebar (Identical to Admin Sidebar) */
@@ -421,7 +520,7 @@
 }
 
 .kitchen-ops-title {
-  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.55rem;
   font-weight: 700;
   color: #ffffff;
@@ -616,7 +715,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   MAIN OPERATIONS WORKSPACE (MATCHING ADMIN OPS MAIN)
+   4. MAIN WORKSPACE (MATCHING ADMIN OPS MAIN)
    -------------------------------------------------------------------------- */
 .kitchen-ops-main {
   flex: 1;
@@ -627,7 +726,7 @@
   max-width: 100%;
 }
 
-/* Header Area */
+/* Header Row */
 .kitchen-ops-header-row {
   display: flex;
   align-items: flex-start;
@@ -648,7 +747,7 @@
 }
 
 .kitchen-ops-heading {
-  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 2.2rem;
   font-weight: 700;
   color: #17271f;
@@ -662,7 +761,7 @@
   margin: 0;
 }
 
-/* Quick Action Controls on Header Right */
+/* Header Action Controls */
 .kitchen-header-actions {
   display: flex;
   align-items: center;
@@ -711,7 +810,7 @@
   border-color: #17271f;
 }
 
-/* View Mode Toggle Segmented Control */
+/* View Mode Segmented Control */
 .kitchen-view-mode-group {
   display: inline-flex;
   background: #e9eeea;
@@ -742,7 +841,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   METRIC / KPI CARDS (MATCHING ADMIN OPS STAT CARDS)
+   5. METRIC / KPI CARDS (ADMIN STYLE)
    -------------------------------------------------------------------------- */
 .kitchen-metrics-grid {
   display: grid;
@@ -800,7 +899,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   FILTER & SEARCH CONTROLS BAR
+   6. CONTROLS BAR (SEARCH & QUICK FILTERS)
    -------------------------------------------------------------------------- */
 .kitchen-controls-bar {
   background: #ffffff;
@@ -842,7 +941,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   KANBAN TICKET BOARD (SIMPLE 3-COLUMN DISPLAY FOR FAST CHEF UNDERSTANDING)
+   7. KANBAN TICKET BOARD (3 COLUMNS)
    -------------------------------------------------------------------------- */
 .kitchen-kanban-board {
   display: grid;
@@ -912,7 +1011,6 @@
   margin-top: 2px;
 }
 
-/* Kanban Cards Stream */
 .kitchen-col-cards-list {
   display: flex;
   flex-direction: column;
@@ -932,7 +1030,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   TICKET CARD (CLEAN LUXURY HOTEL KDS CARD)
+   8. TICKET CARDS (CLEAN LUXURY HOTEL KDS CARD)
    -------------------------------------------------------------------------- */
 .kds-card {
   background: #ffffff;
@@ -956,7 +1054,6 @@
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.14);
 }
 
-/* Ticket Header */
 .kds-card-header {
   background: #f8fafc;
   padding: 12px 14px;
@@ -1017,7 +1114,12 @@
   animation: pulse-urgent 1.5s infinite;
 }
 
-/* Ticket Body */
+@keyframes pulse-urgent {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
 .kds-card-body {
   padding: 14px;
   display: flex;
@@ -1048,7 +1150,6 @@
   border: 1px solid #c8ded4;
 }
 
-/* Critical Allergy Callout Banner */
 .kds-allergy-banner {
   background: #fef2f2;
   border: 1.5px solid #fca5a5;
@@ -1060,10 +1161,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  letter-spacing: 0.02em;
 }
 
-/* Dish Items Checklist */
 .kds-items-list {
   display: flex;
   flex-direction: column;
@@ -1124,7 +1223,6 @@
   margin-top: 1px;
 }
 
-/* Guest Special Instructions */
 .kds-special-note {
   font-size: 0.78rem;
   color: #4b5d54;
@@ -1135,7 +1233,6 @@
   border-radius: 4px;
 }
 
-/* Ticket Footer / Action Buttons */
 .kds-card-footer {
   padding: 10px 14px;
   background: #f8fafc;
@@ -1209,7 +1306,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   GRID CARDS VIEW
+   9. GRID & TABLE VIEWS
    -------------------------------------------------------------------------- */
 .kitchen-grid-view {
   display: grid;
@@ -1217,9 +1314,6 @@
   gap: 20px;
 }
 
-/* --------------------------------------------------------------------------
-   TABLE VIEW (MATCHING ADMIN LISTINGS)
-   -------------------------------------------------------------------------- */
 .kitchen-table-card {
   background: #ffffff;
   border-radius: 10px;
@@ -1257,19 +1351,11 @@
 }
 
 /* --------------------------------------------------------------------------
-   RESPONSIVE DESIGN (TABLET FOCUS)
+   10. RESPONSIVE MEDIA QUERIES (TABLET & MOBILE)
    -------------------------------------------------------------------------- */
 @media (max-width: 1024px) {
-  .kitchen-login-split-wrapper {
-    flex-direction: column;
-  }
-  .kitchen-hero-side {
-    min-height: auto;
-    padding: 36px 28px;
-  }
-  .kitchen-login-side {
-    min-height: auto;
-    padding: 36px 28px;
+  .kitchen-partner-header {
+    padding: 0 20px;
   }
   .kitchen-ops-sidebar {
     width: 72px;
