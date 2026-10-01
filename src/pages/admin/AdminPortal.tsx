@@ -921,6 +921,9 @@ const PropertyManagerDashboard: React.FC = () => {
   // Guest Cases state
   const [guestCasesList, setGuestCasesList] = useState<GuestCaseItem[]>(mockGuestCases);
   const [selectedCaseForModal, setSelectedCaseForModal] = useState<GuestCaseItem | null>(null);
+  const [editCaseStatus, setEditCaseStatus] = useState<'Open' | 'In Progress' | 'Resolved' | 'Closed'>('Open');
+  const [editCasePriority, setEditCasePriority] = useState<'Normal' | 'High' | 'Urgent'>('Normal');
+  const [editCaseAssignedRole, setEditCaseAssignedRole] = useState<string>('Front Desk');
   const [showCreateCaseModal, setShowCreateCaseModal] = useState<boolean>(false);
   const [newCaseMember, setNewCaseMember] = useState<string>('Emily Anderson');
   const [newCaseType, setNewCaseType] = useState<string>('Missing Stay');
@@ -928,6 +931,14 @@ const PropertyManagerDashboard: React.FC = () => {
   const [newCasePriority, setNewCasePriority] = useState<'Normal' | 'High' | 'Urgent'>('Normal');
   const [newCaseAssignedRole, setNewCaseAssignedRole] = useState<'Property Manager' | 'Front Desk'>('Property Manager');
   const [caseReplyNote, setCaseReplyNote] = useState<string>('');
+
+  const openCaseModal = (item: GuestCaseItem) => {
+    setSelectedCaseForModal(item);
+    setEditCaseStatus(item.status);
+    setEditCasePriority(item.priority);
+    setEditCaseAssignedRole(item.assignedRole);
+    setCaseReplyNote('');
+  };
 
   // Guest Cases Filters state
   const [caseFilterSearch, setCaseFilterSearch] = useState<string>('');
@@ -1473,20 +1484,62 @@ const PropertyManagerDashboard: React.FC = () => {
     setEditingNoteReq(null);
   };
 
-  // Handle Update / Resolve Shared Case
-  const handleAddCaseNote = (statusOverride?: 'Open' | 'In Progress' | 'Resolved' | 'Closed') => {
-    if (!selectedCaseForModal) return;
-    if (!caseReplyNote.trim() && !statusOverride) {
-      addToast('error', 'Missing Input', 'Please enter your review notes or investigation findings before submitting.');
-      return;
-    }
-    const newStatus = statusOverride || selectedCaseForModal.status;
+  // Quick Inline Status Update from Cases Table (allows Front Desk and Property Manager to instantly resolve or progress cases)
+  const handleInlineCaseStatusChange = (caseId: string, newStatus: 'Open' | 'In Progress' | 'Resolved' | 'Closed') => {
+    const targetCase = guestCasesList.find(c => c.id === caseId);
+    if (!targetCase) return;
     const authorRole = currentAdmin.role === 'front_desk' ? 'Front Desk' : 'Property Manager';
-    const newNote = caseReplyNote.trim() ? {
+    const newNote = {
       author: currentAdmin.name,
       role: authorRole,
       time: 'Just now',
-      message: caseReplyNote.trim()
+      message: `Status updated from ${targetCase.status} to ${newStatus}.`
+    };
+    const updatedList = guestCasesList.map(c =>
+      c.id === caseId ? {
+        ...c,
+        status: newStatus,
+        updatedBy: currentAdmin.name,
+        timelineUpdates: [...(c.timelineUpdates || []), newNote]
+      } : c
+    );
+    setGuestCasesList(updatedList);
+    addToast('success', 'Case Status Updated', `${targetCase.caseNumber} marked as ${newStatus}. All roles updated.`);
+  };
+
+  // Handle Update / Resolve Shared Case from Modal (supports status, priority, role edits, and review notes)
+  const handleAddCaseNote = (statusOverride?: 'Open' | 'In Progress' | 'Resolved' | 'Closed') => {
+    if (!selectedCaseForModal) return;
+    const finalStatus = statusOverride || editCaseStatus || selectedCaseForModal.status;
+    const finalPriority = editCasePriority || selectedCaseForModal.priority;
+    const finalAssignedRole = editCaseAssignedRole || selectedCaseForModal.assignedRole;
+
+    const authorRole = currentAdmin.role === 'front_desk' ? 'Front Desk' : 'Property Manager';
+    const noteText = caseReplyNote.trim();
+
+    const hasStatusChange = finalStatus !== selectedCaseForModal.status;
+    const hasPriorityChange = finalPriority !== selectedCaseForModal.priority;
+    const hasRoleChange = finalAssignedRole !== selectedCaseForModal.assignedRole;
+
+    if (!noteText && !hasStatusChange && !hasPriorityChange && !hasRoleChange && !statusOverride) {
+      setSelectedCaseForModal(null);
+      return;
+    }
+
+    let noteMessage = noteText;
+    if (!noteMessage) {
+      const details: string[] = [];
+      if (hasStatusChange) details.push(`Status updated to ${finalStatus}`);
+      if (hasRoleChange) details.push(`Reassigned to ${finalAssignedRole}`);
+      if (hasPriorityChange) details.push(`Priority changed to ${finalPriority}`);
+      noteMessage = details.join(' • ');
+    }
+
+    const newNote = noteMessage ? {
+      author: currentAdmin.name,
+      role: authorRole,
+      time: 'Just now',
+      message: noteMessage
     } : null;
 
     const updatedTimeline = newNote
@@ -1496,14 +1549,19 @@ const PropertyManagerDashboard: React.FC = () => {
     const updatedList = guestCasesList.map(c =>
       c.id === selectedCaseForModal.id ? {
         ...c,
-        status: newStatus,
+        status: finalStatus,
+        priority: finalPriority,
+        assignedRole: finalAssignedRole,
         updatedBy: currentAdmin.name,
         timelineUpdates: updatedTimeline
       } : c
     );
 
     setGuestCasesList(updatedList);
-    addToast('success', 'Shared Case Updated', `${selectedCaseForModal.caseNumber} updated to ${newStatus}. All roles notified on shared ledger.`);
+    const msg = finalStatus === 'Resolved' 
+      ? `${selectedCaseForModal.caseNumber} marked as Resolved.` 
+      : `${selectedCaseForModal.caseNumber} updated to ${finalStatus}.`;
+    addToast('success', 'Shared Case Updated', msg);
     setSelectedCaseForModal(null);
     setCaseReplyNote('');
   };
@@ -3985,28 +4043,49 @@ const PropertyManagerDashboard: React.FC = () => {
                                 </span>
                               </td>
 
-                              {/* 5. Status (No dot before status, clean styled text) */}
-                              <td style={{ padding: '14px 18px', whiteSpace: 'nowrap', fontSize: '0.85rem', fontWeight: 600, color: statusColor }}>
-                                {item.status}
+                              {/* 5. Status (Interactive Selector to easily resolve / progress cases) */}
+                              <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                                <select
+                                  value={item.status}
+                                  onChange={(e) => handleInlineCaseStatusChange(item.id, e.target.value as any)}
+                                  title="Change case status directly"
+                                  style={{
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 700,
+                                    border: '1.5px solid #cbd5e1',
+                                    backgroundColor: item.status === 'Resolved' || item.status === 'Closed' ? '#f0fdf4' : item.status === 'In Progress' ? '#fffbeb' : '#f0f9ff',
+                                    color: statusColor,
+                                    cursor: 'pointer',
+                                    outline: 'none'
+                                  }}
+                                >
+                                  <option value="Open">Open</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Resolved">✓ Resolved</option>
+                                  <option value="Closed">Closed</option>
+                                </select>
                               </td>
 
-                              {/* 6. Action with View Icon */}
+                              {/* 6. Action with Review & Edit Button */}
                               <td style={{ padding: '14px 18px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <button
                                   type="button"
-                                  title="View Case Details"
-                                  aria-label="View Case Details"
+                                  title="Review & Edit Case"
+                                  aria-label="Review & Edit Case"
                                   style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '32px',
-                                    height: '32px',
+                                    gap: '5px',
+                                    padding: '6px 12px',
                                     borderRadius: '6px',
                                     border: '1.5px solid #17271f',
                                     backgroundColor: '#ffffff',
                                     color: '#17271f',
                                     cursor: 'pointer',
+                                    fontSize: '0.80rem',
+                                    fontWeight: 600,
                                     transition: 'all 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => {
@@ -4017,9 +4096,10 @@ const PropertyManagerDashboard: React.FC = () => {
                                     e.currentTarget.style.backgroundColor = '#ffffff';
                                     e.currentTarget.style.color = '#17271f';
                                   }}
-                                  onClick={() => setSelectedCaseForModal(item)}
+                                  onClick={() => openCaseModal(item)}
                                 >
-                                  <Eye size={15} />
+                                  <Edit3 size={13} />
+                                  <span>Edit</span>
                                 </button>
                               </td>
                             </tr>
@@ -6638,7 +6718,7 @@ const PropertyManagerDashboard: React.FC = () => {
                     style={{ cursor: 'pointer' }}
                     onClick={() => {
                       const caseItem = guestCasesList.find(c => c.id === 'CASE-1042') || guestCasesList[0];
-                      setSelectedCaseForModal(caseItem);
+                      openCaseModal(caseItem);
                     }}
                   >
                     <div>
@@ -6660,7 +6740,7 @@ const PropertyManagerDashboard: React.FC = () => {
                     style={{ cursor: 'pointer' }}
                     onClick={() => {
                       const caseItem = guestCasesList.find(c => c.id === 'CASE-0981') || guestCasesList[0];
-                      setSelectedCaseForModal(caseItem);
+                      openCaseModal(caseItem);
                     }}
                   >
                     <div>
@@ -8110,10 +8190,10 @@ const PropertyManagerDashboard: React.FC = () => {
       {/* ===================================================================
           MODAL: SHARED GUEST CASE TIMELINE & UPDATE
       =================================================================== */}
+      {/* ===================================================================
+          MODAL: SHARED GUEST CASE TIMELINE & UPDATE (FULL EDIT & RESOLUTION CLEARANCE)
+      =================================================================== */}
       {selectedCaseForModal && (() => {
-        const isAssignedToFrontDesk = Boolean(selectedCaseForModal.assignedRole?.toLowerCase().includes('front desk'));
-        const canAddInputs = !isFrontDesk || isAssignedToFrontDesk;
-
         return (
           <div style={{
             position: 'fixed',
@@ -8140,140 +8220,166 @@ const PropertyManagerDashboard: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
                   <span className="admin-ops-eyebrow">
-                    {isFrontDesk
-                      ? (isAssignedToFrontDesk
-                          ? 'SHARED CASE RECORD • ASSIGNED TO FRONT DESK FOR REVIEW'
-                          : `SHARED CASE RECORD • ASSIGNED TO ${selectedCaseForModal.assignedRole?.toUpperCase() || 'MANAGEMENT'}`)
-                      : `SHARED CASE RECORD • ${selectedCaseForModal.property}`}
+                    SHARED CASE RECORD • {selectedCaseForModal.property}
                   </span>
                   <h3 style={{ margin: '3px 0 0 0', fontFamily: 'Playfair Display, serif', fontSize: '1.45rem', color: '#17271f', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <span>{selectedCaseForModal.caseNumber} • {selectedCaseForModal.title}</span>
-                    {isFrontDesk && (
-                      isAssignedToFrontDesk ? (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: '12px', border: '1px solid #bae6fd', letterSpacing: '0.03em', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
-                          Assigned For Review
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '3px 10px', borderRadius: '12px', border: '1px solid #cbd5e1', letterSpacing: '0.03em', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
-                          View Only Mode
-                        </span>
-                      )
-                    )}
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f0fdf4', color: '#15803d', padding: '3px 10px', borderRadius: '12px', border: '1px solid #bbf7d0', letterSpacing: '0.03em', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
+                      Collaborative Case Edit
+                    </span>
                   </h3>
                 </div>
-              <button
-                type="button"
-                onClick={() => { setSelectedCaseForModal(null); setCaseReplyNote(''); }}
-                style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#6b7280' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Case Key Metadata Bar */}
-            <div style={{
-              backgroundColor: '#f6f8f7',
-              borderRadius: '10px',
-              padding: '16px',
-              marginBottom: '20px',
-              border: '1px solid #e1e7e4'
-            }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.84rem' }}>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>GUEST MEMBER</span>
-                  <strong style={{ color: '#17271f' }}>{selectedCaseForModal.guestName}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>PRIORITY</span>
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    backgroundColor: selectedCaseForModal.priority === 'Urgent' ? '#fee2e2' : selectedCaseForModal.priority === 'High' ? '#fef3c7' : '#e0f2fe',
-                    color: selectedCaseForModal.priority === 'Urgent' ? '#991b1b' : selectedCaseForModal.priority === 'High' ? '#92400e' : '#0369a1'
-                  }}>
-                    {selectedCaseForModal.priority}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>ASSIGNED ROLE</span>
-                  <strong style={{ color: '#17271f' }}>{selectedCaseForModal.assignedRole}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>STATUS</span>
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    backgroundColor: selectedCaseForModal.status === 'Resolved' ? '#dcfce7' : '#fef9c3',
-                    color: selectedCaseForModal.status === 'Resolved' ? '#15803d' : '#854d0e'
-                  }}>
-                    {selectedCaseForModal.status}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedCaseForModal(null); setCaseReplyNote(''); }}
+                  style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#6b7280' }}
+                >
+                  ✕
+                </button>
               </div>
-              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e1e7e4', fontSize: '0.88rem', color: '#334155' }}>
-                <strong>Issue Details:</strong> {selectedCaseForModal.description}
-              </div>
-            </div>
 
-            {/* Shared Timeline Section */}
-            <div style={{ marginBottom: '22px' }}>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#17271f', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Shared Audit Timeline ({selectedCaseForModal.timelineUpdates?.length || 0} Entries)
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {selectedCaseForModal.timelineUpdates && selectedCaseForModal.timelineUpdates.length > 0 ? (
-                  selectedCaseForModal.timelineUpdates.map((t, idx) => (
-                    <div
-                      key={idx}
+              {/* Case Key Metadata Bar (Editable Priority, Assigned Role, and Status) */}
+              <div style={{
+                backgroundColor: '#f6f8f7',
+                borderRadius: '10px',
+                padding: '16px',
+                marginBottom: '20px',
+                border: '1px solid #e1e7e4'
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.84rem' }}>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>GUEST MEMBER</span>
+                    <strong style={{ color: '#17271f', fontSize: '0.90rem' }}>{selectedCaseForModal.guestName}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>PRIORITY</span>
+                    <select
+                      value={editCasePriority}
+                      onChange={(e) => setEditCasePriority(e.target.value as any)}
+                      title="Update Priority"
                       style={{
-                        padding: '12px 14px',
-                        borderRadius: '8px',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderLeft: '4px solid #17271f'
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1.5px solid #cbd5e1',
+                        backgroundColor: editCasePriority === 'Urgent' ? '#fee2e2' : editCasePriority === 'High' ? '#fef3c7' : '#e0f2fe',
+                        color: editCasePriority === 'Urgent' ? '#991b1b' : editCasePriority === 'High' ? '#92400e' : '#0369a1',
+                        fontSize: '0.80rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        width: '100%'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
-                        <span style={{ fontWeight: 700, color: '#17271f' }}>
-                          {t.author} <span style={{ fontWeight: 500, color: '#64748b' }}>({t.role})</span>
-                        </span>
-                        <span style={{ color: '#94a3b8' }}>{t.time}</span>
-                      </div>
-                      <p style={{ margin: 0, fontSize: '0.86rem', color: '#334155', lineHeight: 1.4 }}>
-                        {t.message}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>No timeline entries yet.</p>
-                )}
+                      <option value="Normal">Normal</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>ASSIGNED ROLE</span>
+                    <select
+                      value={editCaseAssignedRole}
+                      onChange={(e) => setEditCaseAssignedRole(e.target.value)}
+                      title="Reassign Case"
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1.5px solid #cbd5e1',
+                        backgroundColor: '#ffffff',
+                        color: '#17271f',
+                        fontSize: '0.80rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="Front Desk">Front Desk</option>
+                      <option value="Property Manager">Property Manager</option>
+                      <option value="General Manager">General Manager</option>
+                    </select>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>STATUS</span>
+                    <select
+                      value={editCaseStatus}
+                      onChange={(e) => setEditCaseStatus(e.target.value as any)}
+                      title="Update Status"
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1.5px solid #cbd5e1',
+                        backgroundColor: editCaseStatus === 'Resolved' || editCaseStatus === 'Closed' ? '#dcfce7' : editCaseStatus === 'In Progress' ? '#fef9c3' : '#e0f2fe',
+                        color: editCaseStatus === 'Resolved' || editCaseStatus === 'Closed' ? '#15803d' : editCaseStatus === 'In Progress' ? '#854d0e' : '#0369a1',
+                        fontSize: '0.80rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">✓ Resolved</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e1e7e4', fontSize: '0.88rem', color: '#334155' }}>
+                  <strong>Issue Details:</strong> {selectedCaseForModal.description}
+                </div>
               </div>
-            </div>
 
-            {/* Post Note / Update Section */}
-            {canAddInputs ? (
+              {/* Shared Timeline Section */}
+              <div style={{ marginBottom: '22px' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#17271f', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Shared Audit Timeline ({selectedCaseForModal.timelineUpdates?.length || 0} Entries)
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {selectedCaseForModal.timelineUpdates && selectedCaseForModal.timelineUpdates.length > 0 ? (
+                    selectedCaseForModal.timelineUpdates.map((t, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: '8px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderLeft: '4px solid #17271f'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
+                          <span style={{ fontWeight: 700, color: '#17271f' }}>
+                            {t.author} <span style={{ fontWeight: 500, color: '#64748b' }}>({t.role})</span>
+                          </span>
+                          <span style={{ color: '#94a3b8' }}>{t.time}</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.86rem', color: '#334155', lineHeight: 1.4 }}>
+                          {t.message}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>No timeline entries yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Post Note / Update Section */}
               <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#17271f' }}>
-                    {isFrontDesk ? 'Add Front Desk Review Input / Notes' : 'Add Shared Investigation Update / Note'}
+                  <label style={{ fontSize: '0.84rem', fontWeight: 700, color: '#17271f' }}>
+                    {isFrontDesk ? 'Front Desk Review Inputs & Resolution Remarks' : 'Case Investigation Updates & Remarks'}
                   </label>
-                  {isFrontDesk && isAssignedToFrontDesk && (
-                    <span style={{ fontSize: '0.74rem', color: '#0369a1', fontWeight: 700, backgroundColor: '#f0f9ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>
-                      Assigned to Front Desk for Review
-                    </span>
-                  )}
+                  <span style={{ fontSize: '0.74rem', color: '#15803d', fontWeight: 700, backgroundColor: '#f0fdf4', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bbf7d0' }}>
+                    Authorized to Edit & Resolve
+                  </span>
                 </div>
                 <textarea
                   rows={3}
                   placeholder={isFrontDesk
-                    ? "Log Front Desk review input, findings, room/stay verification, or operational feedback..."
-                    : "Log findings, Cloudbeds verification notes, or status change justification..."}
+                    ? "Log Front Desk review input, room/stay verification, Cloudbeds confirmation, or resolution steps..."
+                    : "Log findings, Cloudbeds verification notes, stay adjustment details, or resolution remarks..."}
                   value={caseReplyNote}
                   onChange={(e) => setCaseReplyNote(e.target.value)}
                   style={{
@@ -8291,11 +8397,14 @@ const PropertyManagerDashboard: React.FC = () => {
 
                 {/* Action Buttons Row */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {selectedCaseForModal.status !== 'In Progress' && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {editCaseStatus !== 'In Progress' && (
                       <button
                         type="button"
-                        onClick={() => handleAddCaseNote('In Progress')}
+                        onClick={() => {
+                          setEditCaseStatus('In Progress');
+                          handleAddCaseNote('In Progress');
+                        }}
                         style={{
                           padding: '8px 14px',
                           borderRadius: '6px',
@@ -8310,22 +8419,49 @@ const PropertyManagerDashboard: React.FC = () => {
                         Mark In Progress
                       </button>
                     )}
-                    {selectedCaseForModal.status !== 'Resolved' && (
+                    {editCaseStatus !== 'Resolved' && (
                       <button
                         type="button"
-                        onClick={() => handleAddCaseNote('Resolved')}
+                        onClick={() => {
+                          setEditCaseStatus('Resolved');
+                          handleAddCaseNote('Resolved');
+                        }}
                         style={{
-                          padding: '8px 14px',
+                          padding: '8px 15px',
                           borderRadius: '6px',
                           border: '1px solid #16a34a',
                           backgroundColor: '#f0fdf4',
                           color: '#15803d',
+                          fontSize: '0.84rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span>✓ Mark Resolved</span>
+                      </button>
+                    )}
+                    {(editCaseStatus === 'Resolved' || editCaseStatus === 'Closed') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditCaseStatus('Open');
+                          handleAddCaseNote('Open');
+                        }}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: '6px',
+                          border: '1px solid #0284c7',
+                          backgroundColor: '#f0fdf4',
+                          color: '#0369a1',
                           fontSize: '0.82rem',
                           fontWeight: 600,
                           cursor: 'pointer'
                         }}
                       >
-                        ✓ Mark Resolved
+                        Reopen Case
                       </button>
                     )}
                   </div>
@@ -8361,39 +8497,15 @@ const PropertyManagerDashboard: React.FC = () => {
                         cursor: 'pointer'
                       }}
                     >
-                      {isFrontDesk ? 'Submit Review Input' : 'Add Note Only'}
+                      Save & Update Case
                     </button>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.84rem' }}>
-                  <ShieldCheck size={16} color="#475569" />
-                  <span>Front Desk Clearance: <strong>View Only</strong> (This case is assigned to {selectedCaseForModal.assignedRole} for review)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedCaseForModal(null); setCaseReplyNote(''); }}
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: '6px',
-                    border: '1px solid #d1d5db',
-                    backgroundColor: '#ffffff',
-                    color: '#17271f',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      );
-    })()}
+        );
+      })()}
 
     {/* ===================================================================
         MODAL: CREATE GUEST CASE
