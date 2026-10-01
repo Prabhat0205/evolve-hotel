@@ -329,41 +329,6 @@ export const Header: React.FC = () => {
 
           {/* Right Action Icons & User Profile */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Quick Staff Admin Link */}
-            <a
-              href="/admin"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo('admin');
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '7px 12px',
-                borderRadius: '9999px',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: '#173f34',
-                backgroundColor: '#edf4f0',
-                border: '1px solid #c2e0d1',
-                textDecoration: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              title="Open Staff Admin Operations Portal"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#173f34';
-                e.currentTarget.style.color = '#ffffff';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#edf4f0';
-                e.currentTarget.style.color = '#173f34';
-              }}
-            >
-              <ShieldCheck size={14} />
-              <span>Admin</span>
-            </a>
 
             {/* Notification Bell Dropdown (Only shown when user is logged in) */}
             {currentUser && (
@@ -641,27 +606,6 @@ export const Header: React.FC = () => {
                         <ShieldCheck size={16} color="#173f34" /> Questions and supports
                       </button>
 
-                      <button
-                        onClick={() => { navigateTo('admin'); setUserMenuOpen(false); }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.875rem',
-                          color: '#173f34',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          width: '100%',
-                          fontWeight: 700,
-                          backgroundColor: '#edf4f0',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#c2e0d1')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#edf4f0')}
-                      >
-                        <ShieldCheck size={16} color="#173f34" /> Staff Admin Portal
-                      </button>
                     </div>
 
                     <div style={{ borderTop: '1px solid #eeece5', paddingTop: '8px' }}>
@@ -784,28 +728,6 @@ export const Header: React.FC = () => {
                         Sign in as Guest
                       </button>
 
-                      <button
-                        onClick={() => { navigateTo('admin'); setUserMenuOpen(false); }}
-                        style={{
-                          backgroundColor: '#edf4f0',
-                          color: '#173f34',
-                          border: '1px solid #c2e0d1',
-                          padding: '12px',
-                          fontSize: '0.9375rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          width: '100%',
-                          textAlign: 'center',
-                          borderRadius: '8px',
-                          marginTop: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <ShieldCheck size={16} /> Staff Admin Portal
-                      </button>
                     </div>
 
                     <div style={{ marginTop: '24px', fontSize: '0.875rem', color: '#17271f', textAlign: 'left', lineHeight: 1.5 }}>
@@ -955,24 +877,6 @@ export const Header: React.FC = () => {
               Support Concierge
             </button>
 
-            <button
-              onClick={() => { navigateTo('admin'); setMobileNavOpen(false); }}
-              style={{
-                padding: '12px 16px',
-                textAlign: 'left',
-                fontWeight: 700,
-                color: '#173f34',
-                backgroundColor: '#edf4f0',
-                borderRadius: '10px',
-                border: '1px solid #c2e0d1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span>Staff Admin Portal</span>
-              <ShieldCheck size={16} />
-            </button>
           </div>
         )}
       </header>
