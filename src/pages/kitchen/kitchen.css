@@ -1,0 +1,593 @@
+/* ==========================================================================
+   EVOLVE LUXURY HOTELS - KITCHEN DISPLAY SYSTEM & STAFF PORTAL (TABLET OPTIMIZED)
+   ========================================================================== */
+
+.kitchen-app-root {
+  min-height: 100vh;
+  background-color: #0b1120;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Light / High-Contrast Theme Support */
+.kitchen-app-root.light-mode {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   HEADER & SHIFT BAR
+   -------------------------------------------------------------------------- */
+.kitchen-header {
+  background: #111c33;
+  border-bottom: 2px solid #1e293b;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.kitchen-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.kitchen-logo-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #1e3a2b 0%, #0d2818 100%);
+  border: 1px solid #10b981;
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
+.kitchen-logo-badge h1 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin: 0;
+  color: #ecfdf5;
+  text-transform: uppercase;
+}
+
+.kitchen-station-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.kitchen-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kitchen-clock-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1e293b;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #38bdf8;
+  border: 1px solid #334155;
+  letter-spacing: 0.05em;
+}
+
+/* --------------------------------------------------------------------------
+   KPI / SHIFT STATS RIBBON
+   -------------------------------------------------------------------------- */
+.kitchen-stats-ribbon {
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  padding: 10px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.kitchen-stat-card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid #334155;
+  transition: transform 0.15s ease;
+}
+
+.kitchen-stat-card:active {
+  transform: scale(0.98);
+}
+
+.kitchen-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kitchen-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   NAVIGATION TABS BAR (TOUCH OPTIMIZED FOR TABLET)
+   -------------------------------------------------------------------------- */
+.kitchen-nav-bar {
+  background: #111c33;
+  border-bottom: 2px solid #1e293b;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kitchen-tabs-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kitchen-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.90rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-tab-btn:hover {
+  background: #25334a;
+  color: #f8fafc;
+}
+
+.kitchen-tab-btn.active {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #34d399;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+}
+
+.kitchen-tab-badge {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+/* Station Filter Toolbar */
+.kitchen-station-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kitchen-station-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 0.80rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.kitchen-station-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+/* --------------------------------------------------------------------------
+   KDS CARDS GRID (PRIMARY TABLET INTERACTION)
+   -------------------------------------------------------------------------- */
+.kitchen-content-area {
+  flex: 1;
+  padding: 20px;
+}
+
+.kitchen-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  /* Tablet Landscape / Portrait */
+  .kitchen-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* Large Tablet & Desktop */
+  .kitchen-grid-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+}
+
+@media (max-width: 767px) {
+  .kitchen-grid-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   INDIVIDUAL ORDER CARD (KDS TICKET)
+   -------------------------------------------------------------------------- */
+.kds-card {
+  background: #182235;
+  border-radius: 12px;
+  border: 2px solid #27354f;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.kds-card:hover {
+  border-color: #475569;
+}
+
+.kds-card.status-RECEIVED {
+  border-top: 6px solid #0284c7;
+}
+
+.kds-card.status-BEING_PREPARED {
+  border-top: 6px solid #d97706;
+}
+
+.kds-card.status-READY {
+  border-top: 6px solid #10b981;
+}
+
+.kds-card.status-DELIVERED {
+  border-top: 6px solid #64748b;
+  opacity: 0.85;
+}
+
+.kds-card.urgent-ticket {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+}
+
+/* Card Header */
+.kds-card-header {
+  background: #141c2c;
+  padding: 12px 16px;
+  border-bottom: 1.5px solid #222f46;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kds-room-badge {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.kds-ticket-number {
+  font-size: 0.80rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.kds-timer-pill {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.timer-normal {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+}
+
+.timer-warning {
+  background: #78350f;
+  color: #fbbf24;
+  border: 1px solid #d97706;
+}
+
+.timer-urgent {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+  animation: pulse-urgent 1.5s infinite;
+}
+
+@keyframes pulse-urgent {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* Card Body */
+.kds-card-body {
+  padding: 14px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kds-guest-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.88rem;
+}
+
+.kds-guest-name {
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.kds-delivery-slot {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  background: #25334a;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Dietary & Allergy Warning Bar */
+.kds-allergy-alert {
+  background: #450a0a;
+  border: 1.5px solid #ef4444;
+  color: #fca5a5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.80rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kds-dietary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kds-dietary-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #1e3a2b;
+  color: #34d399;
+  border: 1px solid #059669;
+}
+
+/* Items List */
+.kds-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #222f46;
+  padding-top: 10px;
+}
+
+.kds-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #111a2a;
+  border: 1px solid #1e293b;
+  cursor: pointer;
+}
+
+.kds-item-row.prepared {
+  opacity: 0.55;
+  text-decoration: line-through;
+  background: #0f172a;
+}
+
+.kds-item-qty {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.90rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 26px;
+  text-align: center;
+}
+
+.kds-item-details {
+  flex: 1;
+}
+
+.kds-item-name {
+  font-size: 0.90rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.kds-item-note {
+  font-size: 0.78rem;
+  color: #fbbf24;
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+/* Card Actions (Large touch targets for tablet) */
+.kds-card-footer {
+  background: #141c2c;
+  padding: 12px 16px;
+  border-top: 1.5px solid #222f46;
+  display: flex;
+  gap: 8px;
+}
+
+.kds-bump-btn {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kds-bump-btn.start-prep {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.kds-bump-btn.start-prep:hover {
+  background: #b45309;
+}
+
+.kds-bump-btn.mark-ready {
+  background: #059669;
+  color: #ffffff;
+}
+
+.kds-bump-btn.mark-ready:hover {
+  background: #047857;
+}
+
+.kds-bump-btn.complete {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+}
+
+.kds-details-btn {
+  padding: 12px;
+  border-radius: 8px;
+  background: #25334a;
+  color: #f1f5f9;
+  border: 1px solid #3b4e6d;
+  cursor: pointer;
+  min-height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   LOGIN SCREEN (DEDICATED FOR KITCHEN STAFF)
+   -------------------------------------------------------------------------- */
+.kitchen-login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #1e293b 0%, #0b1120 100%);
+  padding: 24px;
+}
+
+.kitchen-login-card {
+  width: 100%;
+  maxWidth: 460px;
+  background: #141f33;
+  border: 2px solid #27354f;
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.kitchen-login-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #0b1120;
+  border: 1.5px solid #334155;
+  color: #ffffff;
+  font-size: 0.95rem;
+  margin-top: 6px;
+  outline: none;
+  min-height: 46px;
+}
+
+.kitchen-login-input:focus {
+  border-color: #10b981;
+}
+
+.kitchen-login-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: #10b981;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+  margin-top: 20px;
+  transition: background 0.15s ease;
+}
+
+.kitchen-login-btn:hover {
+  background: #059669;
+}

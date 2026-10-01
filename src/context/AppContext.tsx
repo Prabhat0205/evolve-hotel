@@ -24,7 +24,8 @@ export type AppRoute =
   | 'profile' 
   | 'support'
   | 'corporate-booking'
-  | 'admin';
+  | 'admin'
+  | 'kitchen';
 
 export const isCurrentPathAdmin = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -36,6 +37,22 @@ export const isCurrentPathAdmin = (): boolean => {
     hash === '#admin' || 
     hash.startsWith('#/admin') || 
     hash.startsWith('#admin/')
+  );
+};
+
+export const isCurrentPathKitchen = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  return (
+    path === '/kitchen' || 
+    path.startsWith('/kitchen/') || 
+    path === '/kitchen-review' || 
+    path.startsWith('/kitchen-review/') || 
+    hash === '#kitchen' || 
+    hash.startsWith('#/kitchen') || 
+    hash.startsWith('#kitchen/') ||
+    hash.startsWith('#kitchen-review')
   );
 };
 
@@ -144,6 +161,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Navigation state
   const getInitialRoute = (): AppRoute => {
+    if (isCurrentPathKitchen()) return 'kitchen';
     if (isCurrentPathAdmin()) return 'admin';
     if (typeof window !== 'undefined') {
       const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
@@ -165,7 +183,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Sync state when URL / popstate changes
   useEffect(() => {
     const handleLocationChange = () => {
-      if (isCurrentPathAdmin()) {
+      if (isCurrentPathKitchen()) {
+        setCurrentRoute('kitchen');
+      } else if (isCurrentPathAdmin()) {
         setCurrentRoute('admin');
       } else {
         const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
@@ -389,7 +409,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentRoute(route);
     setRouteParams(params);
     if (typeof window !== 'undefined') {
-      if (route === 'admin') {
+      if (route === 'kitchen') {
+        const kitchenPath = params?.tab ? `/kitchen/${params.tab}` : '/kitchen';
+        if (window.location.pathname !== kitchenPath && window.location.hash !== '#kitchen') {
+          window.history.pushState(null, '', kitchenPath);
+        }
+      } else if (route === 'admin') {
         const adminPath = params?.tab ? `/admin/${params.tab}` : '/admin';
         if (window.location.pathname !== adminPath && window.location.hash !== '#admin') {
           window.history.pushState(null, '', adminPath);

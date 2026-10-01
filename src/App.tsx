@@ -18,9 +18,19 @@ import { AccountPage } from './pages/AccountPage';
 import { SupportPage } from './pages/SupportPage';
 import { CorporateBookingPage } from './pages/CorporateBookingPage';
 import { AdminPortal } from './pages/admin/AdminPortal';
+import { KitchenPortal } from './pages/kitchen/KitchenPortal';
 
 const AppContent: React.FC = () => {
   const { currentRoute } = useApp();
+
+  if (currentRoute === 'kitchen') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <KitchenPortal />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   if (currentRoute === 'admin') {
     return (

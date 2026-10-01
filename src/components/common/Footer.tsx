@@ -237,6 +237,25 @@ export const Footer: React.FC = () => {
             >
               Admin Portal
             </a>
+            <a
+              href="/kitchen"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('kitchen');
+              }}
+              style={{
+                textDecoration: 'none',
+                color: '#10b981',
+                font: 'inherit',
+                cursor: 'pointer',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              Kitchen KDS
+            </a>
           </div>
         </div>
       </div>
