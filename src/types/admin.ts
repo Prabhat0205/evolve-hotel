@@ -49,6 +49,9 @@ export interface DashboardGuestItem {
   };
   totalPointsEarned?: number;
   pointsRedeemed?: number;
+  squareId?: string;
+  squareSyncStatus?: 'Linked' | 'Pending Sync' | 'Unlinked';
+  squareLastSynced?: string;
   rewardTransactions?: MemberRewardTransaction[];
 }
 
@@ -57,6 +60,7 @@ export interface MemberRewardTransaction {
   date: string;
   activity: 'Points Credited' | 'Points Redeemed';
   stayOrBooking: string;
+  squareRefId?: string;
   nights?: number;
   points: number;
   status: 'Credited' | 'Redeemed' | 'Pending';

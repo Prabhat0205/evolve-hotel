@@ -697,9 +697,13 @@ const PropertyManagerDashboard: React.FC = () => {
       const registeredGuests: DashboardGuestItem[] = registered.map((reg, i) => {
         const u = reg.user;
         const custId = u.customerId || (u.memberProfile?.memberId ? u.memberProfile.memberId.replace('EV-', 'CUST-') : `CUST-${2001 + i}`);
+        const sqId = (u as any).squareId || `sq_cust_${2001 + i}`;
         return {
           id: u.id || `reg-guest-${i}`,
           customerId: custId,
+          squareId: sqId,
+          squareSyncStatus: 'Linked',
+          squareLastSynced: 'Synced via POS webhook',
           name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Registered Guest',
           phone: u.phone || '(555) 000-0000',
           email: u.email,
@@ -1104,6 +1108,7 @@ const PropertyManagerDashboard: React.FC = () => {
       return (
         g.name.toLowerCase().includes(q) ||
         (g.customerId && g.customerId.toLowerCase().includes(q)) ||
+        (g.squareId && g.squareId.toLowerCase().includes(q)) ||
         g.phone.includes(q) ||
         g.email.toLowerCase().includes(q) ||
         g.tier.toLowerCase().includes(q) ||
@@ -1111,12 +1116,13 @@ const PropertyManagerDashboard: React.FC = () => {
       );
     }
 
-    // 1. Name or Customer ID
+    // 1. Name, Customer ID, or Square ID
     if (guestFilterName.trim()) {
       const q = guestFilterName.toLowerCase().trim();
       const matchName = g.name.toLowerCase().includes(q);
       const matchCustId = (g.customerId || '').toLowerCase().includes(q);
-      if (!matchName && !matchCustId) return false;
+      const matchSquareId = (g.squareId || '').toLowerCase().includes(q);
+      if (!matchName && !matchCustId && !matchSquareId) return false;
     }
 
     // 2. Phone No
@@ -2450,13 +2456,13 @@ const PropertyManagerDashboard: React.FC = () => {
                   <div className="admin-filters-body">
                     {/* Line 1 (3 Filters: Name, Phone, Email) */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px 14px', marginBottom: '12px' }}>
-                      {/* 1. Name or Customer ID */}
+                      {/* 1. Name or Customer ID or Square ID */}
                       <div className="admin-filter-group">
-                        <label className="admin-filter-label">Guest Name / Customer ID</label>
+                        <label className="admin-filter-label">Guest Name / Customer ID / Square ID</label>
                         <input
                           type="text"
                           className="admin-filter-input"
-                          placeholder="e.g. Emily or CUST-1001"
+                          placeholder="e.g. Emily, CUST-1001, or sq_cust_1001"
                           value={guestFilterName}
                           onChange={(e) => setGuestFilterName(e.target.value)}
                         />
@@ -2613,6 +2619,7 @@ const PropertyManagerDashboard: React.FC = () => {
                     <thead>
                       <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '12px 16px' }}>Customer ID</th>
+                        <th style={{ padding: '12px 16px' }}>Square ID (POS)</th>
                         <th style={{ padding: '12px 16px' }}>Name</th>
                         <th style={{ padding: '12px 16px' }}>Phone No</th>
                         <th style={{ padding: '12px 16px' }}>Rewards</th>
@@ -2637,6 +2644,34 @@ const PropertyManagerDashboard: React.FC = () => {
                             {/* 1. Customer ID */}
                             <td style={{ padding: '14px 16px', fontWeight: 700, color: '#17271f', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
                               {guest.customerId || `CUST-${1001 + idx}`}
+                            </td>
+
+                            {/* 1b. Square ID (POS) */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span
+                                  title={`Linked Square POS ID: ${guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1001 + idx}`}. Identity-locked to prevent duplicate reward claims across accounts.`}
+                                  style={{
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 700,
+                                    color: '#166534',
+                                    backgroundColor: '#f0fdf4',
+                                    padding: '3px 8px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #bbf7d0',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                  }}
+                                >
+                                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
+                                  {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1001 + idx}`}
+                                </span>
+                                <span style={{ fontSize: '0.72rem', color: guest.squareSyncStatus === 'Pending Sync' ? '#d97706' : '#15803d', fontWeight: 600 }}>
+                                  {guest.squareSyncStatus || 'Linked'}
+                                </span>
+                              </div>
                             </td>
 
                             {/* 2. Name */}
@@ -2705,7 +2740,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={8} style={{ textAlign: 'center', padding: '40px 16px', color: '#64748b', fontSize: '0.9rem' }}>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '40px 16px', color: '#64748b', fontSize: '0.9rem' }}>
                             No members found matching the specified filters.
                           </td>
                         </tr>
@@ -2772,7 +2807,7 @@ const PropertyManagerDashboard: React.FC = () => {
                       type="text"
                       className="admin-bookings-search-input"
                       style={{ paddingLeft: '40px', margin: 0, width: '100%' }}
-                      placeholder="Search members by name, phone, email, or Customer ID..."
+                      placeholder="Search members by name, phone, email, Customer ID, or Square ID..."
                       value={rewardsSearchQuery}
                       onChange={(e) => setRewardsSearchQuery(e.target.value)}
                     />
@@ -2863,7 +2898,8 @@ const PropertyManagerDashboard: React.FC = () => {
                             g.name.toLowerCase().includes(query) ||
                             g.email.toLowerCase().includes(query) ||
                             g.phone.includes(query) ||
-                            (g.customerId && g.customerId.toLowerCase().includes(query));
+                            (g.customerId && g.customerId.toLowerCase().includes(query)) ||
+                            (g.squareId && g.squareId.toLowerCase().includes(query));
                           const matchesTier = rewardsTierFilter === 'all' || g.tier === rewardsTierFilter;
                           return matchesQuery && matchesTier;
                         })
@@ -2887,9 +2923,28 @@ const PropertyManagerDashboard: React.FC = () => {
                                 <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.92rem' }}>
                                   {guest.name}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
                                   <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#edf4f0', color: '#17271f', padding: '1px 6px', borderRadius: '4px', border: '1px solid #c2e0d1' }}>
                                     {guest.customerId || `CUST-${1000 + idx}`}
+                                  </span>
+                                  <span
+                                    title="Linked Square POS Customer ID: Locked against duplicate redemption claims"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      fontSize: '0.72rem',
+                                      fontFamily: 'monospace',
+                                      fontWeight: 700,
+                                      backgroundColor: '#f0fdf4',
+                                      color: '#166534',
+                                      padding: '1px 6px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #bbf7d0'
+                                    }}
+                                  >
+                                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
+                                    Square: {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}
                                   </span>
                                   <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{guest.email}</span>
                                 </div>
@@ -3085,12 +3140,31 @@ const PropertyManagerDashboard: React.FC = () => {
                       {selectedRewardsMember.name.charAt(0)}
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.5rem', color: '#17271f', fontWeight: 800 }}>
                           {selectedRewardsMember.name}
                         </h2>
                         <span style={{ fontSize: '0.8rem', fontWeight: 700, backgroundColor: '#edf4f0', color: '#17271f', padding: '2px 8px', borderRadius: '4px', border: '1px solid #c2e0d1' }}>
                           {selectedRewardsMember.customerId || 'CUST-1001'}
+                        </span>
+                        <span
+                          title="Linked Square POS ID: Uniquely associates all points & rewards redemptions"
+                          style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            backgroundColor: '#f0fdf4',
+                            color: '#166534',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #bbf7d0',
+                            fontFamily: 'monospace',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                        >
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: selectedRewardsMember.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
+                          Square POS: {selectedRewardsMember.squareId || `sq_cust_${selectedRewardsMember.customerId?.replace('CUST-', '') || '1001'}`}
                         </span>
                         <span style={{
                           fontSize: '0.75rem',
@@ -3105,7 +3179,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         </span>
                       </div>
                       <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px' }}>
-                        {selectedRewardsMember.phone} • {selectedRewardsMember.email} • PMS Ref: <strong>{selectedRewardsMember.cloudbedsReference || 'CB-10482'}</strong>
+                        {selectedRewardsMember.phone} • {selectedRewardsMember.email} • PMS Ref: <strong>{selectedRewardsMember.cloudbedsReference || 'CB-10482'}</strong> • Linked Square ID: <strong style={{ fontFamily: 'monospace', color: '#166534' }}>{selectedRewardsMember.squareId || `sq_cust_${selectedRewardsMember.customerId?.replace('CUST-', '') || '1001'}`}</strong> ({selectedRewardsMember.squareSyncStatus || 'Linked'})
                       </div>
                     </div>
                   </div>
@@ -3329,8 +3403,33 @@ const PropertyManagerDashboard: React.FC = () => {
                                   </span>
                                 </td>
 
-                                <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: 600, color: '#17271f' }}>
-                                  {tx.stayOrBooking}
+                                <td style={{ padding: '14px 16px' }}>
+                                  <div style={{ fontFamily: 'monospace', fontWeight: 600, color: '#17271f' }}>
+                                    {tx.stayOrBooking}
+                                  </div>
+                                  {!isCredited && (
+                                    <div style={{ marginTop: '3px' }}>
+                                      <span
+                                        title={`Redemption locked to Square POS ID: ${selectedRewardsMember.squareId || 'sq_cust_1001'}`}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          fontSize: '0.72rem',
+                                          fontFamily: 'monospace',
+                                          fontWeight: 700,
+                                          backgroundColor: '#f0fdf4',
+                                          color: '#166534',
+                                          padding: '1px 6px',
+                                          borderRadius: '4px',
+                                          border: '1px solid #bbf7d0'
+                                        }}
+                                      >
+                                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#22c55e' }}></span>
+                                        <span>Square: {tx.squareRefId || `sq_red_${tx.id || 'pos'}`}</span>
+                                      </span>
+                                    </div>
+                                  )}
                                 </td>
 
                                 <td style={{ padding: '14px 16px' }}>
@@ -3396,8 +3495,8 @@ const PropertyManagerDashboard: React.FC = () => {
                     color: '#475569',
                     lineHeight: 1.5
                   }}>
-                    <strong style={{ color: '#17271f' }}>Rewards Points Policy: </strong>
-                    Points are credited to members for qualifying completed stays. Members can redeem their accumulated points across multiple categories—such as <strong>Room Nights</strong>, <strong>Fine Dining</strong> experiences, or <strong>Giftogram vouchers</strong>—based on points balance and eligibility.
+                    <strong style={{ color: '#17271f' }}>Rewards Points & POS Policy: </strong>
+                    Points are credited to members for qualifying completed stays and bound to their unique <strong>Customer ID</strong> and 3rd-party <strong>Square POS ID</strong> ({selectedRewardsMember.squareId || 'sq_cust_1001'}). When members redeem points (e.g., 5 nights to fine dining experiences), redemptions are locked to their Square ID. Even if guest contact details change, this permanent POS linkage prevents duplicate points claims across different accounts.
                   </div>
                 </div>
               </div>
@@ -5562,6 +5661,40 @@ const PropertyManagerDashboard: React.FC = () => {
                     </div>
                     <div style={{ fontWeight: 600, color: '#17271f', fontSize: '0.92rem' }}>
                       Verified ✓
+                    </div>
+                  </div>
+
+                  {/* Row 1b: Square POS Integration & Anti-Duplicate Redemption Lock */}
+                  <div className="admin-security-user-row">
+                    <div>
+                      <h4 style={{ margin: '0 0 3px 0', fontSize: '1.02rem', fontWeight: 700, color: '#17271f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>Square POS ID (Points & Rewards Lock)</span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#f0fdf4', color: '#166534', padding: '1px 6px', borderRadius: '4px', border: '1px solid #bbf7d0', fontFamily: 'monospace' }}>
+                          {selectedGuest.squareId || `sq_cust_${selectedGuest.customerId?.replace('CUST-', '') || '1001'}`}
+                        </span>
+                      </h4>
+                      <div style={{ color: '#55665e', fontSize: '0.85rem' }}>
+                        Linked with Customer ID: <strong style={{ color: '#17271f' }}>{selectedGuest.customerId || 'CUST-1001'}</strong> • Status: <strong style={{ color: selectedGuest.squareSyncStatus === 'Pending Sync' ? '#d97706' : '#15803d' }}>{selectedGuest.squareSyncStatus || 'Linked'}</strong> • Last Sync: {selectedGuest.squareLastSynced || 'Synced via POS webhook'}
+                      </div>
+                      <div style={{ color: '#6a7c73', fontSize: '0.82rem', marginTop: '2px' }}>
+                        Default 3rd-party POS identifier. All points redemptions (e.g. 5 nights to fine dining dinner) are permanently associated with this Square ID so that updated member details cannot claim duplicate rewards across accounts.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontWeight: 700,
+                        color: selectedGuest.squareSyncStatus === 'Pending Sync' ? '#b45309' : '#15803d',
+                        fontSize: '0.86rem',
+                        backgroundColor: selectedGuest.squareSyncStatus === 'Pending Sync' ? '#fef3c7' : '#eaf5ee',
+                        padding: '4px 10px',
+                        borderRadius: '6px'
+                      }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: selectedGuest.squareSyncStatus === 'Pending Sync' ? '#d97706' : '#16a34a' }}></span>
+                        {selectedGuest.squareSyncStatus || 'Linked ✓'}
+                      </span>
                     </div>
                   </div>
 
@@ -8826,13 +8959,19 @@ const PropertyManagerDashboard: React.FC = () => {
                     .filter(g =>
                       g.name.toLowerCase().includes(membershipReportSearch.toLowerCase()) ||
                       g.tier.toLowerCase().includes(membershipReportSearch.toLowerCase()) ||
-                      g.phone.includes(membershipReportSearch)
+                      g.phone.includes(membershipReportSearch) ||
+                      (g.squareId && g.squareId.toLowerCase().includes(membershipReportSearch.toLowerCase()))
                     )
                     .map((g, idx) => (
                       <tr key={g.id} style={{ borderBottom: idx !== guestsList.length - 1 ? '1px solid #edf2f7' : 'none' }}>
                         <td style={{ padding: '12px 14px' }}>
                           <strong style={{ color: '#17271f', display: 'block' }}>{g.name}</strong>
-                          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{g.phone}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{g.phone}</span>
+                            <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', fontWeight: 700, backgroundColor: '#f0fdf4', color: '#166534', padding: '1px 5px', borderRadius: '4px', border: '1px solid #bbf7d0' }}>
+                              Square: {g.squareId || `sq_cust_${g.customerId?.replace('CUST-', '') || 1000 + idx}`}
+                            </span>
+                          </div>
                         </td>
                         <td style={{ padding: '12px 14px' }}>
                           <span style={{
