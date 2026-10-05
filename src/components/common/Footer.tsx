@@ -212,12 +212,42 @@ export const Footer: React.FC = () => {
           <div>
             © {new Date().getFullYear()} Evolve Hotels & Resorts International. All rights reserved.
           </div>
-          <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span>Privacy Policy</span>
             <span>Terms of Service</span>
-            <span>Cancellation Policies</span>
-            <span>Accessibility</span>
             <span>Security & 2FA</span>
+            <button
+              type="button"
+              onClick={() => navigateTo('admin')}
+              style={{
+                background: 'rgba(221, 169, 67, 0.15)',
+                border: '1px solid #dda943',
+                color: '#dda943',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Admin Operations Portal ↗
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('kitchen')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                color: '#ffffff',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Kitchen Queue App ↗
+            </button>
           </div>
         </div>
       </div>

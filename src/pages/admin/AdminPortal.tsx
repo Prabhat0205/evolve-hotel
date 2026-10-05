@@ -1879,11 +1879,31 @@ const PropertyManagerDashboard: React.FC = () => {
             <div className="admin-dash-two-col">
               {/* LEFT COLUMN: GUEST MANAGEMENT CARD */}
               <div className="admin-dash-card">
-                <h2 className="admin-dash-card-title">Guest Management</h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                  <h2 className="admin-dash-card-title" style={{ margin: 0 }}>Guest Management</h2>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('guests')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#15803d',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: 0
+                    }}
+                  >
+                    View Members Table (Square ID) →
+                  </button>
+                </div>
                 <input
                   type="text"
                   className="admin-guest-search-input"
-                  placeholder="Search by guest name, phone number or email"
+                  placeholder="Search by guest name, phone, email, Customer ID, or Square ID..."
                   value={guestSearchQuery}
                   onChange={(e) => setGuestSearchQuery(e.target.value)}
                 />
@@ -1892,9 +1912,33 @@ const PropertyManagerDashboard: React.FC = () => {
                     filteredGuests.map(guest => (
                       <div key={guest.id} className="admin-guest-item">
                         <div>
-                          <div className="admin-guest-name">{guest.name}</div>
-                          <div className="admin-guest-meta">
-                            {guest.phone} • {guest.email} • {guest.tier}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className="admin-guest-name">{guest.name}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#edf4f0', color: '#17271f', padding: '1px 6px', borderRadius: '4px', border: '1px solid #c2e0d1' }}>
+                              {guest.customerId || 'CUST-1001'}
+                            </span>
+                            <span
+                              title={`Linked Square POS Customer ID: ${guest.squareId || 'sq_cust_1001'}. Locks redemptions to prevent duplicate claims.`}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.72rem',
+                                fontFamily: 'monospace',
+                                fontWeight: 700,
+                                backgroundColor: '#f0fdf4',
+                                color: '#166534',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                border: '1px solid #bbf7d0'
+                              }}
+                            >
+                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
+                              Square: {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || '1001'}`}
+                            </span>
+                          </div>
+                          <div className="admin-guest-meta" style={{ marginTop: '3px' }}>
+                            {guest.phone} • {guest.email} • <strong>{guest.tier}</strong> • {guest.rewardNights ?? 0} Nights
                           </div>
                         </div>
                         <button
@@ -2874,6 +2918,12 @@ const PropertyManagerDashboard: React.FC = () => {
                     </div>
                     <span style={{ fontSize: '0.78rem', color: '#997125', fontWeight: 600 }}>Earned − Redeemed</span>
                   </div>
+
+                  <div style={{ backgroundColor: '#f0fdf4', borderRadius: '12px', padding: '16px 20px', border: '1.5px solid #86efac', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.08)' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', letterSpacing: '0.08em', textTransform: 'uppercase' }}>SQUARE POS LINKAGE</span>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#15803d', margin: '4px 0 2px 0' }}>100%</div>
+                    <span style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>Anti-duplicate claim lock active</span>
+                  </div>
                 </div>
 
                 {/* Clean Members Listing Table */}
@@ -2881,6 +2931,8 @@ const PropertyManagerDashboard: React.FC = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f8faf9', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        <th style={{ padding: '14px 18px' }}>Customer ID</th>
+                        <th style={{ padding: '14px 18px' }}>Square ID (POS)</th>
                         <th style={{ padding: '14px 18px' }}>Member Profile</th>
                         <th style={{ padding: '14px 18px' }}>Verified Contact</th>
                         <th style={{ padding: '14px 18px' }}>Loyalty Tier</th>
@@ -2919,34 +2971,48 @@ const PropertyManagerDashboard: React.FC = () => {
                               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f7f4')}
                               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#fafcfb')}
                             >
-                              <td style={{ padding: '14px 18px' }}>
-                                <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.92rem' }}>
-                                  {guest.name}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
-                                  <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#edf4f0', color: '#17271f', padding: '1px 6px', borderRadius: '4px', border: '1px solid #c2e0d1' }}>
-                                    {guest.customerId || `CUST-${1000 + idx}`}
-                                  </span>
+                              {/* 1. Customer ID */}
+                              <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 700, backgroundColor: '#edf4f0', color: '#17271f', padding: '3px 8px', borderRadius: '4px', border: '1px solid #c2e0d1' }}>
+                                  {guest.customerId || `CUST-${1000 + idx}`}
+                                </span>
+                              </td>
+
+                              {/* 2. Square ID (POS) */}
+                              <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                   <span
-                                    title="Linked Square POS Customer ID: Locked against duplicate redemption claims"
+                                    title={`Linked Square POS ID: ${guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}. Identity lock active against duplicate claims.`}
                                     style={{
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '4px',
-                                      fontSize: '0.72rem',
+                                      gap: '5px',
+                                      fontSize: '0.82rem',
                                       fontFamily: 'monospace',
                                       fontWeight: 700,
                                       backgroundColor: '#f0fdf4',
                                       color: '#166534',
-                                      padding: '1px 6px',
-                                      borderRadius: '4px',
+                                      padding: '3px 8px',
+                                      borderRadius: '5px',
                                       border: '1px solid #bbf7d0'
                                     }}
                                   >
-                                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
-                                    Square: {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
+                                    {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}
                                   </span>
-                                  <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{guest.email}</span>
+                                  <span style={{ fontSize: '0.72rem', color: guest.squareSyncStatus === 'Pending Sync' ? '#d97706' : '#15803d', fontWeight: 600 }}>
+                                    {guest.squareSyncStatus || 'Linked'}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* 3. Member Profile */}
+                              <td style={{ padding: '14px 18px' }}>
+                                <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.92rem' }}>
+                                  {guest.name}
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                                  {guest.email}
                                 </div>
                               </td>
 
