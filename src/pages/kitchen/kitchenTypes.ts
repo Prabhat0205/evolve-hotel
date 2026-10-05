@@ -1,58 +1,47 @@
-import { BreakfastItem, OrderStatus } from '../../types';
+export type KitchenTab =
+  | 'upcoming'
+  | 'preparing'
+  | 'ready'
+  | 'picked_up'
+  | 'all_orders'
+  | 'order_history'
+  | 'buffet_menu'
+  | 'reports'
+  | 'settings';
 
-export type KitchenStation = 'ALL' | 'HOT_LINE' | 'COLD_BAKERY' | 'BARISTA';
+export type KitchenOrderStatus = 'NOT_STARTED' | 'PREPARING' | 'READY' | 'PICKED_UP';
 
-export type KitchenTab = 'live_kds' | 'orders_queue' | 'stations' | 'inventory_86' | 'delivered_archive';
-
-export type KitchenOrderStatus = 'RECEIVED' | 'BEING_PREPARED' | 'READY' | 'EN_ROUTE' | 'DELIVERED';
-
-export interface KitchenOrderItemDetail {
+export interface PlateDetail {
   id: string;
-  item: BreakfastItem;
-  quantity: number;
-  specialInstructions?: string;
-  station: KitchenStation;
-  isPrepared?: boolean;
+  plateNumber: number;
+  items: string[];
+  specialRequest?: string;
 }
 
 export interface KitchenOrderRecord {
   id: string;
-  orderNumber: string;
-  roomNumber: string;
-  guestName: string;
-  guestTier?: 'Prestige' | 'Gold' | 'Silver' | 'Standard VIP';
-  deliverySlot: string; // e.g. "08:00 AM - 08:30 AM"
-  orderPlacedAt: string; // e.g. "07:15 AM"
-  estimatedDeliveryTime: string;
+  ticketId: string; // e.g. "K-2316"
+  roomNumber: string; // e.g. "Room 108"
+  guestName: string; // e.g. "Robert Martinez"
+  pickupTime: string; // e.g. "7:15 AM"
+  platesCount: number;
+  plates: PlateDetail[];
   status: KitchenOrderStatus;
-  items: KitchenOrderItemDetail[];
-  dietaryNotes?: string[];
-  allergies?: string[];
-  specialInstructions?: string;
-  assignedCook?: string;
-  prepStartedAt?: string;
-  readyAt?: string;
-  elapsedMinutes: number;
-  targetMinutes: number;
-  isUrgent?: boolean;
-  tableOrRoomType?: string;
+  orderDate?: string;
+}
+
+export interface BuffetMenuItem {
+  id: string;
+  category: 'Eggs & Omelettes' | 'Meats & Proteins' | 'Breads & Toast' | 'Sides & Toppings' | 'Beverages & Juices';
+  name: string;
+  description: string;
+  options?: string[];
+  isAvailable: boolean;
 }
 
 export interface KitchenStaffUser {
   id: string;
   name: string;
   email: string;
-  role: 'head_chef' | 'line_cook' | 'pastry_chef' | 'station_lead';
   roleTitle: string;
-  avatarUrl?: string;
-  station: KitchenStation;
-}
-
-export interface KitchenShiftStats {
-  totalActive: number;
-  pendingQueue: number;
-  cookingNow: number;
-  readyForPickup: number;
-  deliveredToday: number;
-  avgPrepMinutes: number;
 }

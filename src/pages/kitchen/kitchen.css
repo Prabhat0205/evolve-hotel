@@ -1,179 +1,663 @@
 /* ==========================================================================
-   EVOLVE HOTELS & RESORTS — KITCHEN DISPLAY SYSTEM & PARTNER PORTAL
-   THEMED EXACTLY LIKE THE ADMIN PORTAL (LUXURY DEEP EMERALD, GOLD, CLEAN LIGHT WORKSPACE)
-   FEATURING CLEAN PARTNER LANDING, EMAIL + PASSWORD, EMAIL 2FA, AND LIVE KDS
+   EVOLVE HOTELS & RESORTS — KITCHEN DISPATCH APP
+   EXACT REPLICA OF THE SPECIFIED BREAKFAST QUEUE & BUFFET MENU MANAGEMENT
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. KITCHEN PARTNER LANDING PAGE (MATCHING ZOMATO PARTNER STYLE)
+   OUTER LAYOUT: 3-PANEL SYSTEM (SIDEBAR, QUEUE STREAM, DETAILS PANEL)
    -------------------------------------------------------------------------- */
-.kitchen-partner-landing {
+.kitchen-screen-wrapper {
+  display: flex;
   min-height: 100vh;
   width: 100%;
-  display: flex;
-  flex-direction: column;
   background-color: #f7f9f8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
   color: #17271f;
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
 }
 
-/* Top Navigation Bar */
-.kitchen-partner-header {
-  height: 64px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5ebe7;
-  padding: 0 40px;
+/* --------------------------------------------------------------------------
+   PANEL 1: LEFT DEEP FOREST SIDEBAR
+   -------------------------------------------------------------------------- */
+.kitchen-sidebar-panel {
+  width: 200px;
+  background-color: #0f241c;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 14px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.kitchen-sidebar-brand {
+  margin-bottom: 28px;
+  padding: 0 8px;
+}
+
+.kitchen-sidebar-brand-name {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1.25;
+  display: block;
+}
+
+.kitchen-sidebar-brand-sub {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-transform: uppercase;
+  display: block;
+}
+
+.kitchen-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.kitchen-sidebar-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-sizing: border-box;
-}
-
-.kitchen-partner-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.kitchen-partner-brand-text {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.85rem;
-  font-weight: 900;
-  font-style: italic;
-  letter-spacing: -0.02em;
-  color: #17271f;
-  line-height: 1;
-}
-
-.kitchen-partner-brand-badge {
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #997125;
-  background: #fdf6e9;
-  border: 1px solid #fae2b8;
-  padding: 3px 8px;
-  border-radius: 4px;
-}
-
-.kitchen-partner-top-link {
-  font-size: 0.85rem;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #b7c7c0;
+  background: transparent;
+  border: none;
+  font-size: 0.92rem;
   font-weight: 600;
-  color: #55665e;
-  background: none;
-  border: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.15s ease;
-}
-
-.kitchen-partner-top-link:hover {
-  color: #17271f;
-}
-
-/* Centered Landing Body */
-.kitchen-partner-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
-  text-align: center;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
   box-sizing: border-box;
 }
 
-/* Chef Illustration Container */
-.kitchen-chef-illustration-box {
-  max-width: 420px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
+.kitchen-sidebar-item:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
-.kitchen-chef-svg {
-  width: 100%;
-  height: auto;
-  max-height: 230px;
-  filter: drop-shadow(0 8px 16px rgba(23, 39, 31, 0.06));
+.kitchen-sidebar-item.active {
+  background-color: #1e3e33;
+  color: #ffffff;
+  font-weight: 700;
 }
 
-/* Title & Subtitle */
-.kitchen-partner-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.65rem;
+.kitchen-sidebar-item-badge {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 0.72rem;
   font-weight: 800;
-  color: #1e293b;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.01em;
 }
 
-.kitchen-partner-subtitle {
-  font-size: 0.95rem;
-  color: #64748b;
-  max-width: 440px;
-  margin: 0 0 28px 0;
-  line-height: 1.5;
-}
-
-/* Action Buttons (Login & Register) */
-.kitchen-partner-actions {
+.kitchen-sidebar-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 320px;
-  max-width: 100%;
+  gap: 8px;
 }
 
-.kitchen-btn-primary-login {
-  width: 100%;
-  padding: 13px 24px;
-  background-color: #1a67ed;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
+.kitchen-sidebar-user {
+  font-size: 0.78rem;
+  color: #dda943;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 3px 10px rgba(26, 103, 237, 0.22);
-}
-
-.kitchen-btn-primary-login:hover {
-  background-color: #1555c7;
-  transform: translateY(-1px);
-  box-shadow: 0 5px 14px rgba(26, 103, 237, 0.32);
-}
-
-.kitchen-btn-secondary-register {
-  width: 100%;
-  padding: 12px 24px;
-  background-color: #ffffff;
-  color: #1a67ed;
-  border: 1.5px solid #1a67ed;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.kitchen-btn-secondary-register:hover {
-  background-color: #eff6ff;
-  border-color: #1555c7;
+  padding: 0 8px;
 }
 
 /* --------------------------------------------------------------------------
-   2. AUTH MODAL: STEP 1 (EMAIL + PASS) & STEP 2 (EMAIL 2FA)
+   PANEL 2: CENTER BREAKFAST QUEUE STREAM
    -------------------------------------------------------------------------- */
-.kitchen-auth-backdrop {
+.kitchen-center-panel {
+  flex: 1;
+  padding: 28px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  max-width: calc(100% - 200px - 360px);
+}
+
+/* Center Header */
+.kitchen-queue-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.kitchen-queue-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #17271f;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.kitchen-queue-subtitle {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+.kitchen-queue-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kitchen-dropdown-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d4ded9;
+  color: #17271f;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-dropdown-btn:hover {
+  border-color: #17271f;
+}
+
+.kitchen-search-room-input {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d4ded9;
+  color: #17271f;
+  font-size: 0.85rem;
+  outline: none;
+  min-width: 140px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-search-room-input:focus {
+  border-color: #17271f;
+}
+
+.kitchen-action-outline-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d4ded9;
+  color: #17271f;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-action-outline-btn:hover {
+  background: #f7faf9;
+  border-color: #17271f;
+}
+
+/* Metric Cards Row (5 Cards) */
+.kitchen-summary-cards-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.kitchen-summary-card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.kitchen-summary-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.kitchen-summary-card.active {
+  border-color: #17271f;
+  background-color: #fcfdfc;
+}
+
+.kitchen-summary-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.kitchen-summary-number {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #17271f;
+  line-height: 1.1;
+  display: block;
+}
+
+.kitchen-summary-plates {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Filter Pill Buttons Row */
+.kitchen-filter-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 20px;
+}
+
+.kitchen-filter-pill {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid #d4ded9;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.kitchen-filter-pill:hover {
+  background: #f1f5f9;
+  color: #17271f;
+}
+
+.kitchen-filter-pill.active {
+  background: #17271f;
+  color: #ffffff;
+  border-color: #17271f;
+}
+
+/* Section Title */
+.kitchen-section-heading {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #17271f;
+  margin-bottom: 12px;
+}
+
+/* Order Rows Stream */
+.kitchen-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kitchen-order-row-card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kitchen-order-row-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+}
+
+.kitchen-order-row-card.selected {
+  border-color: #17271f;
+  background-color: #fbfdfc;
+  box-shadow: 0 4px 14px rgba(23, 39, 31, 0.08);
+}
+
+/* Left yellow/amber stripe matching screenshot */
+.kitchen-order-row-card.has-stripe::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background-color: #dda943;
+}
+
+.kitchen-order-row-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.kitchen-order-time {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #17271f;
+  min-width: 75px;
+}
+
+.kitchen-order-room-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.kitchen-order-room-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #17271f;
+  margin: 0;
+}
+
+.kitchen-order-guest-plates {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Soft Mint Status Badge matching screenshot */
+.kitchen-status-pill-notstarted {
+  background: #e2f3ec;
+  color: #1f5945;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.kitchen-status-pill-preparing {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.kitchen-status-pill-ready {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.kitchen-status-pill-pickedup {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   PANEL 3: RIGHT ORDER DETAILS & ACTION PANEL (MATCHING SCREENSHOT)
+   -------------------------------------------------------------------------- */
+.kitchen-details-panel {
+  width: 360px;
+  background-color: #ffffff;
+  border-left: 1px solid #e5ebe7;
+  padding: 28px 24px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.kitchen-details-ticket-id {
+  font-size: 0.80rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #b4832c;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.kitchen-details-room-heading {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #17271f;
+  margin: 0 0 6px 0;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.kitchen-details-guest-meta {
+  font-size: 0.90rem;
+  color: #55665e;
+  margin: 0 0 24px 0;
+}
+
+/* Plate Breakdown Section */
+.kitchen-plate-block {
+  margin-bottom: 22px;
+}
+
+.kitchen-plate-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #17271f;
+  margin: 0 0 10px 0;
+}
+
+.kitchen-plate-items-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kitchen-plate-item-bullet {
+  font-size: 0.92rem;
+  color: #17271f;
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.kitchen-plate-item-bullet::before {
+  content: '•';
+  font-size: 1.1rem;
+  color: #17271f;
+}
+
+.kitchen-plate-special-req {
+  font-size: 0.92rem;
+  color: #17271f;
+  line-height: 1.4;
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.kitchen-plate-special-req::before {
+  content: '•';
+  font-size: 1.1rem;
+  color: #17271f;
+}
+
+.kitchen-plate-special-req strong {
+  font-weight: 800;
+  color: #17271f;
+}
+
+/* 2x2 Segmented Status Buttons (Matching Screenshot) */
+.kitchen-status-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+.kitchen-status-btn {
+  padding: 13px 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  background-color: #f1f5f9;
+  color: #17271f;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.kitchen-status-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.kitchen-status-btn.active {
+  background-color: #17271f;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(23, 39, 31, 0.2);
+}
+
+/* Edit Breakfast Order Button */
+.kitchen-edit-order-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  color: #17271f;
+  border: none;
+  font-size: 0.90rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-edit-order-btn:hover {
+  background-color: #e2e8f0;
+}
+
+/* Print Order Ticket Button */
+.kitchen-print-ticket-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #17271f;
+  border: 1.5px solid #d4ded9;
+  font-size: 0.90rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kitchen-print-ticket-btn:hover {
+  background-color: #f7faf9;
+  border-color: #17271f;
+}
+
+/* --------------------------------------------------------------------------
+   BUFFET MENU MANAGEMENT PANEL (CUSTOMER FIXED BUFFET MENU)
+   -------------------------------------------------------------------------- */
+.kitchen-buffet-panel {
+  flex: 1;
+  padding: 28px 32px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+.kitchen-buffet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.kitchen-buffet-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #17271f;
+  margin: 0;
+}
+
+.kitchen-btn-add-buffet {
+  padding: 10px 18px;
+  border-radius: 8px;
+  background-color: #17271f;
+  color: #ffffff;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-btn-add-buffet:hover {
+  background-color: #173f34;
+}
+
+.kitchen-buffet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.kitchen-buffet-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   MODAL STYLES (EDIT ORDER & ADD BUFFET ITEM)
+   -------------------------------------------------------------------------- */
+.kitchen-modal-backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(14, 26, 21, 0.65);
@@ -183,1219 +667,26 @@
   justify-content: center;
   z-index: 100;
   padding: 20px;
-  box-sizing: border-box;
 }
 
-.kitchen-auth-modal {
+.kitchen-modal-box {
   background-color: #ffffff;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid #e1e7e4;
   width: 100%;
-  max-width: 440px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
-  padding: 32px 30px;
-  box-sizing: border-box;
-  animation: modalFadeIn 0.2s ease-out;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.kitchen-auth-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.kitchen-auth-back-btn {
-  background: none;
-  border: none;
-  color: #55665e;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-}
-
-.kitchen-auth-back-btn:hover {
-  color: #17271f;
-}
-
-.kitchen-auth-close-btn {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.kitchen-auth-close-btn:hover {
-  color: #17271f;
-  background-color: #f1f5f9;
-}
-
-.kitchen-auth-step-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 22px;
-}
-
-.kitchen-step-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.80rem;
-  font-weight: 800;
-  transition: all 0.15s ease;
-}
-
-.kitchen-step-dot.active {
-  background-color: #17271f;
-  color: #ffffff;
-}
-
-.kitchen-step-dot.completed {
-  background-color: #16a34a;
-  color: #ffffff;
-}
-
-.kitchen-step-dot.inactive {
-  background-color: #e2e8f0;
-  color: #94a3b8;
-}
-
-.kitchen-step-connector {
-  width: 32px;
-  height: 2px;
-  background-color: #e2e8f0;
-}
-
-.kitchen-step-connector.completed {
-  background-color: #16a34a;
-}
-
-/* 2FA Digit Input Grid */
-.kitchen-otp-container {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-.kitchen-otp-box {
-  width: 48px;
-  height: 56px;
-  border-radius: 8px;
-  border: 1.5px solid #cbd5e1;
-  background-color: #ffffff;
-  color: #17271f;
-  font-size: 1.4rem;
-  font-weight: 800;
-  text-align: center;
-  outline: none;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.kitchen-otp-box:focus {
-  border-color: #173f34;
-  box-shadow: 0 0 0 3px rgba(23, 63, 52, 0.12);
-}
-
-.kitchen-2fa-info-banner {
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 0.84rem;
-  color: #166534;
-}
-
-/* Demo Role Accounts Quick-Select Drawer */
-.kitchen-demo-box {
-  margin-top: 24px;
-  padding: 14px;
-  background: #f7f9f8;
-  border: 1px dashed #d6cebf;
-  border-radius: 10px;
-}
-
-.kitchen-demo-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.kitchen-demo-title {
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #17271f;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kitchen-demo-badge {
-  font-size: 0.6875rem;
-  padding: 2px 7px;
-  background: #fcf6eb;
-  color: #8c6317;
-  border-radius: 4px;
-  font-weight: 800;
-}
-
-.kitchen-demo-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-}
-
-.kitchen-demo-card {
-  text-align: left;
-  background: #ffffff;
-  border: 1px solid #e1e7e4;
-  border-radius: 8px;
-  padding: 9px 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.kitchen-demo-card:hover {
-  border-color: #173f34;
-  background: #f2f7f4;
-  transform: translateY(-1px);
-}
-
-.kitchen-demo-role-name {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #17271f;
-  display: block;
-}
-
-.kitchen-demo-desc {
-  font-size: 0.70rem;
-  color: #55665e;
-  display: block;
-  margin-top: 1px;
-}
-
-/* Form inputs & buttons inside modal */
-.kitchen-modal-input-group {
-  margin-bottom: 16px;
-}
-
-.kitchen-modal-label {
-  display: block;
-  font-size: 0.80rem;
-  font-weight: 700;
-  color: #17271f;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
-}
-
-.kitchen-modal-input {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: 1.5px solid #d4ded9;
-  background-color: #ffffff;
-  color: #17271f;
-  font-size: 0.92rem;
-  box-sizing: border-box;
-  outline: none;
-  transition: all 0.15s ease;
-}
-
-.kitchen-modal-input:focus {
-  border-color: #173f34;
-  box-shadow: 0 0 0 3px rgba(23, 63, 52, 0.1);
-}
-
-.kitchen-modal-submit-btn {
-  width: 100%;
-  padding: 13px;
-  border-radius: 8px;
-  background-color: #17271f;
-  color: #ffffff;
-  border: none;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.15s ease;
-  margin-top: 12px;
-}
-
-.kitchen-modal-submit-btn:hover {
-  background-color: #173f34;
-  transform: translateY(-1px);
-}
-
-/* --------------------------------------------------------------------------
-   3. OPERATIONS DASHBOARD LAYOUT (SAME THEME AS ADMIN OPS SIDEBAR & WORKSPACE)
-   -------------------------------------------------------------------------- */
-.kitchen-ops-layout {
-  display: flex;
-  min-height: 100vh;
-  width: 100%;
-  background-color: #f7f9f8;
-  color: #17271f;
-  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
-}
-
-/* Left Dark Emerald Sidebar (Identical to Admin Sidebar) */
-.kitchen-ops-sidebar {
-  width: 250px;
-  min-height: 100vh;
-  background-color: #12241c;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 24px 16px;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1), padding 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  max-width: 540px;
+  max-height: 90vh;
   overflow-y: auto;
+  padding: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
 }
 
-.kitchen-ops-sidebar.collapsed {
-  width: 68px;
-  padding: 24px 8px;
-}
-
-.kitchen-ops-brand {
-  margin-bottom: 24px;
-  padding: 0 4px;
-}
-
-.kitchen-ops-brand-eyebrow {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #dda943;
-  margin-bottom: 4px;
-  display: block;
-}
-
-.kitchen-ops-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.02em;
-  margin: 0;
-}
-
-.kitchen-ops-toggle-btn {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #dda943;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.kitchen-ops-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.kitchen-ops-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.kitchen-ops-nav-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 11px 14px;
-  border-radius: 8px;
-  color: #b7c7c0;
-  background: transparent;
-  border: none;
-  font-size: 0.90rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s ease;
-  width: 100%;
-}
-
-.kitchen-ops-nav-item:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.06);
-}
-
-.kitchen-ops-nav-item.active {
-  background-color: #21382c;
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 #dda943;
-}
-
-.kitchen-ops-sidebar.collapsed .kitchen-ops-nav-item {
-  justify-content: center;
-  padding: 11px 0;
-}
-
-.kitchen-nav-badge {
-  padding: 2px 7px;
-  border-radius: 12px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  background: rgba(221, 169, 67, 0.2);
-  color: #dda943;
-}
-
-.kitchen-ops-nav-item.active .kitchen-nav-badge {
-  background: #dda943;
-  color: #12241c;
-}
-
-/* Sidebar Station Filter Section */
-.kitchen-station-sidebar-box {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.kitchen-station-sidebar-title {
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #8da49b;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.kitchen-station-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: transparent;
-  border: none;
-  color: #a3b8af;
-  font-size: 0.82rem;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  transition: all 0.15s ease;
-}
-
-.kitchen-station-item:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.kitchen-station-item.active {
-  color: #dda943;
-  background: rgba(221, 169, 67, 0.12);
-  font-weight: 700;
-}
-
-/* Bottom Profile Card in Sidebar */
-.kitchen-ops-profile-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  margin-top: 20px;
-}
-
-.kitchen-ops-profile-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.kitchen-ops-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #dda943;
-  color: #12241c;
-  font-weight: 800;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.kitchen-ops-name {
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.2;
-}
-
-.kitchen-ops-role-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #dda943;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-top: 1px;
-}
-
-.kitchen-ops-logout-btn {
-  background: none;
-  border: none;
-  color: #8da49b;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-}
-
-.kitchen-ops-logout-btn:hover {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.12);
-}
-
-/* --------------------------------------------------------------------------
-   4. MAIN WORKSPACE (MATCHING ADMIN OPS MAIN)
-   -------------------------------------------------------------------------- */
-.kitchen-ops-main {
-  flex: 1;
-  padding: 20px 28px 48px 28px;
-  overflow-y: auto;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Header Row */
-.kitchen-ops-header-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 22px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.kitchen-ops-eyebrow {
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #997125;
-  margin-bottom: 4px;
-  display: block;
-}
-
-.kitchen-ops-heading {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #17271f;
-  margin: 0 0 4px 0;
-  line-height: 1.2;
-}
-
-.kitchen-ops-subheading {
-  font-size: 0.95rem;
-  color: #55665e;
-  margin: 0;
-}
-
-/* Header Action Controls */
-.kitchen-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.kitchen-clock-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
-  background: #ffffff;
-  border: 1px solid #d4ded9;
-  border-radius: 8px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #17271f;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.kitchen-icon-btn {
-  padding: 9px 12px;
-  border-radius: 8px;
-  border: 1px solid #d4ded9;
-  background: #ffffff;
-  color: #17271f;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.84rem;
-  font-weight: 700;
-  transition: all 0.15s ease;
-  min-height: 40px;
-}
-
-.kitchen-icon-btn:hover {
-  background: #f7faf9;
-  border-color: #17271f;
-}
-
-.kitchen-icon-btn.active {
-  background: #17271f;
-  color: #ffffff;
-  border-color: #17271f;
-}
-
-/* View Mode Segmented Control */
-.kitchen-view-mode-group {
-  display: inline-flex;
-  background: #e9eeea;
-  padding: 3px;
-  border-radius: 8px;
-  gap: 3px;
-}
-
-.kitchen-view-mode-btn {
-  border: none;
-  background: transparent;
-  color: #55665e;
-  padding: 7px 12px;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.kitchen-view-mode-btn.active {
-  background: #ffffff;
-  color: #17271f;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-/* --------------------------------------------------------------------------
-   5. METRIC / KPI CARDS (ADMIN STYLE)
-   -------------------------------------------------------------------------- */
-.kitchen-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.kitchen-metric-card {
-  background: #ffffff;
-  border: 1px solid #e1e7e4;
-  border-radius: 10px;
-  padding: 16px 18px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: all 0.15s ease;
-}
-
-.kitchen-metric-card:hover {
-  border-color: #c0d3c9;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-.kitchen-metric-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.kitchen-metric-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.kitchen-metric-num {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #17271f;
-  line-height: 1.1;
-}
-
-.kitchen-metric-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* --------------------------------------------------------------------------
-   6. CONTROLS BAR (SEARCH & QUICK FILTERS)
-   -------------------------------------------------------------------------- */
-.kitchen-controls-bar {
-  background: #ffffff;
-  border: 1px solid #e1e7e4;
-  border-radius: 10px;
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 22px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-}
-
-.kitchen-search-box {
-  position: relative;
-  min-width: 240px;
-  max-width: 360px;
-  flex: 1;
-}
-
-.kitchen-search-input {
-  width: 100%;
-  padding: 9px 12px 9px 36px;
-  border-radius: 8px;
-  background: #f8fafc;
-  border: 1.5px solid #d4ded9;
-  color: #17271f;
-  font-size: 0.88rem;
-  outline: none;
-  box-sizing: border-box;
-  transition: all 0.15s ease;
-}
-
-.kitchen-search-input:focus {
-  background: #ffffff;
-  border-color: #173f34;
-}
-
-/* --------------------------------------------------------------------------
-   7. KANBAN TICKET BOARD (3 COLUMNS)
-   -------------------------------------------------------------------------- */
-.kitchen-kanban-board {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .kitchen-kanban-board {
-    grid-template-columns: 1fr;
-    gap: 24px;
+/* Responsive */
+@media (max-width: 1100px) {
+  .kitchen-center-panel {
+    max-width: none;
   }
-}
-
-.kitchen-kanban-col {
-  background: #edf1ef;
-  border-radius: 12px;
-  border: 1px solid #d8e2dd;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  min-height: 600px;
-}
-
-.kitchen-kanban-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #d3ded8;
-  margin-bottom: 14px;
-}
-
-.kitchen-col-title-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.kitchen-col-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.kitchen-col-title {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: #17271f;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0;
-}
-
-.kitchen-col-count-badge {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #ffffff;
-}
-
-.kitchen-col-sub {
-  font-size: 0.75rem;
-  color: #55665e;
-  margin-top: 2px;
-}
-
-.kitchen-col-cards-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-}
-
-.kitchen-col-empty-card {
-  padding: 36px 16px;
-  text-align: center;
-  border: 1.5px dashed #c4d4cc;
-  border-radius: 8px;
-  color: #6e7a76;
-  font-size: 0.84rem;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.4);
-}
-
-/* --------------------------------------------------------------------------
-   8. TICKET CARDS (CLEAN LUXURY HOTEL KDS CARD)
-   -------------------------------------------------------------------------- */
-.kds-card {
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1.5px solid #dce4e0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.kds-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
-  border-color: #173f34;
-}
-
-.kds-card.urgent {
-  border-color: #f87171 !important;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.14);
-}
-
-.kds-card-header {
-  background: #f8fafc;
-  padding: 12px 14px;
-  border-bottom: 1px solid #eef2ef;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.kds-room-badge {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #17271f;
-  letter-spacing: -0.01em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kds-ticket-id {
-  font-size: 0.78rem;
-  color: #64748b;
-  font-weight: 700;
-}
-
-.kds-timer-pill {
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.timer-blue {
-  background: #e0f2fe;
-  color: #0369a1;
-  border: 1px solid #bae6fd;
-}
-
-.timer-amber {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.timer-green {
-  background: #dcfce7;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-}
-
-.timer-red {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
-  animation: pulse-urgent 1.5s infinite;
-}
-
-@keyframes pulse-urgent {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-  100% { transform: scale(1); }
-}
-
-.kds-card-body {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: 1;
-}
-
-.kds-guest-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.88rem;
-}
-
-.kds-guest-name {
-  font-weight: 700;
-  color: #17271f;
-}
-
-.kds-slot-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: #edf5f1;
-  color: #173f34;
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid #c8ded4;
-}
-
-.kds-allergy-banner {
-  background: #fef2f2;
-  border: 1.5px solid #fca5a5;
-  color: #991b1b;
-  padding: 7px 10px;
-  border-radius: 6px;
-  font-size: 0.80rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kds-items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 1px solid #f0f4f2;
-  padding-top: 8px;
-}
-
-.kds-item-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  background: #fbfcfb;
-  border: 1px solid #edf2ef;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.kds-item-row:hover {
-  background: #f4f8f5;
-  border-color: #cbdad2;
-}
-
-.kds-item-row.done {
-  opacity: 0.55;
-  background: #f8fafc;
-  text-decoration: line-through;
-}
-
-.kds-item-qty {
-  background: #17271f;
-  color: #ffffff;
-  font-size: 0.80rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  min-width: 22px;
-  text-align: center;
-}
-
-.kds-item-info {
-  flex: 1;
-}
-
-.kds-item-name {
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: #17271f;
-  line-height: 1.3;
-}
-
-.kds-item-instruction {
-  font-size: 0.75rem;
-  color: #b45309;
-  font-weight: 600;
-  margin-top: 1px;
-}
-
-.kds-special-note {
-  font-size: 0.78rem;
-  color: #4b5d54;
-  font-style: italic;
-  padding: 6px 10px;
-  background: #fefce8;
-  border-left: 3px solid #dda943;
-  border-radius: 4px;
-}
-
-.kds-card-footer {
-  padding: 10px 14px;
-  background: #f8fafc;
-  border-top: 1px solid #eef2ef;
-  display: flex;
-  gap: 8px;
-}
-
-.kds-action-btn {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 0.86rem;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-  min-height: 44px;
-}
-
-.kds-action-btn.btn-cook {
-  background: #17271f;
-  color: #ffffff;
-}
-
-.kds-action-btn.btn-cook:hover {
-  background: #173f34;
-}
-
-.kds-action-btn.btn-ready {
-  background: #16a34a;
-  color: #ffffff;
-}
-
-.kds-action-btn.btn-ready:hover {
-  background: #15803d;
-}
-
-.kds-action-btn.btn-dispatch {
-  background: #ffffff;
-  color: #17271f;
-  border: 1.5px solid #17271f;
-}
-
-.kds-action-btn.btn-dispatch:hover {
-  background: #17271f;
-  color: #ffffff;
-}
-
-.kds-inspect-btn {
-  padding: 10px;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #17271f;
-  border: 1.5px solid #cbd5e1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  transition: all 0.15s ease;
-}
-
-.kds-inspect-btn:hover {
-  background: #edf5f1;
-  border-color: #17271f;
-}
-
-/* --------------------------------------------------------------------------
-   9. GRID & TABLE VIEWS
-   -------------------------------------------------------------------------- */
-.kitchen-grid-view {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
-}
-
-.kitchen-table-card {
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid #e1e7e4;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
-}
-
-.kitchen-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 0.88rem;
-}
-
-.kitchen-table th {
-  background: #f8fafc;
-  padding: 12px 16px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1.5px solid #e2e8f0;
-}
-
-.kitchen-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #edf2f7;
-  color: #17271f;
-}
-
-.kitchen-table tr:hover td {
-  background-color: #fbfdfc;
-}
-
-/* --------------------------------------------------------------------------
-   10. RESPONSIVE MEDIA QUERIES (TABLET & MOBILE)
-   -------------------------------------------------------------------------- */
-@media (max-width: 1024px) {
-  .kitchen-partner-header {
-    padding: 0 20px;
-  }
-  .kitchen-ops-sidebar {
-    width: 72px;
-    padding: 20px 8px;
-  }
-  .kitchen-ops-sidebar .kitchen-ops-brand,
-  .kitchen-ops-sidebar .kitchen-station-sidebar-box,
-  .kitchen-ops-sidebar .kitchen-ops-name,
-  .kitchen-ops-sidebar .kitchen-ops-role-badge {
-    display: none;
-  }
-  .kitchen-ops-sidebar .kitchen-ops-nav-item span {
-    display: none;
-  }
-  .kitchen-ops-sidebar .kitchen-ops-nav-item {
-    justify-content: center;
-    padding: 12px 0;
-  }
-  .kitchen-ops-main {
-    padding: 16px 18px 36px 18px;
-  }
-}
-
-@media (max-width: 640px) {
-  .kitchen-ops-layout {
-    flex-direction: column;
-  }
-  .kitchen-ops-sidebar {
-    width: 100%;
-    height: auto;
-    min-height: auto;
-    flex-direction: row;
-    padding: 12px 16px;
-    position: relative;
-  }
-  .kitchen-ops-nav {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-  .kitchen-ops-profile-card {
+  .kitchen-details-panel {
     display: none;
   }
 }
