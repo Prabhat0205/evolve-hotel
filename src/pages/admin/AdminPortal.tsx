@@ -2433,7 +2433,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px', width: '13%' }}>Guest Name</th>
                         <th style={{ padding: '12px 16px', width: '12%' }}>Phone No</th>
                         <th style={{ padding: '12px 16px', width: '13%' }}>Room Type</th>
-                        <th style={{ padding: '12px 14px', width: '8%' }}>No of Suites</th>
+                        <th style={{ padding: '12px 14px', width: '12%' }}>Room No</th>
                         <th style={{ padding: '12px 16px', width: '14%' }}>Booking Dates</th>
                         <th style={{ padding: '12px 14px', width: '10%' }}>Booking Source</th>
                         <th style={{ padding: '12px 14px', width: '5%' }}>Status</th>
@@ -2471,7 +2471,7 @@ const PropertyManagerDashboard: React.FC = () => {
 
                               {/* 3. Guest Name */}
                               <td style={{ padding: '14px 16px', color: '#17271f', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
-                                {booking.guestName}
+                                {booking.guestName?.replace(/\s*\(\+.*?\)/g, '') || 'Guest User'}
                               </td>
 
                               {/* 4. Phone No (Separate Column) */}
@@ -2484,9 +2484,16 @@ const PropertyManagerDashboard: React.FC = () => {
                                 {booking.roomType}
                               </td>
 
-                              {/* 6. No of Suites */}
-                              <td style={{ padding: '14px 14px', color: '#334155', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
-                                {booking.suitesCount} {booking.suitesCount === 1 ? 'suite' : 'suites'}
+                              {/* 6. Room No */}
+                              <td style={{ padding: '14px 14px', color: '#17271f', fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+                                <div>
+                                  {booking.suiteNumber
+                                    ? `Suite ${booking.suiteNumber}`
+                                    : 'Suite 104'}
+                                </div>
+                                <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 500, marginTop: '1px' }}>
+                                  {booking.suitesCount} {booking.suitesCount === 1 ? 'suite' : 'suites'}
+                                </div>
                               </td>
 
                               {/* 7. Booking Dates */}
@@ -3103,9 +3110,9 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Booking Ref</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
                         <th style={{ padding: '12px 16px' }}>Room No</th>
+                        <th style={{ padding: '12px 16px' }}>Room Type</th>
                         <th style={{ padding: '12px 16px' }}>Dates</th>
                         <th style={{ padding: '12px 16px' }}>Notes</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3143,7 +3150,9 @@ const PropertyManagerDashboard: React.FC = () => {
                             <td style={{ padding: '14px 16px' }}>
                               {guest.name ? (
                                 <div>
-                                  <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>{guest.name}</div>
+                                  <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>
+                                    {guest.name.replace(/\s*\(\+.*?\)/g, '')}
+                                  </div>
                                 </div>
                               ) : (
                                 <span style={{
@@ -3188,90 +3197,82 @@ const PropertyManagerDashboard: React.FC = () => {
                               <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.88rem' }}>
                                 Suite {guest.suiteNumber}
                               </div>
-                              <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '1px' }}>
-                                {guest.roomType}
-                              </div>
+                              {guest.suiteNumber.includes(',') && (
+                                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '1px' }}>
+                                  {guest.suiteNumber.split(',').length} suites
+                                </div>
+                              )}
                             </td>
 
-                            {/* 6. Dates */}
+                            {/* 6. Room Type (Separate Column) */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#334155', fontSize: '0.86rem' }}>
+                              {guest.roomType}
+                            </td>
+
+                            {/* 7. Dates */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.84rem' }}>
                               {guest.dateRange}
                             </td>
 
-                            {/* 7. Notes */}
+                            {/* 8. Notes & Edit (Common Section) */}
                             <td style={{ padding: '14px 16px' }}>
-                              {guest.notes ? (
-                                <div
-                                  onClick={() => openGuestUserDetailModal(guest)}
-                                  title={`${guest.notes} (Click to edit notes)`}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    cursor: 'pointer',
-                                    backgroundColor: '#f8fafc',
-                                    border: '1px solid #e2e8f0',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px',
-                                    maxWidth: '260px'
-                                  }}
-                                >
-                                  <FileText size={13} style={{ color: '#059669', flexShrink: 0 }} />
-                                  <span style={{
-                                    fontSize: '0.80rem',
-                                    color: '#334155',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                  }}>
-                                    {guest.notes}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {guest.notes ? (
+                                  <div
+                                    onClick={() => openGuestUserDetailModal(guest)}
+                                    title={`${guest.notes} (Click to edit notes)`}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      cursor: 'pointer',
+                                      backgroundColor: '#f8fafc',
+                                      border: '1px solid #e2e8f0',
+                                      padding: '4px 10px',
+                                      borderRadius: '6px',
+                                      maxWidth: '260px',
+                                      flex: 1
+                                    }}
+                                  >
+                                    <FileText size={13} style={{ color: '#059669', flexShrink: 0 }} />
+                                    <span style={{
+                                      fontSize: '0.80rem',
+                                      color: '#334155',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}>
+                                      {guest.notes}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', flex: 1 }}>
+                                    No notes
                                   </span>
-                                </div>
-                              ) : (
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => openGuestUserDetailModal(guest)}
+                                  title={guest.notes ? "Edit note" : "Add note"}
                                   style={{
-                                    border: '1px dashed #cbd5e1',
-                                    backgroundColor: '#f8fafc',
-                                    color: '#64748b',
-                                    fontSize: '0.76rem',
-                                    fontWeight: 500,
-                                    padding: '3px 8px',
+                                    padding: '5px 10px',
+                                    backgroundColor: '#17271f',
+                                    color: '#ffffff',
+                                    border: 'none',
                                     borderRadius: '5px',
+                                    fontSize: '0.76rem',
+                                    fontWeight: 600,
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px'
+                                    gap: '4px',
+                                    flexShrink: 0
                                   }}
                                 >
-                                  <Plus size={11} /> Add Note
+                                  {guest.notes ? <Edit3 size={11} /> : <Plus size={11} />}
+                                  <span>{guest.notes ? 'Edit' : 'Add Note'}</span>
                                 </button>
-                              )}
-                            </td>
-
-                            {/* 8. Action */}
-                            <td style={{ padding: '14px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                              <button
-                                type="button"
-                                onClick={() => openGuestUserDetailModal(guest)}
-                                style={{
-                                  padding: '6px 12px',
-                                  backgroundColor: '#17271f',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px'
-                                }}
-                              >
-                                <Edit3 size={12} />
-                                <span>{guest.notes ? 'Edit Notes' : 'Add Note'}</span>
-                              </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -7880,7 +7881,7 @@ const PropertyManagerDashboard: React.FC = () => {
               <div>
                 <span className="admin-ops-eyebrow">{isFrontDesk ? 'FRONT DESK WORKSPACE • VIEW ONLY' : 'PROPERTY MANAGER WORKSPACE'}</span>
                 <h3 style={{ margin: '3px 0 0 0', fontFamily: 'Playfair Display, serif', fontSize: '1.5rem', color: '#17271f', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <span>{selectedBookingDetails.confirmationCode} • {selectedBookingDetails.guestName}</span>
+                  <span>{selectedBookingDetails.confirmationCode} • {selectedBookingDetails.guestName?.replace(/\s*\(\+.*?\)/g, '') || 'Guest User'}</span>
                   {isFrontDesk && (
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '3px 10px', borderRadius: '12px', border: '1px solid #cbd5e1', letterSpacing: '0.03em', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
                       View Only Mode
@@ -7929,7 +7930,13 @@ const PropertyManagerDashboard: React.FC = () => {
               {/* Card 2: ASSIGNED SUITE */}
               <div className="admin-security-metric-tile">
                 <span className="admin-security-metric-eyebrow">ASSIGNED SUITE</span>
-                <h3 className="admin-security-metric-val">{selectedBookingDetails.suiteNumber || '214'}</h3>
+                <h3 className="admin-security-metric-val">
+                  {selectedBookingDetails.suiteNumber?.includes(',') 
+                    ? `Suite ${selectedBookingDetails.suiteNumber}` 
+                    : (selectedBookingDetails.suiteNumber?.startsWith('Suite') 
+                        ? selectedBookingDetails.suiteNumber 
+                        : `Suite ${selectedBookingDetails.suiteNumber || '214'}`)}
+                </h3>
                 <p className="admin-security-metric-subtext">Read-only from Cloudbeds</p>
               </div>
 
@@ -7946,7 +7953,7 @@ const PropertyManagerDashboard: React.FC = () => {
               <div className="admin-security-user-row">
                 <div>
                   <h4 style={{ margin: '0 0 3px 0', fontSize: '1.02rem', fontWeight: 700, color: '#17271f' }}>Guest</h4>
-                  <div style={{ color: '#55665e', fontSize: '0.85rem' }}>{selectedBookingDetails.guestName}</div>
+                  <div style={{ color: '#55665e', fontSize: '0.85rem' }}>{selectedBookingDetails.guestName?.replace(/\s*\(\+.*?\)/g, '') || 'Guest User'}</div>
                   <div style={{ color: '#6a7c73', fontSize: '0.82rem' }}>
                     {selectedBookingDetails.phone} • {selectedBookingDetails.email}
                   </div>
@@ -7964,7 +7971,7 @@ const PropertyManagerDashboard: React.FC = () => {
                   <div style={{ color: '#6a7c73', fontSize: '0.82rem' }}>{selectedBookingDetails.dateRange}</div>
                 </div>
                 <div style={{ fontWeight: 600, color: '#17271f', fontSize: '0.92rem' }}>
-                  {selectedBookingDetails.roomType} • {selectedBookingDetails.suitesCount} suite
+                  {selectedBookingDetails.roomType} • {selectedBookingDetails.suitesCount || 1} {(selectedBookingDetails.suitesCount || 1) > 1 ? 'suites' : 'suite'}
                 </div>
               </div>
 
@@ -8370,7 +8377,7 @@ const PropertyManagerDashboard: React.FC = () => {
                     Edit Notes
                   </h3>
                   <div style={{ fontSize: '0.76rem', color: '#93c5aa', marginTop: '2px' }}>
-                    {selectedGuestUserForModal.name ? `${selectedGuestUserForModal.name} • ` : ''}Suite {selectedGuestUserForModal.suiteNumber} • Ref: {selectedGuestUserForModal.bookingRef}
+                    {selectedGuestUserForModal.name ? `${selectedGuestUserForModal.name.replace(/\s*\(\+.*?\)/g, '')} • ` : ''}Suite {selectedGuestUserForModal.suiteNumber} • Ref: {selectedGuestUserForModal.bookingRef}
                   </div>
                 </div>
               </div>
