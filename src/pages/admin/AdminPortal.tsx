@@ -744,7 +744,7 @@ const PropertyManagerDashboard: React.FC = () => {
   const [editGuestEmail, setEditGuestEmail] = useState<string>('');
   const [editGuestPhone, setEditGuestPhone] = useState<string>('');
   const [editCloudbedsRef, setEditCloudbedsRef] = useState<string>('CB-10482');
-  const [editAccountStatus, setEditAccountStatus] = useState<'Active' | 'Suspended'>('Active');
+  const [editAccountStatus, setEditAccountStatus] = useState<'Active' | 'Inactive'>('Active');
   const [editAccountStatusReason, setEditAccountStatusReason] = useState<string>('');
 
   // Phone editing & 2FA sequence state
@@ -1646,7 +1646,7 @@ const PropertyManagerDashboard: React.FC = () => {
   const handleToggleUserAccess = (userId: string) => {
     setPropertyUsersList(propertyUsersList.map(u => {
       if (u.id === userId) {
-        const nextStatus = u.status === 'Active' ? 'Suspended' : 'Active';
+        const nextStatus = u.status === 'Active' ? 'Inactive' : 'Active';
         addToast(nextStatus === 'Active' ? 'success' : 'info', 'Security Status Updated', `${u.name} is now ${nextStatus}.`);
         return { ...u, status: nextStatus };
       }
@@ -1655,7 +1655,7 @@ const PropertyManagerDashboard: React.FC = () => {
     if (selectedUserForModal && selectedUserForModal.id === userId) {
       setSelectedUserForModal({
         ...selectedUserForModal,
-        status: selectedUserForModal.status === 'Active' ? 'Suspended' : 'Active'
+        status: selectedUserForModal.status === 'Active' ? 'Inactive' : 'Active'
       });
     }
   };
@@ -1699,7 +1699,7 @@ const PropertyManagerDashboard: React.FC = () => {
   // Toggle staff account access (Disable / Enable)
   const handleToggleStaffAccess = () => {
     if (!selectedStaffUser) return;
-    const nextStatus = selectedStaffUser.status === 'Active' ? 'Suspended' : 'Active';
+    const nextStatus = selectedStaffUser.status === 'Active' ? 'Inactive' : 'Active';
     const updatedUser: PropertyUserItem = {
       ...selectedStaffUser,
       status: nextStatus,
@@ -1708,7 +1708,7 @@ const PropertyManagerDashboard: React.FC = () => {
     setPropertyUsersList(propertyUsersList.map(u => u.id === selectedStaffUser.id ? updatedUser : u));
     setSelectedStaffUser(updatedUser);
 
-    if (nextStatus === 'Suspended') {
+    if (nextStatus === 'Inactive') {
       addToast('info', 'Access Disabled', `${selectedStaffUser.name}'s account access has been disabled${actionReason ? `: "${actionReason}"` : '.'}`);
     } else {
       addToast('success', 'Access Enabled', `${selectedStaffUser.name}'s account access has been re-enabled.`);
@@ -2564,7 +2564,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         >
                           <option value="all">All Statuses</option>
                           <option value="Active">Active</option>
-                          <option value="Suspended">Suspended</option>
+                          <option value="Inactive">Inactive</option>
                         </select>
                       </div>
 
@@ -6104,11 +6104,11 @@ const PropertyManagerDashboard: React.FC = () => {
                     </div>
                     <select
                       value={editAccountStatus}
-                      onChange={(e) => setEditAccountStatus(e.target.value as 'Active' | 'Suspended')}
+                      onChange={(e) => setEditAccountStatus(e.target.value as 'Active' | 'Inactive')}
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid #d1d5db', fontSize: '0.92rem', color: '#17271f', backgroundColor: '#ffffff', boxSizing: 'border-box' }}
                     >
                       <option value="Active">Active</option>
-                      <option value="Suspended">Suspended</option>
+                      <option value="Inactive">Inactive</option>
                     </select>
 
                     {editAccountStatus !== (selectedGuest.accountStatus || 'Active') && (

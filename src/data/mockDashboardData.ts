@@ -221,7 +221,7 @@ export const mockDashboardGuests: DashboardGuestItem[] = [
     stayHistoryText: '3 completed direct stays • Last checkout May 22, 2026',
     redemptionHistoryText: '0 Free Nights',
     casesText: '1 open inquiry • Phone update pending',
-    accountStatus: 'Suspended',
+    accountStatus: 'Inactive',
   },
   {
     id: 'guest-8',

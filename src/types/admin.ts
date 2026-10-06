@@ -40,7 +40,7 @@ export interface DashboardGuestItem {
   stayHistoryText?: string;
   redemptionHistoryText?: string;
   casesText?: string;
-  accountStatus?: 'Active' | 'Suspended';
+  accountStatus?: 'Active' | 'Inactive';
   commPreferences?: {
     stayMessages: boolean;
     rewardConfirmations: boolean;
@@ -183,7 +183,7 @@ export interface PropertyUserItem {
   email: string;
   phone?: string;
   notes?: string;
-  status: 'Active' | 'Suspended';
+  status: 'Active' | 'Inactive';
   twoFactorRequirement: 'Mandatory' | 'Optional';
   recoveryIssuesCount: number;
   lastActive: string;
