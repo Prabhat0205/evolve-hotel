@@ -692,7 +692,6 @@ const PropertyManagerDashboard: React.FC = () => {
 
   // Guest Management state
   const [guestSearchQuery, setGuestSearchQuery] = useState<string>('');
-  const [dashboardTierFilter, setDashboardTierFilter] = useState<'all' | 'Prestige' | 'Elite' | 'Origins'>('all');
   // Helper to load guests including any registered accounts from sign-up
   const getInitialGuestsList = (): DashboardGuestItem[] => {
     try {
@@ -1233,7 +1232,6 @@ const PropertyManagerDashboard: React.FC = () => {
   // Filtered guests based on search input (Dashboard) and Advanced Filters (Guest Management)
   const filteredGuests = guestsList.filter(g => {
     if (activeTab === 'dashboard') {
-      if (dashboardTierFilter !== 'all' && g.tier !== dashboardTierFilter) return false;
       if (!guestSearchQuery.trim()) return true;
       const q = guestSearchQuery.toLowerCase().trim();
       return (
@@ -1998,16 +1996,6 @@ const PropertyManagerDashboard: React.FC = () => {
                   Real-time telemetry across guest loyalty tiers, active reservations, and automated ledger activity.
                 </p>
               </div>
-              <div className="admin-dash-banner-controls">
-                <div className="admin-status-pill-synced" title="Cloudbeds PMS, Square POS, and Giftogram services healthy">
-                  <span className="admin-synced-dot" />
-                  <span>Square POS & Cloudbeds Synced</span>
-                </div>
-                <div className="admin-dash-date-badge">
-                  <CalendarDays size={14} />
-                  <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                </div>
-              </div>
             </div>
 
             {/* 1. TOP 4 KPI METRIC CARDS */}
@@ -2016,35 +2004,19 @@ const PropertyManagerDashboard: React.FC = () => {
                 let IconComp = Users;
                 let iconBg = '#f0fdf4';
                 let iconColor = '#166534';
-                let badgeText = '+10.4% MoM';
-                let badgeBg = '#ecfdf5';
-                let badgeColor = '#065f46';
-                let badgeBorder = '#a7f3d0';
 
                 if (metric.id === 'bookings') {
                   IconComp = Building2;
                   iconBg = '#eff6ff';
                   iconColor = '#2563eb';
-                  badgeText = '94% In-House';
-                  badgeBg = '#eff6ff';
-                  badgeColor = '#1e40af';
-                  badgeBorder = '#bfdbfe';
                 } else if (metric.id === 'rewards') {
                   IconComp = Award;
                   iconBg = '#fefce8';
                   iconColor = '#ca8a04';
-                  badgeText = 'Reconciled';
-                  badgeBg = '#fefce8';
-                  badgeColor = '#854d0e';
-                  badgeBorder = '#fef08a';
                 } else if (metric.id === 'alerts') {
                   IconComp = AlertCircle;
                   iconBg = '#fff1f2';
                   iconColor = '#e11d48';
-                  badgeText = 'Action Req';
-                  badgeBg = '#fff1f2';
-                  badgeColor = '#9f1239';
-                  badgeBorder = '#fecdd3';
                 }
 
                 return (
@@ -2057,15 +2029,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="admin-kpi-value">{metric.value}</div>
-                      <div className="admin-kpi-meta-row">
-                        <span
-                          className="admin-kpi-badge"
-                          style={{ backgroundColor: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}
-                        >
-                          {badgeText}
-                        </span>
-                        <span className="admin-kpi-subtext">{metric.subtext}</span>
-                      </div>
+                      <div className="admin-kpi-subtext">{metric.subtext}</div>
                     </div>
                     <div className="admin-kpi-footer">
                       <button
@@ -2089,15 +2053,7 @@ const PropertyManagerDashboard: React.FC = () => {
               {/* LEFT COLUMN: GUEST MANAGEMENT CARD */}
               <div className="admin-dash-card">
                 <div className="admin-dash-card-header">
-                  <div>
-                    <h2 className="admin-dash-card-title">
-                      Guest Management
-                      <span className="admin-chip-counter">{filteredGuests.length} Members</span>
-                    </h2>
-                    <p className="admin-dash-card-subtitle" style={{ margin: '3px 0 0 0' }}>
-                      Real-time member loyalty telemetry & Square POS link
-                    </p>
-                  </div>
+                  <h2 className="admin-dash-card-title">Guest Management</h2>
                   <button
                     type="button"
                     className="admin-link-action"
@@ -2129,26 +2085,6 @@ const PropertyManagerDashboard: React.FC = () => {
                       <X size={14} />
                     </button>
                   )}
-                </div>
-
-                {/* Fast Tier Filter Pills */}
-                <div className="admin-tier-filter-pills">
-                  {(['all', 'Prestige', 'Elite', 'Origins'] as const).map(tier => {
-                    const count = tier === 'all'
-                      ? guestsList.length
-                      : guestsList.filter(g => g.tier === tier).length;
-                    const isActive = dashboardTierFilter === tier;
-                    return (
-                      <button
-                        key={tier}
-                        type="button"
-                        className={`admin-tier-pill ${isActive ? 'active' : ''}`}
-                        onClick={() => setDashboardTierFilter(tier)}
-                      >
-                        {tier === 'all' ? 'All Members' : tier} ({count})
-                      </button>
-                    );
-                  })}
                 </div>
 
                 {/* Guest List */}
