@@ -41,7 +41,8 @@ import {
   LayoutDashboard, CalendarDays, Award, Gift, BarChart3,
   ChevronDown, ChevronUp, Filter, Plus, Check, Clock, Search, Download, ExternalLink,
   FileText, Printer, UserPlus, ShieldAlert, Key, History, Menu, SlidersHorizontal,
-  CheckCircle2, MessageSquare, Edit3, Phone, UtensilsCrossed, Coffee
+  CheckCircle2, MessageSquare, Edit3, Phone, UtensilsCrossed, Coffee,
+  Activity, X
 } from 'lucide-react';
 
 /* =========================================================================
@@ -691,6 +692,7 @@ const PropertyManagerDashboard: React.FC = () => {
 
   // Guest Management state
   const [guestSearchQuery, setGuestSearchQuery] = useState<string>('');
+  const [dashboardTierFilter, setDashboardTierFilter] = useState<'all' | 'Prestige' | 'Elite' | 'Origins'>('all');
   // Helper to load guests including any registered accounts from sign-up
   const getInitialGuestsList = (): DashboardGuestItem[] => {
     try {
@@ -1231,6 +1233,7 @@ const PropertyManagerDashboard: React.FC = () => {
   // Filtered guests based on search input (Dashboard) and Advanced Filters (Guest Management)
   const filteredGuests = guestsList.filter(g => {
     if (activeTab === 'dashboard') {
+      if (dashboardTierFilter !== 'all' && g.tier !== dashboardTierFilter) return false;
       if (!guestSearchQuery.trim()) return true;
       const q = guestSearchQuery.toLowerCase().trim();
       return (
@@ -1978,113 +1981,264 @@ const PropertyManagerDashboard: React.FC = () => {
       <main className="admin-ops-main">
         {activeTab === 'dashboard' ? (
           /* ===============================================================
-             MAIN DASHBOARD VIEW (MATCHING BOTH SCREENSHOTS)
+             MAIN DASHBOARD VIEW (MODERN LUXURY EXECUTIVE OVERVIEW)
           =============================================================== */
           <div>
+            {/* Executive Header Banner */}
+            <div className="admin-dash-header-banner">
+              <div>
+                <div className="admin-dash-telemetry-badge">
+                  <span className="admin-pulse-indicator" />
+                  <span className="admin-telemetry-text">Hospitality Operations Live</span>
+                  <span className="admin-telemetry-sep">•</span>
+                  <span className="admin-telemetry-prop">Evolve Estate & Suites</span>
+                </div>
+                <h1 className="admin-dash-title">Executive Management Overview</h1>
+                <p className="admin-dash-subtitle">
+                  Real-time telemetry across guest loyalty tiers, active reservations, and automated ledger activity.
+                </p>
+              </div>
+              <div className="admin-dash-banner-controls">
+                <div className="admin-status-pill-synced" title="Cloudbeds PMS, Square POS, and Giftogram services healthy">
+                  <span className="admin-synced-dot" />
+                  <span>Square POS & Cloudbeds Synced</span>
+                </div>
+                <div className="admin-dash-date-badge">
+                  <CalendarDays size={14} />
+                  <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+              </div>
+            </div>
+
             {/* 1. TOP 4 KPI METRIC CARDS */}
             <div className="admin-kpi-grid">
-              {mockDashboardMetrics.map(metric => (
-                <div key={metric.id} className="admin-kpi-card">
-                  <div>
-                    <div className="admin-kpi-label">{metric.label}</div>
-                    <div className="admin-kpi-value">{metric.value}</div>
-                    <div className="admin-kpi-subtext">{metric.subtext}</div>
+              {mockDashboardMetrics.map(metric => {
+                let IconComp = Users;
+                let iconBg = '#f0fdf4';
+                let iconColor = '#166534';
+                let badgeText = '+10.4% MoM';
+                let badgeBg = '#ecfdf5';
+                let badgeColor = '#065f46';
+                let badgeBorder = '#a7f3d0';
+
+                if (metric.id === 'bookings') {
+                  IconComp = Building2;
+                  iconBg = '#eff6ff';
+                  iconColor = '#2563eb';
+                  badgeText = '94% In-House';
+                  badgeBg = '#eff6ff';
+                  badgeColor = '#1e40af';
+                  badgeBorder = '#bfdbfe';
+                } else if (metric.id === 'rewards') {
+                  IconComp = Award;
+                  iconBg = '#fefce8';
+                  iconColor = '#ca8a04';
+                  badgeText = 'Reconciled';
+                  badgeBg = '#fefce8';
+                  badgeColor = '#854d0e';
+                  badgeBorder = '#fef08a';
+                } else if (metric.id === 'alerts') {
+                  IconComp = AlertCircle;
+                  iconBg = '#fff1f2';
+                  iconColor = '#e11d48';
+                  badgeText = 'Action Req';
+                  badgeBg = '#fff1f2';
+                  badgeColor = '#9f1239';
+                  badgeBorder = '#fecdd3';
+                }
+
+                return (
+                  <div key={metric.id} className="admin-kpi-card">
+                    <div>
+                      <div className="admin-kpi-top">
+                        <span className="admin-kpi-label">{metric.label}</span>
+                        <div className="admin-kpi-icon-wrap" style={{ backgroundColor: iconBg, color: iconColor }}>
+                          <IconComp size={18} />
+                        </div>
+                      </div>
+                      <div className="admin-kpi-value">{metric.value}</div>
+                      <div className="admin-kpi-meta-row">
+                        <span
+                          className="admin-kpi-badge"
+                          style={{ backgroundColor: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}
+                        >
+                          {badgeText}
+                        </span>
+                        <span className="admin-kpi-subtext">{metric.subtext}</span>
+                      </div>
+                    </div>
+                    <div className="admin-kpi-footer">
+                      <button
+                        type="button"
+                        className="admin-kpi-action"
+                        onClick={() => {
+                          if (metric.actionTab) setActiveTab(metric.actionTab);
+                        }}
+                      >
+                        <span>{metric.actionText.replace(' →', '')}</span>
+                        <ArrowRight size={14} className="admin-kpi-arrow" />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className="admin-kpi-action"
-                    onClick={() => {
-                      if (metric.actionTab) setActiveTab(metric.actionTab);
-                    }}
-                  >
-                    <span>{metric.actionText}</span>
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* 2. MIDDLE TWO-COLUMN SECTION */}
             <div className="admin-dash-two-col">
               {/* LEFT COLUMN: GUEST MANAGEMENT CARD */}
               <div className="admin-dash-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                  <h2 className="admin-dash-card-title" style={{ margin: 0 }}>Guest Management</h2>
+                <div className="admin-dash-card-header">
+                  <div>
+                    <h2 className="admin-dash-card-title">
+                      Guest Management
+                      <span className="admin-chip-counter">{filteredGuests.length} Members</span>
+                    </h2>
+                    <p className="admin-dash-card-subtitle" style={{ margin: '3px 0 0 0' }}>
+                      Real-time member loyalty telemetry & Square POS link
+                    </p>
+                  </div>
                   <button
                     type="button"
+                    className="admin-link-action"
                     onClick={() => setActiveTab('guests')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#15803d',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: 0
-                    }}
+                    title="Open full members directory with Square POS status"
                   >
-                    View Members Table (Square ID) →
+                    <span>View Members Table</span>
+                    <ArrowRight size={13} />
                   </button>
                 </div>
-                <input
-                  type="text"
-                  className="admin-guest-search-input"
-                  placeholder="Search by guest name, phone, email, Evolve ID, or Square ID..."
-                  value={guestSearchQuery}
-                  onChange={(e) => setGuestSearchQuery(e.target.value)}
-                />
+
+                {/* Search Input with Search Icon and Clear button */}
+                <div className="admin-dash-search-wrap">
+                  <Search size={15} className="admin-dash-search-icon" />
+                  <input
+                    type="text"
+                    className="admin-guest-search-input"
+                    placeholder="Search guest name, phone, email, Evolve ID, or Square ID..."
+                    value={guestSearchQuery}
+                    onChange={(e) => setGuestSearchQuery(e.target.value)}
+                  />
+                  {guestSearchQuery && (
+                    <button
+                      type="button"
+                      className="admin-search-clear-btn"
+                      onClick={() => setGuestSearchQuery('')}
+                      title="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Fast Tier Filter Pills */}
+                <div className="admin-tier-filter-pills">
+                  {(['all', 'Prestige', 'Elite', 'Origins'] as const).map(tier => {
+                    const count = tier === 'all'
+                      ? guestsList.length
+                      : guestsList.filter(g => g.tier === tier).length;
+                    const isActive = dashboardTierFilter === tier;
+                    return (
+                      <button
+                        key={tier}
+                        type="button"
+                        className={`admin-tier-pill ${isActive ? 'active' : ''}`}
+                        onClick={() => setDashboardTierFilter(tier)}
+                      >
+                        {tier === 'all' ? 'All Members' : tier} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Guest List */}
                 <div className="admin-guest-list">
                   {filteredGuests.length > 0 ? (
-                    filteredGuests.map(guest => (
-                      <div key={guest.id} className="admin-guest-item">
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span className="admin-guest-name">{guest.name}</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#edf4f0', color: '#17271f', padding: '1px 6px', borderRadius: '4px', border: '1px solid #c2e0d1' }}>
-                              {guest.customerId || 'CUST-1001'}
-                            </span>
-                            <span
-                              title={`Linked Square POS Customer ID: ${guest.squareId || 'sq_cust_1001'}. Locks redemptions to prevent duplicate claims.`}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '0.72rem',
-                                fontFamily: 'monospace',
-                                fontWeight: 700,
-                                backgroundColor: '#f0fdf4',
-                                color: '#166534',
-                                padding: '1px 6px',
-                                borderRadius: '4px',
-                                border: '1px solid #bbf7d0'
-                              }}
-                            >
-                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
-                              Square: {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || '1001'}`}
-                            </span>
+                    filteredGuests.map(guest => {
+                      const initials = guest.name
+                        .split(' ')
+                        .filter(Boolean)
+                        .map(n => n[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase() || 'GU';
+
+                      const tierLower = (guest.tier || '').toLowerCase();
+                      const tierBadgeStyle =
+                        tierLower === 'prestige'
+                          ? { bg: '#fef3c7', color: '#92400e', border: '#fde68a' }
+                          : tierLower === 'elite'
+                          ? { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' }
+                          : { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
+
+                      return (
+                        <div key={guest.id} className="admin-guest-item">
+                          <div className="admin-guest-left">
+                            <div className="admin-guest-avatar">
+                              {initials}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span className="admin-guest-name">{guest.name}</span>
+                                <span className="admin-guest-id-chip">
+                                  {guest.customerId || 'CUST-1001'}
+                                </span>
+                                <span
+                                  className="admin-square-id-chip"
+                                  title={`Linked Square POS Customer ID: ${guest.squareId || 'sq_cust_1001'}. Real-time synchronization active.`}
+                                >
+                                  <span
+                                    style={{
+                                      width: '6px',
+                                      height: '6px',
+                                      borderRadius: '50%',
+                                      backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e',
+                                      display: 'inline-block'
+                                    }}
+                                  />
+                                  Square: {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || '1001'}`}
+                                </span>
+                              </div>
+                              <div className="admin-guest-meta-row">
+                                <span>{guest.phone}</span>
+                                <span>•</span>
+                                <span>{guest.email}</span>
+                                <span>•</span>
+                                <span
+                                  className="admin-guest-tier-badge"
+                                  style={{
+                                    backgroundColor: tierBadgeStyle.bg,
+                                    color: tierBadgeStyle.color,
+                                    border: `1px solid ${tierBadgeStyle.border}`
+                                  }}
+                                >
+                                  {guest.tier}
+                                </span>
+                                <span>•</span>
+                                <span style={{ fontWeight: 600, color: '#17271f' }}>
+                                  {guest.rewardNights ?? 0} Nights
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="admin-guest-meta" style={{ marginTop: '3px' }}>
-                            {guest.phone} • {guest.email} • <strong>{guest.tier}</strong> • {guest.rewardNights ?? 0} Nights
-                          </div>
+                          <button
+                            type="button"
+                            className="admin-btn-adjust"
+                            onClick={() => {
+                              openGuestProfile(guest, 'profile');
+                              setEditTier(guest.tier);
+                              setPointAdjustment('');
+                            }}
+                          >
+                            <SlidersHorizontal size={13} />
+                            <span>View / Adjust</span>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          className="admin-btn-adjust"
-                          onClick={() => {
-                            openGuestProfile(guest, 'profile');
-                            setEditTier(guest.tier);
-                            setPointAdjustment('');
-                          }}
-                        >
-                          View / Adjust
-                        </button>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <div style={{ textAlign: 'center', padding: '24px 0', color: '#6b7280', fontSize: '0.85rem' }}>
-                      No members match "{guestSearchQuery}".
+                    <div style={{ textAlign: 'center', padding: '36px 0', color: '#6b7280', fontSize: '0.85rem' }}>
+                      No members match the current filter or search criteria.
                     </div>
                   )}
                 </div>
@@ -2092,36 +2246,111 @@ const PropertyManagerDashboard: React.FC = () => {
 
               {/* RIGHT COLUMN: QUICK ACCESS CARD */}
               <div className="admin-dash-card">
-                <h2 className="admin-dash-card-title">Quick Access</h2>
-                <p className="admin-dash-card-subtitle">
-                  Direct shortcuts to the complete property workflows.
-                </p>
+                <div className="admin-dash-card-header" style={{ marginBottom: '8px' }}>
+                  <div>
+                    <h2 className="admin-dash-card-title">
+                      <Sparkles size={17} color="#dda943" />
+                      Quick Access
+                    </h2>
+                    <p className="admin-dash-card-subtitle" style={{ margin: '3px 0 0 0' }}>
+                      Direct shortcuts to property workflows and queues.
+                    </p>
+                  </div>
+                </div>
                 <div className="admin-quick-access-grid">
-                  {mockQuickAccessTiles.map(tile => (
-                    <button
-                      key={tile.id}
-                      type="button"
-                      className="admin-quick-access-tile"
-                      onClick={() => {
-                        if (tile.id === 'property-settings') {
-                          setActiveTab('properties');
-                        } else {
-                          setActiveQuickAccess(tile);
-                        }
-                      }}
-                    >
-                      <div className="admin-quick-access-title">{tile.title}</div>
-                      <div className="admin-quick-access-desc">{tile.description}</div>
-                    </button>
-                  ))}
+                  {mockQuickAccessTiles.map(tile => {
+                    let TileIcon = ArrowRight;
+                    let iconBg = '#f4f6f5';
+                    let iconColor = '#17271f';
+                    let isLiveApi = false;
+
+                    if (tile.id === 'missing-stay') {
+                      TileIcon = Clock;
+                      iconBg = '#fffbeb';
+                      iconColor = '#d97706';
+                    } else if (tile.id === 'gift-card') {
+                      TileIcon = Gift;
+                      iconBg = '#fefce8';
+                      iconColor = '#ca8a04';
+                    } else if (tile.id === 'phone-recovery') {
+                      TileIcon = Phone;
+                      iconBg = '#f0fdf4';
+                      iconColor = '#16a34a';
+                    } else if (tile.id === 'api-status') {
+                      TileIcon = Activity;
+                      iconBg = '#ecfeff';
+                      iconColor = '#0891b2';
+                      isLiveApi = true;
+                    } else if (tile.id === 'create-case') {
+                      TileIcon = UserPlus;
+                      iconBg = '#f5f3ff';
+                      iconColor = '#7c3aed';
+                    } else if (tile.id === 'account-status') {
+                      TileIcon = ShieldCheck;
+                      iconBg = '#eff6ff';
+                      iconColor = '#2563eb';
+                    } else if (tile.id === 'property-settings') {
+                      TileIcon = SlidersHorizontal;
+                      iconBg = '#f8fafc';
+                      iconColor = '#475569';
+                    }
+
+                    return (
+                      <button
+                        key={tile.id}
+                        type="button"
+                        className="admin-quick-access-tile"
+                        onClick={() => {
+                          if (tile.id === 'property-settings') {
+                            setActiveTab('properties');
+                          } else {
+                            setActiveQuickAccess(tile);
+                          }
+                        }}
+                      >
+                        <div className="admin-tile-header">
+                          <div className="admin-tile-icon-wrap" style={{ backgroundColor: iconBg, color: iconColor }}>
+                            <TileIcon size={17} />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {isLiveApi && (
+                              <span
+                                style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  backgroundColor: '#10b981',
+                                  display: 'inline-block'
+                                }}
+                                title="Live Webhook Link"
+                              />
+                            )}
+                            <ArrowRight size={13} className="admin-tile-chevron" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="admin-quick-access-title">{tile.title}</div>
+                          <div className="admin-quick-access-desc">{tile.description}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {/* 3. BOTTOM SECTION: RECENT AUDIT ACTIVITY CARD (SCREENSHOT 2) */}
+            {/* 3. BOTTOM SECTION: RECENT AUDIT ACTIVITY CARD (INTEGRATED EXECUTIVE CARD) */}
             <div className="admin-audit-card">
               <div className="admin-audit-header">
-                <h2 className="admin-dash-card-title" style={{ margin: 0 }}>Recent Audit Activity</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <History size={18} color="#17271f" />
+                  <h2 className="admin-dash-card-title" style={{ margin: 0 }}>
+                    Recent Audit Activity
+                  </h2>
+                  <span className="admin-chip-counter">
+                    {mockAuditActivity.length} Events Logged
+                  </span>
+                </div>
                 <button
                   type="button"
                   className="admin-btn-export-report"
@@ -2129,31 +2358,81 @@ const PropertyManagerDashboard: React.FC = () => {
                     addToast('success', 'Report Exported', 'Audit summary export CSV dispatched to manager work email.');
                   }}
                 >
-                  Export Report
+                  <Download size={14} />
+                  <span>Export Report</span>
                 </button>
               </div>
               <div className="admin-audit-list">
-                {mockAuditActivity.map(item => (
-                  <div key={item.id} className="admin-audit-row">
-                    <div className="admin-audit-time">{item.timestamp}</div>
-                    <div className="admin-audit-content">
-                      <div className="admin-audit-title">{item.title}</div>
-                      <div className="admin-audit-sub">{item.subtitle}</div>
+                {mockAuditActivity.map(item => {
+                  let AuditIcon = History;
+                  let iconBg = '#f4f6f5';
+                  let iconColor = '#55665e';
+
+                  if (item.type === 'stay') {
+                    AuditIcon = CheckCircle2;
+                    iconBg = '#ecfdf5';
+                    iconColor = '#059669';
+                  } else if (item.type === 'gift') {
+                    AuditIcon = Gift;
+                    iconBg = '#fefce8';
+                    iconColor = '#ca8a04';
+                  } else if (item.type === 'account') {
+                    AuditIcon = ShieldCheck;
+                    iconBg = '#eff6ff';
+                    iconColor = '#2563eb';
+                  }
+
+                  const isPositive = item.tag.includes('+');
+                  const isCurrency = item.tag.includes('$');
+                  const tagStyle = isPositive
+                    ? { bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' }
+                    : isCurrency
+                    ? { bg: '#fefce8', color: '#854d0e', border: '#fde047' }
+                    : { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
+
+                  return (
+                    <div key={item.id} className="admin-audit-row">
+                      <div className="admin-audit-time-pill">
+                        <Clock size={12} />
+                        <span>{item.timestamp}</span>
+                      </div>
+                      <div className="admin-audit-content">
+                        <div className="admin-audit-icon-wrap" style={{ backgroundColor: iconBg, color: iconColor }}>
+                          <AuditIcon size={16} />
+                        </div>
+                        <div>
+                          <div className="admin-audit-title">{item.title}</div>
+                          <div className="admin-audit-sub">{item.subtitle}</div>
+                        </div>
+                      </div>
+                      <div
+                        className="admin-audit-tag"
+                        style={{
+                          backgroundColor: tagStyle.bg,
+                          color: tagStyle.color,
+                          border: `1px solid ${tagStyle.border}`
+                        }}
+                      >
+                        {item.tag}
+                      </div>
                     </div>
-                    <div className="admin-audit-tag">{item.tag}</div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+              <div className="admin-audit-footer">
+                <div className="admin-audit-footer-text">
+                  Immutable ledger synced with Cloudbeds PMS webhooks and Square POS night audits.
+                </div>
+                <button
+                  type="button"
+                  className="admin-btn-audit-docked"
+                  onClick={() => setShowAuditModal(true)}
+                >
+                  <span>View Full Searchable Audit Log</span>
+                  <ExternalLink size={13} />
+                </button>
               </div>
             </div>
-
-            {/* 4. BOTTOM ACTION: VIEW FULL SEARCHABLE AUDIT LOG BUTTON */}
-            <button
-              type="button"
-              className="admin-btn-audit-log"
-              onClick={() => setShowAuditModal(true)}
-            >
-              <span>View Full Searchable Audit Log</span>
-            </button>
           </div>
         ) : activeTab === 'bookings' ? (
           /* ===============================================================
