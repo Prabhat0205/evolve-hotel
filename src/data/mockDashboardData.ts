@@ -527,7 +527,7 @@ export const mockActiveBookings: AdminActiveBooking[] = [
     pmsId: 'PHR-8841',
     suiteNumber: '104',
     adultsCount: 2,
-    bookingSource: 'Direct Phone',
+    bookingSource: 'Direct Website',
     isGuestUser: true,
     hasBreakfastAccess: false,
     restaurantStatus: 'Not Checked In',
@@ -539,7 +539,7 @@ export const mockActiveBookings: AdminActiveBooking[] = [
     cloudbedsId: 'PH-8854',
     guestName: 'David Miller',
     phone: '+1 (555) 923-4819',
-    email: 'd.miller@gmail.com',
+    email: '',
     property: 'Evolve Texarkana',
     dateRange: 'Oct 06, 2026–Oct 08, 2026',
     startDate: '2026-10-06',
@@ -553,7 +553,7 @@ export const mockActiveBookings: AdminActiveBooking[] = [
     pmsId: 'PHR-8854',
     suiteNumber: '218',
     adultsCount: 3,
-    bookingSource: 'Direct Phone',
+    bookingSource: 'Direct Website',
     isGuestUser: true,
     hasBreakfastAccess: false,
     restaurantStatus: 'Checked In',
@@ -580,7 +580,7 @@ export const mockActiveBookings: AdminActiveBooking[] = [
     pmsId: 'PHR-8862',
     suiteNumber: '305',
     adultsCount: 2,
-    bookingSource: 'Direct Phone',
+    bookingSource: 'Direct Website',
     isGuestUser: true,
     hasBreakfastAccess: false,
     restaurantStatus: 'Not Checked In',
@@ -606,13 +606,13 @@ export const mockPhoneGuestUsers: PhoneGuestUserBooking[] = [
     status: 'In House',
     hasBreakfastAccess: false,
     restaurantStatus: 'Not Checked In',
-    notes: 'Booked room directly via phone number. Ineligible for breakfast buffet (Room only).'
+    notes: 'Booked room directly via website. Room only accommodation.'
   },
   {
     id: 'phone-guest-2',
     phone: '+1 (555) 923-4819',
     name: 'David Miller',
-    email: 'd.miller@gmail.com',
+    email: '',
     bookingRef: 'GB-8854',
     bookingDate: 'Oct 05, 2026',
     checkInDate: '2026-10-06',
@@ -627,7 +627,7 @@ export const mockPhoneGuestUsers: PhoneGuestUserBooking[] = [
     restaurantStatus: 'Checked In',
     restaurantCheckInDate: 'Oct 06, 12:45 PM',
     tableNumber: 'Table 6',
-    notes: 'Checked in to restaurant for lunch. Details recorded at front desk.'
+    notes: 'Requested late check-in. Front desk notified.'
   },
   {
     id: 'phone-guest-3',
@@ -646,13 +646,13 @@ export const mockPhoneGuestUsers: PhoneGuestUserBooking[] = [
     status: 'Arriving',
     hasBreakfastAccess: false,
     restaurantStatus: 'Not Checked In',
-    notes: 'Guest phone booking only. Room only access, no complimentary breakfast.'
+    notes: 'Guest website booking. Extra towels requested.'
   },
   {
     id: 'phone-guest-4',
     phone: '+1 (555) 612-9944',
     name: 'Rachel Adams',
-    email: 'rachel.a@yahoo.com',
+    email: '',
     bookingRef: 'GB-8819',
     bookingDate: 'Sep 28, 2026',
     checkInDate: '2026-10-01',
@@ -667,7 +667,7 @@ export const mockPhoneGuestUsers: PhoneGuestUserBooking[] = [
     restaurantStatus: 'Details Captured',
     restaurantCheckInDate: 'Oct 02, 7:15 PM',
     tableNumber: 'Table 2',
-    notes: 'Dinner at restaurant charged to room. Guest details updated.'
+    notes: 'Quiet room on upper floor preferred.'
   },
   {
     id: 'phone-guest-5',
@@ -686,7 +686,7 @@ export const mockPhoneGuestUsers: PhoneGuestUserBooking[] = [
     status: 'Arriving',
     hasBreakfastAccess: false,
     restaurantStatus: 'Not Checked In',
-    notes: 'Direct phone booking. No breakfast buffet entitlement.'
+    notes: 'Direct website booking.'
   }
 ];
 

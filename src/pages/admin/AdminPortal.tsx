@@ -1199,7 +1199,7 @@ const PropertyManagerDashboard: React.FC = () => {
       } : null);
     }
 
-    addToast('success', 'Guest Details Saved', `Updated guest user records & restaurant check-in for ${selectedGuestUserForModal.phone}.`);
+    addToast('success', 'Guest Details Saved', `Updated details and notes for ${selectedGuestUserForModal.phone}.`);
     setSelectedGuestUserForModal(null);
   };
 
@@ -2344,9 +2344,8 @@ const PropertyManagerDashboard: React.FC = () => {
                           onChange={(e) => setFilterBookingSource(e.target.value)}
                         >
                           <option value="all">All Sources</option>
-                          <option value="Direct Phone">Direct Phone (Guest User)</option>
-                          <option value="Cloudbeds">Cloudbeds</option>
                           <option value="Direct Website">Direct Website</option>
+                          <option value="Cloudbeds">Cloudbeds</option>
                           <option value="Third Party">Third Party</option>
                         </select>
                       </div>
@@ -2513,7 +2512,7 @@ const PropertyManagerDashboard: React.FC = () => {
                               {/* 8. Booking Source */}
                               <td style={{ padding: '14px 14px', color: '#334155', fontWeight: 500, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
                                 {booking.isGuestUser ? (
-                                  <span style={{ color: '#c2410c', fontWeight: 700 }}>Direct Phone</span>
+                                  <span style={{ color: '#c2410c', fontWeight: 700 }}>Direct Website</span>
                                 ) : (
                                   booking.bookingSource || 'Cloudbeds'
                                 )}
@@ -2683,7 +2682,7 @@ const PropertyManagerDashboard: React.FC = () => {
                   }}
                 >
                   <Phone size={16} />
-                  <span>Guest Users (Phone Bookings)</span>
+                  <span>Guest Users</span>
                   <span style={{
                     backgroundColor: guestManagementSubTab === 'guest_users' ? '#ea580c' : '#fee2e2',
                     color: guestManagementSubTab === 'guest_users' ? '#ffffff' : '#b91c1c',
@@ -3119,7 +3118,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Booking Ref</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
                         <th style={{ padding: '12px 16px' }}>Room & Dates</th>
-                        <th style={{ padding: '12px 16px' }}>Restaurant Check-In</th>
+                        <th style={{ padding: '12px 16px' }}>Notes</th>
                         <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
                       </tr>
                     </thead>
@@ -3159,7 +3158,6 @@ const PropertyManagerDashboard: React.FC = () => {
                               {guest.name ? (
                                 <div>
                                   <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>{guest.name}</div>
-                                  {guest.email && <div style={{ fontSize: '0.76rem', color: '#64748b' }}>{guest.email}</div>}
                                 </div>
                               ) : (
                                 <span style={{
@@ -3209,38 +3207,55 @@ const PropertyManagerDashboard: React.FC = () => {
                               </div>
                             </td>
 
-                            {/* 6. Restaurant Check-In */}
-                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                              {guest.restaurantStatus === 'Checked In' || guest.restaurantStatus === 'Details Captured' ? (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  fontSize: '0.76rem',
-                                  fontWeight: 700,
-                                  color: '#15803d',
-                                  backgroundColor: '#dcfce7',
-                                  padding: '3px 8px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #bbf7d0'
-                                }}>
-                                  <Check size={12} />
-                                  <span>{guest.restaurantStatus}</span>
-                                  {guest.tableNumber && <span>• {guest.tableNumber}</span>}
-                                </span>
+                            {/* 6. Notes */}
+                            <td style={{ padding: '14px 16px' }}>
+                              {guest.notes ? (
+                                <div
+                                  onClick={() => openGuestUserDetailModal(guest)}
+                                  title={`${guest.notes} (Click to edit notes)`}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    cursor: 'pointer',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    maxWidth: '260px'
+                                  }}
+                                >
+                                  <FileText size={13} style={{ color: '#059669', flexShrink: 0 }} />
+                                  <span style={{
+                                    fontSize: '0.80rem',
+                                    color: '#334155',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {guest.notes}
+                                  </span>
+                                </div>
                               ) : (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  fontSize: '0.76rem',
-                                  color: '#64748b',
-                                  backgroundColor: '#f1f5f9',
-                                  padding: '3px 8px',
-                                  borderRadius: '4px'
-                                }}>
-                                  Not Checked In
-                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => openGuestUserDetailModal(guest)}
+                                  style={{
+                                    border: '1px dashed #cbd5e1',
+                                    backgroundColor: '#f8fafc',
+                                    color: '#64748b',
+                                    fontSize: '0.76rem',
+                                    fontWeight: 500,
+                                    padding: '3px 8px',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <Plus size={11} /> Add Note
+                                </button>
                               )}
                             </td>
 
@@ -3263,8 +3278,8 @@ const PropertyManagerDashboard: React.FC = () => {
                                   gap: '5px'
                                 }}
                               >
-                                <UtensilsCrossed size={12} />
-                                <span>{guest.name ? 'Update / Restaurant' : 'Add Details / Check-in'}</span>
+                                <Edit3 size={12} />
+                                <span>{guest.notes || guest.name ? 'Edit Notes' : 'Add Note'}</span>
                               </button>
                             </td>
                           </tr>
@@ -7973,11 +7988,11 @@ const PropertyManagerDashboard: React.FC = () => {
                       </span>
                     </h4>
                     <div style={{ color: '#c2410c', fontSize: '0.85rem' }}>
-                      Direct Phone Booking • Room-Only Stay (Ineligible for Complimentary Breakfast Buffet).
+                      Direct Website Booking • Room-Only Stay (Ineligible for Complimentary Breakfast Buffet).
                     </div>
-                    {selectedBookingDetails.restaurantStatus && (
-                      <div style={{ color: '#7c2d12', fontSize: '0.82rem', marginTop: '4px', fontWeight: 600 }}>
-                        Restaurant Status: {selectedBookingDetails.restaurantStatus} {selectedBookingDetails.tableNumber ? `(${selectedBookingDetails.tableNumber})` : ''}
+                    {selectedBookingDetails.notes && (
+                      <div style={{ color: '#7c2d12', fontSize: '0.82rem', marginTop: '4px', fontWeight: 500 }}>
+                        Notes: {selectedBookingDetails.notes}
                       </div>
                     )}
                   </div>
@@ -7988,8 +8003,8 @@ const PropertyManagerDashboard: React.FC = () => {
                       style={{ backgroundColor: '#17271f', color: '#ffffff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       onClick={() => openGuestUserModalFromBooking(selectedBookingDetails)}
                     >
-                      <UtensilsCrossed size={14} />
-                      <span>Restaurant Check-In</span>
+                      <FileText size={14} />
+                      <span>Guest Details & Notes</span>
                     </button>
                   </div>
                 </div>
@@ -8357,14 +8372,14 @@ const PropertyManagerDashboard: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <UtensilsCrossed size={18} color="#ffffff" />
+                  <FileText size={18} color="#ffffff" />
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
-                    Restaurant Check-In & Guest Profile
+                    Guest Details & Notes
                   </h3>
                   <div style={{ fontSize: '0.78rem', color: '#93c5aa', marginTop: '2px' }}>
-                    Phone Booking: {selectedGuestUserForModal.phone} • Ref: {selectedGuestUserForModal.bookingRef}
+                    Direct Booking: {selectedGuestUserForModal.phone} • Ref: {selectedGuestUserForModal.bookingRef}
                   </div>
                 </div>
               </div>
