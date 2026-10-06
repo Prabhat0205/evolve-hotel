@@ -1152,21 +1152,14 @@ const PropertyManagerDashboard: React.FC = () => {
 
   const handleSaveGuestUserDetails = () => {
     if (!selectedGuestUserForModal) return;
-    const isCheckedIn = modalRestaurantCheckedIn;
-    const newRestStatus: 'Not Checked In' | 'Checked In' | 'Details Captured' = 
-      isCheckedIn ? (modalGuestName.trim() ? 'Details Captured' : 'Checked In') : (modalGuestName.trim() ? 'Details Captured' : 'Not Checked In');
+    const updatedNotes = modalGuestNotes.trim();
 
     // 1. Update phoneGuestUsersList
     setPhoneGuestUsersList(prev => prev.map(item => {
       if (item.id === selectedGuestUserForModal.id || item.bookingRef === selectedGuestUserForModal.bookingRef) {
         return {
           ...item,
-          name: modalGuestName.trim() || item.name,
-          email: modalGuestEmail.trim() || item.email,
-          restaurantStatus: newRestStatus,
-          tableNumber: modalTableNumber.trim() || item.tableNumber,
-          notes: modalGuestNotes.trim() || item.notes,
-          restaurantCheckInDate: isCheckedIn ? (item.restaurantCheckInDate || 'Today • Just now') : undefined,
+          notes: updatedNotes,
         };
       }
       return item;
@@ -1177,11 +1170,7 @@ const PropertyManagerDashboard: React.FC = () => {
       if (b.confirmationCode === selectedGuestUserForModal.bookingRef || b.phone === selectedGuestUserForModal.phone) {
         return {
           ...b,
-          guestName: modalGuestName.trim() ? modalGuestName.trim() : b.guestName,
-          email: modalGuestEmail.trim() ? modalGuestEmail.trim() : b.email,
-          restaurantStatus: newRestStatus,
-          tableNumber: modalTableNumber.trim() || b.tableNumber,
-          notes: modalGuestNotes.trim() || b.notes,
+          notes: updatedNotes,
         };
       }
       return b;
@@ -1191,15 +1180,11 @@ const PropertyManagerDashboard: React.FC = () => {
     if (selectedBookingDetails && (selectedBookingDetails.confirmationCode === selectedGuestUserForModal.bookingRef || selectedBookingDetails.phone === selectedGuestUserForModal.phone)) {
       setSelectedBookingDetails(prev => prev ? {
         ...prev,
-        guestName: modalGuestName.trim() ? modalGuestName.trim() : prev.guestName,
-        email: modalGuestEmail.trim() ? modalGuestEmail.trim() : prev.email,
-        restaurantStatus: newRestStatus,
-        tableNumber: modalTableNumber.trim() || prev.tableNumber,
-        notes: modalGuestNotes.trim() || prev.notes,
+        notes: updatedNotes,
       } : null);
     }
 
-    addToast('success', 'Guest Details Saved', `Updated details and notes for ${selectedGuestUserForModal.phone}.`);
+    addToast('success', 'Notes Saved', `Updated notes for ${selectedGuestUserForModal.name || selectedGuestUserForModal.phone}.`);
     setSelectedGuestUserForModal(null);
   };
 
@@ -3117,7 +3102,8 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Guest Name</th>
                         <th style={{ padding: '12px 16px' }}>Booking Ref</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
-                        <th style={{ padding: '12px 16px' }}>Room & Dates</th>
+                        <th style={{ padding: '12px 16px' }}>Room No</th>
+                        <th style={{ padding: '12px 16px' }}>Dates</th>
                         <th style={{ padding: '12px 16px' }}>Notes</th>
                         <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
                       </tr>
@@ -3197,17 +3183,22 @@ const PropertyManagerDashboard: React.FC = () => {
                               {guest.bookingDate}
                             </td>
 
-                            {/* 5. Room & Dates */}
+                            {/* 5. Room No */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                              <div style={{ fontWeight: 600, color: '#17271f', fontSize: '0.86rem' }}>
-                                Suite {guest.suiteNumber} • {guest.roomType}
+                              <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.88rem' }}>
+                                Suite {guest.suiteNumber}
                               </div>
-                              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                                {guest.dateRange}
+                              <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '1px' }}>
+                                {guest.roomType}
                               </div>
                             </td>
 
-                            {/* 6. Notes */}
+                            {/* 6. Dates */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.84rem' }}>
+                              {guest.dateRange}
+                            </td>
+
+                            {/* 7. Notes */}
                             <td style={{ padding: '14px 16px' }}>
                               {guest.notes ? (
                                 <div
@@ -3259,7 +3250,7 @@ const PropertyManagerDashboard: React.FC = () => {
                               )}
                             </td>
 
-                            {/* 7. Action */}
+                            {/* 8. Action */}
                             <td style={{ padding: '14px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                               <button
                                 type="button"
@@ -3279,14 +3270,14 @@ const PropertyManagerDashboard: React.FC = () => {
                                 }}
                               >
                                 <Edit3 size={12} />
-                                <span>{guest.notes || guest.name ? 'Edit Notes' : 'Add Note'}</span>
+                                <span>{guest.notes ? 'Edit Notes' : 'Add Note'}</span>
                               </button>
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={7} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                          <td colSpan={8} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
                             No guest user phone bookings found matching your search.
                           </td>
                         </tr>
@@ -8348,14 +8339,14 @@ const PropertyManagerDashboard: React.FC = () => {
           <div style={{
             backgroundColor: '#ffffff',
             borderRadius: '12px',
-            maxWidth: '560px',
+            maxWidth: '480px',
             width: '100%',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             overflow: 'hidden'
           }}>
             {/* Modal Header */}
             <div style={{
-              padding: '18px 24px',
+              padding: '18px 22px',
               backgroundColor: '#17271f',
               color: '#ffffff',
               display: 'flex',
@@ -8375,11 +8366,11 @@ const PropertyManagerDashboard: React.FC = () => {
                   <FileText size={18} color="#ffffff" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
-                    Guest Details & Notes
+                  <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700, color: '#ffffff' }}>
+                    Edit Notes
                   </h3>
-                  <div style={{ fontSize: '0.78rem', color: '#93c5aa', marginTop: '2px' }}>
-                    Direct Booking: {selectedGuestUserForModal.phone} • Ref: {selectedGuestUserForModal.bookingRef}
+                  <div style={{ fontSize: '0.76rem', color: '#93c5aa', marginTop: '2px' }}>
+                    {selectedGuestUserForModal.name ? `${selectedGuestUserForModal.name} • ` : ''}Suite {selectedGuestUserForModal.suiteNumber} • Ref: {selectedGuestUserForModal.bookingRef}
                   </div>
                 </div>
               </div>
@@ -8400,174 +8391,36 @@ const PropertyManagerDashboard: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: '22px 24px', maxHeight: '76vh', overflowY: 'auto' }}>
-              {/* Notice / Policy Banner */}
-              <div style={{
-                backgroundColor: '#fff7ed',
-                border: '1px solid #fed7aa',
-                borderRadius: '8px',
-                padding: '12px 14px',
-                marginBottom: '18px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px'
-              }}>
-                <AlertCircle size={18} style={{ color: '#ea580c', flexShrink: 0, marginTop: '2px' }} />
-                <div style={{ fontSize: '0.82rem', color: '#9a3412', lineHeight: 1.45 }}>
-                  <strong>Guest User Policy:</strong> This guest booked room-only via mobile phone number (<strong>No Breakfast Buffet Access</strong>). When the guest arrives at the restaurant or front desk, capture their details below.
-                </div>
-              </div>
-
-              {/* Booking Context Grid */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '10px',
-                backgroundColor: '#f8fafc',
-                padding: '12px',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0',
-                marginBottom: '18px',
-                fontSize: '0.82rem'
-              }}>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>ROOM BOOKED</span>
-                  <strong style={{ color: '#1e293b' }}>{selectedGuestUserForModal.roomType}</strong>
-                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Suite {selectedGuestUserForModal.suiteNumber}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>BOOKING DATE</span>
-                  <strong style={{ color: '#1e293b' }}>{selectedGuestUserForModal.bookingDate}</strong>
-                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{selectedGuestUserForModal.dateRange}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>BREAKFAST STATUS</span>
-                  <strong style={{ color: '#dc2626' }}>🚫 No Access</strong>
-                  <div style={{ color: '#dc2626', fontSize: '0.75rem' }}>Room Only</div>
-                </div>
-              </div>
-
-              {/* Form Inputs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Guest Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={modalGuestName}
-                    onChange={(e) => setModalGuestName(e.target.value)}
-                    placeholder="Enter guest full name (e.g. Liam Davis)"
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.88rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Email Address (Optional)
-                  </label>
-                  <input
-                    type="email"
-                    value={modalGuestEmail}
-                    onChange={(e) => setModalGuestEmail(e.target.value)}
-                    placeholder="e.g. guest@example.com for receipts"
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.88rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                {/* Restaurant Check-in Card */}
-                <div style={{
-                  border: '1.5px solid #bbf7d0',
-                  backgroundColor: '#f0fdf4',
+            {/* Modal Body: Notes Editor Only */}
+            <div style={{ padding: '20px 22px' }}>
+              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#17271f', marginBottom: '8px' }}>
+                Guest Notes
+              </label>
+              <textarea
+                rows={5}
+                value={modalGuestNotes}
+                onChange={(e) => setModalGuestNotes(e.target.value)}
+                placeholder="Enter notes for this guest booking (e.g. room preferences, special requests, arrival details)..."
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
                   borderRadius: '8px',
-                  padding: '14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px'
-                }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, color: '#166534', fontSize: '0.88rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={modalRestaurantCheckedIn}
-                      onChange={(e) => setModalRestaurantCheckedIn(e.target.checked)}
-                      style={{ width: '16px', height: '16px', accentColor: '#166534' }}
-                    />
-                    <span>Check In Guest to Restaurant</span>
-                  </label>
-                  <div style={{ fontSize: '0.78rem', color: '#15803d', marginLeft: '24px' }}>
-                    Toggle on when the guest arrives at the dining room or restaurant host stand.
-                  </div>
-
-                  {modalRestaurantCheckedIn && (
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px', marginLeft: '24px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#166534', marginBottom: '4px' }}>
-                          Table Number / Seating Area
-                        </label>
-                        <input
-                          type="text"
-                          value={modalTableNumber}
-                          onChange={(e) => setModalTableNumber(e.target.value)}
-                          placeholder="e.g. Table 6 or Patio Booth"
-                          style={{
-                            width: '100%',
-                            padding: '7px 10px',
-                            borderRadius: '5px',
-                            border: '1px solid #86efac',
-                            fontSize: '0.84rem',
-                            backgroundColor: '#ffffff',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Front Desk / Dining Notes
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={modalGuestNotes}
-                    onChange={(e) => setModalGuestNotes(e.target.value)}
-                    placeholder="e.g. Inquired about lunch menu, bill charged to room."
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.84rem',
-                      outline: 'none',
-                      resize: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-              </div>
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '0.88rem',
+                  color: '#1e293b',
+                  outline: 'none',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                  lineHeight: 1.5,
+                  fontFamily: 'inherit'
+                }}
+                autoFocus
+              />
             </div>
 
             {/* Modal Footer */}
             <div style={{
-              padding: '14px 24px',
+              padding: '14px 22px',
               backgroundColor: '#f8fafc',
               borderTop: '1px solid #e2e8f0',
               display: 'flex',
@@ -8579,7 +8432,7 @@ const PropertyManagerDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setSelectedGuestUserForModal(null)}
                 style={{
-                  padding: '9px 18px',
+                  padding: '8px 16px',
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
                   backgroundColor: '#ffffff',
@@ -8595,21 +8448,21 @@ const PropertyManagerDashboard: React.FC = () => {
                 type="button"
                 onClick={handleSaveGuestUserDetails}
                 style={{
-                  padding: '9px 20px',
+                  padding: '8px 18px',
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: '#17271f',
                   color: '#ffffff',
                   fontSize: '0.85rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px'
                 }}
               >
-                <Check size={15} />
-                <span>Save Details & Update Booking</span>
+                <Check size={14} />
+                <span>Save Notes</span>
               </button>
             </div>
           </div>
