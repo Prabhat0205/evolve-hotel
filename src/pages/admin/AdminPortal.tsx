@@ -2432,9 +2432,10 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px', width: '10%' }}>Cloudbed ID</th>
                         <th style={{ padding: '12px 16px', width: '13%' }}>Guest Name</th>
                         <th style={{ padding: '12px 16px', width: '12%' }}>Phone No</th>
-                        <th style={{ padding: '12px 16px', width: '13%' }}>Room Type</th>
+                        <th style={{ padding: '12px 14px', width: '12%' }}>Room Type</th>
+                        <th style={{ padding: '12px 12px', width: '7%' }}>Suites</th>
                         <th style={{ padding: '12px 14px', width: '12%' }}>Room No</th>
-                        <th style={{ padding: '12px 16px', width: '14%' }}>Booking Dates</th>
+                        <th style={{ padding: '12px 14px', width: '13%' }}>Booking Dates</th>
                         <th style={{ padding: '12px 14px', width: '10%' }}>Booking Source</th>
                         <th style={{ padding: '12px 14px', width: '5%' }}>Status</th>
                         <th style={{ padding: '12px 18px', width: '5%', textAlign: 'right' }}>Action</th>
@@ -2480,28 +2481,28 @@ const PropertyManagerDashboard: React.FC = () => {
                               </td>
 
                               {/* 5. Room Type */}
-                              <td style={{ padding: '14px 16px', color: '#334155', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '14px 14px', color: '#334155', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
                                 {booking.roomType}
                               </td>
 
-                              {/* 6. Room No */}
-                              <td style={{ padding: '14px 14px', color: '#17271f', fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
-                                <div>
-                                  {booking.suiteNumber
-                                    ? `Suite ${booking.suiteNumber}`
-                                    : 'Suite 104'}
-                                </div>
-                                <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 500, marginTop: '1px' }}>
-                                  {booking.suitesCount} {booking.suitesCount === 1 ? 'suite' : 'suites'}
-                                </div>
+                              {/* 6. Suites */}
+                              <td style={{ padding: '14px 12px', color: '#17271f', fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+                                {booking.suitesCount || 1} {(booking.suitesCount || 1) === 1 ? 'suite' : 'suites'}
                               </td>
 
-                              {/* 7. Booking Dates */}
-                              <td style={{ padding: '14px 16px', color: '#55665e', fontSize: '0.86rem', whiteSpace: 'nowrap' }}>
+                              {/* 7. Room No */}
+                              <td style={{ padding: '14px 14px', color: '#17271f', fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+                                {booking.suiteNumber
+                                  ? (booking.suiteNumber.startsWith('Suite') ? booking.suiteNumber : `Suite ${booking.suiteNumber}`)
+                                  : 'Suite 104'}
+                              </td>
+
+                              {/* 8. Booking Dates */}
+                              <td style={{ padding: '14px 14px', color: '#55665e', fontSize: '0.86rem', whiteSpace: 'nowrap' }}>
                                 {booking.dateRange}
                               </td>
 
-                              {/* 8. Booking Source */}
+                              {/* 9. Booking Source */}
                               <td style={{ padding: '14px 14px', color: '#334155', fontWeight: 500, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
                                 {booking.isGuestUser ? (
                                   <span style={{ color: '#c2410c', fontWeight: 700 }}>Direct Website</span>
@@ -2510,12 +2511,12 @@ const PropertyManagerDashboard: React.FC = () => {
                                 )}
                               </td>
 
-                              {/* 9. Status */}
+                              {/* 10. Status */}
                               <td style={{ padding: '14px 14px', whiteSpace: 'nowrap', fontSize: '0.85rem', fontWeight: 600, color: statusColor }}>
                                 {booking.status}
                               </td>
 
-                              {/* 10. Action (Small Eye Icon) */}
+                              {/* 11. Action (Small Eye Icon) */}
                               <td style={{ padding: '14px 18px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <button
                                   type="button"
@@ -2552,7 +2553,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         })
                       ) : (
                         <tr>
-                          <td colSpan={10} style={{ textAlign: 'center', padding: '40px 16px', color: '#64748b', fontSize: '0.9rem' }}>
+                          <td colSpan={11} style={{ textAlign: 'center', padding: '40px 16px', color: '#64748b', fontSize: '0.9rem' }}>
                             No active bookings found matching your criteria.
                           </td>
                         </tr>
@@ -3109,6 +3110,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Guest Name</th>
                         <th style={{ padding: '12px 16px' }}>Booking Ref</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
+                        <th style={{ padding: '12px 14px' }}>Suites</th>
                         <th style={{ padding: '12px 16px' }}>Room No</th>
                         <th style={{ padding: '12px 16px' }}>Room Type</th>
                         <th style={{ padding: '12px 16px' }}>Dates</th>
@@ -3192,29 +3194,29 @@ const PropertyManagerDashboard: React.FC = () => {
                               {guest.bookingDate}
                             </td>
 
-                            {/* 5. Room No */}
+                            {/* 5. Suites */}
+                            <td style={{ padding: '14px 14px', whiteSpace: 'nowrap', color: '#17271f', fontWeight: 600, fontSize: '0.88rem' }}>
+                              {guest.suitesCount || (guest.suiteNumber.includes(',') ? guest.suiteNumber.split(',').length : 1)} {(guest.suitesCount || (guest.suiteNumber.includes(',') ? guest.suiteNumber.split(',').length : 1)) === 1 ? 'suite' : 'suites'}
+                            </td>
+
+                            {/* 6. Room No */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                               <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.88rem' }}>
                                 Suite {guest.suiteNumber}
                               </div>
-                              {guest.suiteNumber.includes(',') && (
-                                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '1px' }}>
-                                  {guest.suiteNumber.split(',').length} suites
-                                </div>
-                              )}
                             </td>
 
-                            {/* 6. Room Type (Separate Column) */}
+                            {/* 7. Room Type (Separate Column) */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#334155', fontSize: '0.86rem' }}>
                               {guest.roomType}
                             </td>
 
-                            {/* 7. Dates */}
+                            {/* 8. Dates */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.84rem' }}>
                               {guest.dateRange}
                             </td>
 
-                            {/* 8. Notes & Edit (Common Section) */}
+                            {/* 9. Notes & Edit (Common Section) */}
                             <td style={{ padding: '14px 16px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {guest.notes ? (
@@ -3253,24 +3255,26 @@ const PropertyManagerDashboard: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => openGuestUserDetailModal(guest)}
-                                  title={guest.notes ? "Edit note" : "Add note"}
+                                  title={guest.notes ? "Edit notes" : "Add notes"}
+                                  aria-label={guest.notes ? "Edit notes" : "Add notes"}
                                   style={{
-                                    padding: '5px 10px',
+                                    width: '30px',
+                                    height: '30px',
                                     backgroundColor: '#17271f',
                                     color: '#ffffff',
                                     border: 'none',
-                                    borderRadius: '5px',
-                                    fontSize: '0.76rem',
-                                    fontWeight: 600,
+                                    borderRadius: '6px',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px',
-                                    flexShrink: 0
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    transition: 'background-color 0.15s ease'
                                   }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d4739')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#17271f')}
                                 >
-                                  {guest.notes ? <Edit3 size={11} /> : <Plus size={11} />}
-                                  <span>{guest.notes ? 'Edit' : 'Add Note'}</span>
+                                  <Edit3 size={13} />
                                 </button>
                               </div>
                             </td>
@@ -3278,7 +3282,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={8} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                          <td colSpan={9} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
                             No guest user phone bookings found matching your search.
                           </td>
                         </tr>
@@ -7927,9 +7931,11 @@ const PropertyManagerDashboard: React.FC = () => {
                 <p className="admin-security-metric-subtext">Read-only from Cloudbeds</p>
               </div>
 
-              {/* Card 2: ASSIGNED SUITE */}
+              {/* Card 2: ASSIGNED SUITE / SUITES */}
               <div className="admin-security-metric-tile">
-                <span className="admin-security-metric-eyebrow">ASSIGNED SUITE</span>
+                <span className="admin-security-metric-eyebrow">
+                  {(selectedBookingDetails.suitesCount || 1) > 1 || selectedBookingDetails.suiteNumber?.includes(',') ? 'ASSIGNED SUITES' : 'ASSIGNED SUITE'}
+                </span>
                 <h3 className="admin-security-metric-val">
                   {selectedBookingDetails.suiteNumber?.includes(',') 
                     ? `Suite ${selectedBookingDetails.suiteNumber}` 
@@ -7937,7 +7943,11 @@ const PropertyManagerDashboard: React.FC = () => {
                         ? selectedBookingDetails.suiteNumber 
                         : `Suite ${selectedBookingDetails.suiteNumber || '214'}`)}
                 </h3>
-                <p className="admin-security-metric-subtext">Read-only from Cloudbeds</p>
+                <p className="admin-security-metric-subtext">
+                  {(selectedBookingDetails.suitesCount || 1) > 1 || selectedBookingDetails.suiteNumber?.includes(',')
+                    ? `${selectedBookingDetails.suitesCount || selectedBookingDetails.suiteNumber?.split(',').length} suites assigned`
+                    : 'Read-only from Cloudbeds'}
+                </p>
               </div>
 
               {/* Card 3: CLOUDBEDS ID */}
@@ -7970,8 +7980,17 @@ const PropertyManagerDashboard: React.FC = () => {
                   <div style={{ color: '#55665e', fontSize: '0.85rem' }}>{selectedBookingDetails.property}</div>
                   <div style={{ color: '#6a7c73', fontSize: '0.82rem' }}>{selectedBookingDetails.dateRange}</div>
                 </div>
-                <div style={{ fontWeight: 600, color: '#17271f', fontSize: '0.92rem' }}>
-                  {selectedBookingDetails.roomType} • {selectedBookingDetails.suitesCount || 1} {(selectedBookingDetails.suitesCount || 1) > 1 ? 'suites' : 'suite'}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 600, color: '#17271f', fontSize: '0.92rem' }}>
+                    {selectedBookingDetails.roomType} • {selectedBookingDetails.suitesCount || 1} {(selectedBookingDetails.suitesCount || 1) > 1 ? 'suites' : 'suite'}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#17271f', marginTop: '3px', fontWeight: 600 }}>
+                    Assigned: {selectedBookingDetails.suiteNumber?.includes(',')
+                      ? `Suite ${selectedBookingDetails.suiteNumber}`
+                      : (selectedBookingDetails.suiteNumber?.startsWith('Suite')
+                          ? selectedBookingDetails.suiteNumber
+                          : `Suite ${selectedBookingDetails.suiteNumber || '214'}`)}
+                  </div>
                 </div>
               </div>
 
@@ -8013,7 +8032,7 @@ const PropertyManagerDashboard: React.FC = () => {
                       Breakfast order {selectedBookingDetails.breakfastOrder?.orderNumber || 'K-2322'}
                     </h4>
                     <div style={{ color: '#55665e', fontSize: '0.85rem' }}>
-                      Assigned Suite {selectedBookingDetails.suiteNumber || '214'} • {selectedBookingDetails.breakfastOrder?.pickupTime || '8:15 AM pickup'} • {selectedBookingDetails.breakfastOrder?.platesCount || 2} plates
+                      Assigned {selectedBookingDetails.suiteNumber?.includes(',') ? 'Suites' : 'Suite'} {selectedBookingDetails.suiteNumber || '214'} • {selectedBookingDetails.breakfastOrder?.pickupTime || '8:15 AM pickup'} • {selectedBookingDetails.breakfastOrder?.platesCount || 2} plates
                     </div>
                     <div style={{ color: '#6a7c73', fontSize: '0.82rem', marginTop: '2px' }}>
                       Connected to reservation {selectedBookingDetails.confirmationCode}; Kitchen status changes update this record.

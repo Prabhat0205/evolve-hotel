@@ -95,6 +95,7 @@ export interface PhoneGuestUserBooking {
   dateRange: string;
   roomType: string;
   suiteNumber: string;
+  suitesCount?: number;
   adultsCount: number;
   totalAmount: string;
   status: 'Arriving' | 'In House' | 'Completed' | 'Cancelled';
