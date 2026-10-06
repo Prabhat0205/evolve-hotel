@@ -61,6 +61,7 @@ export interface MemberRewardTransaction {
   activity: 'Points Credited' | 'Points Redeemed';
   stayOrBooking: string;
   squareRefId?: string;
+  giftogramRefId?: string;
   nights?: number;
   points: number;
   status: 'Credited' | 'Redeemed' | 'Pending';
