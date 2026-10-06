@@ -2692,30 +2692,22 @@ const PropertyManagerDashboard: React.FC = () => {
 
                             {/* 1b. Square ID (POS) */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                <span
-                                  title={`Linked Square POS ID: ${guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1001 + idx}`}. Identity-locked to prevent duplicate reward claims across accounts.`}
-                                  style={{
-                                    fontFamily: 'monospace',
-                                    fontSize: '0.82rem',
-                                    fontWeight: 700,
-                                    color: '#166534',
-                                    backgroundColor: '#f0fdf4',
-                                    padding: '3px 8px',
-                                    borderRadius: '6px',
-                                    border: '1px solid #bbf7d0',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '5px'
-                                  }}
-                                >
-                                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
-                                  {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1001 + idx}`}
-                                </span>
-                                <span style={{ fontSize: '0.72rem', color: guest.squareSyncStatus === 'Pending Sync' ? '#d97706' : '#15803d', fontWeight: 600 }}>
-                                  {guest.squareSyncStatus || 'Linked'}
-                                </span>
-                              </div>
+                              <span
+                                title={`Square POS ID: ${guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1001 + idx}`}`}
+                                style={{
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 700,
+                                  color: '#166534',
+                                  backgroundColor: '#f0fdf4',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #bbf7d0',
+                                  display: 'inline-block'
+                                }}
+                              >
+                                {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1001 + idx}`}
+                              </span>
                             </td>
 
                             {/* 2. Name */}
@@ -2980,30 +2972,22 @@ const PropertyManagerDashboard: React.FC = () => {
 
                               {/* 2. Square ID (POS) */}
                               <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                  <span
-                                    title={`Linked Square POS ID: ${guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}. Identity lock active against duplicate claims.`}
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '5px',
-                                      fontSize: '0.82rem',
-                                      fontFamily: 'monospace',
-                                      fontWeight: 700,
-                                      backgroundColor: '#f0fdf4',
-                                      color: '#166534',
-                                      padding: '3px 8px',
-                                      borderRadius: '5px',
-                                      border: '1px solid #bbf7d0'
-                                    }}
-                                  >
-                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e' }}></span>
-                                    {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}
-                                  </span>
-                                  <span style={{ fontSize: '0.72rem', color: guest.squareSyncStatus === 'Pending Sync' ? '#d97706' : '#15803d', fontWeight: 600 }}>
-                                    {guest.squareSyncStatus || 'Linked'}
-                                  </span>
-                                </div>
+                                <span
+                                  title={`Square POS ID: ${guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}`}
+                                  style={{
+                                    display: 'inline-block',
+                                    fontSize: '0.82rem',
+                                    fontFamily: 'monospace',
+                                    fontWeight: 700,
+                                    backgroundColor: '#f0fdf4',
+                                    color: '#166534',
+                                    padding: '3px 8px',
+                                    borderRadius: '5px',
+                                    border: '1px solid #bbf7d0'
+                                  }}
+                                >
+                                  {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || 1000 + idx}`}
+                                </span>
                               </td>
 
                               {/* 3. Member Profile */}
