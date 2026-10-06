@@ -2487,25 +2487,7 @@ const PropertyManagerDashboard: React.FC = () => {
 
                               {/* 3. Guest Name */}
                               <td style={{ padding: '14px 16px', color: '#17271f', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
-                                <div>{booking.guestName}</div>
-                                {booking.isGuestUser && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
-                                    <span style={{
-                                      fontSize: '0.70rem',
-                                      backgroundColor: '#fff7ed',
-                                      color: '#c2410c',
-                                      border: '1px solid #fed7aa',
-                                      padding: '1px 6px',
-                                      borderRadius: '4px',
-                                      fontWeight: 700,
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '3px'
-                                    }}>
-                                      <Phone size={10} /> Phone Guest (No Breakfast)
-                                    </span>
-                                  </div>
-                                )}
+                                {booking.guestName}
                               </td>
 
                               {/* 4. Phone No (Separate Column) */}
@@ -3045,113 +3027,6 @@ const PropertyManagerDashboard: React.FC = () => {
                GUEST USERS (PHONE BOOKINGS) NESTED TAB VIEW
             =============================================================== */
             <div>
-              {/* Informational Policy & Feature Overview Banner */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '14px',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '14px 18px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '8px',
-                    backgroundColor: '#e0f2fe',
-                    color: '#0369a1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Phone size={18} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>
-                      Phone-Only Room Bookings
-                    </div>
-                    <div style={{ color: '#64748b', fontSize: '0.80rem', marginTop: '2px', lineHeight: 1.4 }}>
-                      Direct guest users book hotel suites using their mobile phone number only, without creating an account or loyalty profile.
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{
-                  backgroundColor: '#fff7ed',
-                  border: '1px solid #fed7aa',
-                  borderRadius: '10px',
-                  padding: '14px 18px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '8px',
-                    backgroundColor: '#ffedd5',
-                    color: '#c2410c',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Coffee size={18} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, color: '#9a3412', fontSize: '0.90rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>🚫 No Breakfast Access</span>
-                      <span style={{ fontSize: '0.70rem', backgroundColor: '#ea580c', color: '#fff', padding: '1px 5px', borderRadius: '4px' }}>
-                        Policy Enforced
-                      </span>
-                    </div>
-                    <div style={{ color: '#c2410c', fontSize: '0.80rem', marginTop: '2px', lineHeight: 1.4 }}>
-                      Strict room-only accommodation. Guest users have <strong>NO access</strong> to the complimentary breakfast buffet.
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{
-                  backgroundColor: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: '10px',
-                  padding: '14px 18px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '8px',
-                    backgroundColor: '#dcfce7',
-                    color: '#15803d',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <UtensilsCrossed size={18} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, color: '#166534', fontSize: '0.90rem' }}>
-                      Restaurant Check-In Capture
-                    </div>
-                    <div style={{ color: '#15803d', fontSize: '0.80rem', marginTop: '2px', lineHeight: 1.4 }}>
-                      When a guest user arrives at the on-site restaurant or front desk, admins can add their full name, email, table and notes.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Filter & Search Bar */}
               <div style={{
                 backgroundColor: '#ffffff',
@@ -3244,7 +3119,6 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Booking Ref</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
                         <th style={{ padding: '12px 16px' }}>Room & Dates</th>
-                        <th style={{ padding: '12px 16px' }}>Breakfast Access</th>
                         <th style={{ padding: '12px 16px' }}>Restaurant Check-In</th>
                         <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
                       </tr>
@@ -3335,30 +3209,7 @@ const PropertyManagerDashboard: React.FC = () => {
                               </div>
                             </td>
 
-                            {/* 6. Breakfast Access */}
-                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px' }}>
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  fontSize: '0.74rem',
-                                  fontWeight: 700,
-                                  color: '#b91c1c',
-                                  backgroundColor: '#fee2e2',
-                                  padding: '3px 8px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #fecaca'
-                                }}>
-                                  <span>🚫</span> No Breakfast Access
-                                </span>
-                                <span style={{ fontSize: '0.70rem', color: '#991b1b', marginLeft: '4px' }}>
-                                  Room Only • No Buffet
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* 7. Restaurant Check-In */}
+                            {/* 6. Restaurant Check-In */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                               {guest.restaurantStatus === 'Checked In' || guest.restaurantStatus === 'Details Captured' ? (
                                 <span style={{
@@ -3393,7 +3244,7 @@ const PropertyManagerDashboard: React.FC = () => {
                               )}
                             </td>
 
-                            {/* 8. Action */}
+                            {/* 7. Action */}
                             <td style={{ padding: '14px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                               <button
                                 type="button"
@@ -3420,7 +3271,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={8} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                          <td colSpan={7} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
                             No guest user phone bookings found matching your search.
                           </td>
                         </tr>
