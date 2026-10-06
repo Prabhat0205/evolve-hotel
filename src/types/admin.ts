@@ -83,6 +83,28 @@ export interface QuickAccessTile {
   badge?: string;
 }
 
+export interface PhoneGuestUserBooking {
+  id: string;
+  phone: string;
+  name?: string;
+  email?: string;
+  bookingRef: string;
+  bookingDate: string;
+  checkInDate: string;
+  checkOutDate: string;
+  dateRange: string;
+  roomType: string;
+  suiteNumber: string;
+  adultsCount: number;
+  totalAmount: string;
+  status: 'Arriving' | 'In House' | 'Completed' | 'Cancelled';
+  hasBreakfastAccess: false; // Guests booking via phone have no breakfast access (room only)
+  restaurantStatus: 'Not Checked In' | 'Checked In' | 'Details Captured';
+  restaurantCheckInDate?: string;
+  tableNumber?: string;
+  notes?: string;
+}
+
 export interface AdminActiveBooking {
   id: string;
   confirmationCode: string;
@@ -110,6 +132,12 @@ export interface AdminActiveBooking {
   };
   lastCloudbedsSync?: string;
   bookingSource?: string;
+  isGuestUser?: boolean;
+  hasBreakfastAccess?: boolean;
+  bookingDate?: string;
+  restaurantStatus?: 'Not Checked In' | 'Checked In' | 'Details Captured';
+  tableNumber?: string;
+  notes?: string;
 }
 
 export interface GiftCardRequestItem {

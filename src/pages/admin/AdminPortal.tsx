@@ -18,6 +18,7 @@ import {
   mockAutomatedRuleDecisions,
   mockRewardsReportEntries,
   mockPropertyUsers,
+  mockPhoneGuestUsers,
 } from '../../data/mockDashboardData';
 import {
   AdminPropertyItem,
@@ -25,6 +26,7 @@ import {
   AuditActivityItem,
   QuickAccessTile,
   AdminActiveBooking,
+  PhoneGuestUserBooking,
   GiftCardRequestItem,
   GuestCaseItem,
   AutomatedRuleDecisionItem,
@@ -39,7 +41,7 @@ import {
   LayoutDashboard, CalendarDays, Award, Gift, BarChart3,
   ChevronDown, ChevronUp, Filter, Plus, Check, Clock, Search, Download, ExternalLink,
   FileText, Printer, UserPlus, ShieldAlert, Key, History, Menu, SlidersHorizontal,
-  CheckCircle2, MessageSquare, Edit3
+  CheckCircle2, MessageSquare, Edit3, Phone, UtensilsCrossed, Coffee
 } from 'lucide-react';
 
 /* =========================================================================
@@ -891,6 +893,24 @@ const PropertyManagerDashboard: React.FC = () => {
   const [guestFilterJoinedYear, setGuestFilterJoinedYear] = useState<string>('all');
   const [guestQuickTierFilter, setGuestQuickTierFilter] = useState<'all' | 'Origins' | 'Prestige' | 'Elite' | 'Active'>('all');
 
+  // Guest Management Sub-tab ('members' vs 'guest_users')
+  const [guestManagementSubTab, setGuestManagementSubTab] = useState<'members' | 'guest_users'>('members');
+  const [phoneGuestUsersList, setPhoneGuestUsersList] = useState<PhoneGuestUserBooking[]>(mockPhoneGuestUsers);
+  const [guestUserSearch, setGuestUserSearch] = useState<string>('');
+  const [guestUserRestaurantFilter, setGuestUserRestaurantFilter] = useState<'all' | 'Not Checked In' | 'Checked In' | 'Details Captured'>('all');
+  const [guestUserStatusFilter, setGuestUserStatusFilter] = useState<'all' | 'Arriving' | 'In House' | 'Completed'>('all');
+
+  // Modal for Restaurant Check-in & Guest User Details
+  const [selectedGuestUserForModal, setSelectedGuestUserForModal] = useState<PhoneGuestUserBooking | null>(null);
+  const [modalGuestName, setModalGuestName] = useState<string>('');
+  const [modalGuestEmail, setModalGuestEmail] = useState<string>('');
+  const [modalRestaurantCheckedIn, setModalRestaurantCheckedIn] = useState<boolean>(false);
+  const [modalTableNumber, setModalTableNumber] = useState<string>('');
+  const [modalGuestNotes, setModalGuestNotes] = useState<string>('');
+
+  // Active Bookings Filter by Guest Type
+  const [filterGuestType, setFilterGuestType] = useState<'all' | 'members' | 'guest_users'>('all');
+
   // Quick Access & Modals state
   const [activeQuickAccess, setActiveQuickAccess] = useState<QuickAccessTile | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -1048,7 +1068,13 @@ const PropertyManagerDashboard: React.FC = () => {
       if (booking.status.toLowerCase() !== filterBookingStatus.toLowerCase()) return false;
     }
 
-    // 10. Quick Timeline Filter
+    // 10. Guest / Account Type Filter
+    if (filterGuestType !== 'all') {
+      if (filterGuestType === 'guest_users' && !booking.isGuestUser) return false;
+      if (filterGuestType === 'members' && booking.isGuestUser) return false;
+    }
+
+    // 11. Quick Timeline Filter
     if (selectedTimeFilter === 'today') {
       if (booking.startDate !== '2026-09-17' && booking.status !== 'Arriving') return false;
     } else if (selectedTimeFilter === 'tomorrow') {
@@ -1072,6 +1098,7 @@ const PropertyManagerDashboard: React.FC = () => {
     (filterBookingSource !== 'all' ? 1 : 0) +
     (filterSuitesCount !== 'all' ? 1 : 0) +
     (filterBookingStatus !== 'all' ? 1 : 0) +
+    (filterGuestType !== 'all' ? 1 : 0) +
     (selectedTimeFilter !== 'all' ? 1 : 0)
   );
 
@@ -1085,12 +1112,124 @@ const PropertyManagerDashboard: React.FC = () => {
     setFilterBookingSource('all');
     setFilterSuitesCount('all');
     setFilterBookingStatus('all');
+    setFilterGuestType('all');
     setSelectedTimeFilter('all');
     addToast('info', 'Filters Reset', 'All filter fields have been cleared.');
   };
 
   const handleApplyFilters = () => {
     addToast('success', 'Filters Applied', `Showing ${filteredBookings.length} matching reservations.`);
+  };
+
+  // Filtered Phone Guest Users (Guest Management nested tab)
+  const filteredPhoneGuests = phoneGuestUsersList.filter(guest => {
+    if (guestUserSearch.trim()) {
+      const q = guestUserSearch.toLowerCase().trim();
+      const matchPhone = guest.phone.toLowerCase().includes(q);
+      const matchRef = guest.bookingRef.toLowerCase().includes(q);
+      const matchName = guest.name ? guest.name.toLowerCase().includes(q) : false;
+      const matchRoom = guest.roomType.toLowerCase().includes(q) || guest.suiteNumber.toLowerCase().includes(q);
+      if (!matchPhone && !matchRef && !matchName && !matchRoom) return false;
+    }
+    if (guestUserRestaurantFilter !== 'all') {
+      if (guest.restaurantStatus !== guestUserRestaurantFilter) return false;
+    }
+    if (guestUserStatusFilter !== 'all') {
+      if (guest.status !== guestUserStatusFilter) return false;
+    }
+    return true;
+  });
+
+  // Modal Handlers for Guest User Details & Restaurant Check-In
+  const openGuestUserDetailModal = (guest: PhoneGuestUserBooking) => {
+    setSelectedGuestUserForModal(guest);
+    setModalGuestName(guest.name || '');
+    setModalGuestEmail(guest.email || '');
+    setModalRestaurantCheckedIn(guest.restaurantStatus === 'Checked In' || guest.restaurantStatus === 'Details Captured');
+    setModalTableNumber(guest.tableNumber || '');
+    setModalGuestNotes(guest.notes || '');
+  };
+
+  const handleSaveGuestUserDetails = () => {
+    if (!selectedGuestUserForModal) return;
+    const isCheckedIn = modalRestaurantCheckedIn;
+    const newRestStatus: 'Not Checked In' | 'Checked In' | 'Details Captured' = 
+      isCheckedIn ? (modalGuestName.trim() ? 'Details Captured' : 'Checked In') : (modalGuestName.trim() ? 'Details Captured' : 'Not Checked In');
+
+    // 1. Update phoneGuestUsersList
+    setPhoneGuestUsersList(prev => prev.map(item => {
+      if (item.id === selectedGuestUserForModal.id || item.bookingRef === selectedGuestUserForModal.bookingRef) {
+        return {
+          ...item,
+          name: modalGuestName.trim() || item.name,
+          email: modalGuestEmail.trim() || item.email,
+          restaurantStatus: newRestStatus,
+          tableNumber: modalTableNumber.trim() || item.tableNumber,
+          notes: modalGuestNotes.trim() || item.notes,
+          restaurantCheckInDate: isCheckedIn ? (item.restaurantCheckInDate || 'Today • Just now') : undefined,
+        };
+      }
+      return item;
+    }));
+
+    // 2. Update corresponding entry in activeBookingsList
+    setActiveBookingsList(prev => prev.map(b => {
+      if (b.confirmationCode === selectedGuestUserForModal.bookingRef || b.phone === selectedGuestUserForModal.phone) {
+        return {
+          ...b,
+          guestName: modalGuestName.trim() ? modalGuestName.trim() : b.guestName,
+          email: modalGuestEmail.trim() ? modalGuestEmail.trim() : b.email,
+          restaurantStatus: newRestStatus,
+          tableNumber: modalTableNumber.trim() || b.tableNumber,
+          notes: modalGuestNotes.trim() || b.notes,
+        };
+      }
+      return b;
+    }));
+
+    // 3. Update selectedBookingDetails if open
+    if (selectedBookingDetails && (selectedBookingDetails.confirmationCode === selectedGuestUserForModal.bookingRef || selectedBookingDetails.phone === selectedGuestUserForModal.phone)) {
+      setSelectedBookingDetails(prev => prev ? {
+        ...prev,
+        guestName: modalGuestName.trim() ? modalGuestName.trim() : prev.guestName,
+        email: modalGuestEmail.trim() ? modalGuestEmail.trim() : prev.email,
+        restaurantStatus: newRestStatus,
+        tableNumber: modalTableNumber.trim() || prev.tableNumber,
+        notes: modalGuestNotes.trim() || prev.notes,
+      } : null);
+    }
+
+    addToast('success', 'Guest Details Saved', `Updated guest user records & restaurant check-in for ${selectedGuestUserForModal.phone}.`);
+    setSelectedGuestUserForModal(null);
+  };
+
+  const openGuestUserModalFromBooking = (booking: AdminActiveBooking) => {
+    const existingGuest = phoneGuestUsersList.find(g => g.bookingRef === booking.confirmationCode || g.phone === booking.phone);
+    if (existingGuest) {
+      openGuestUserDetailModal(existingGuest);
+    } else {
+      const synth: PhoneGuestUserBooking = {
+        id: `phone-guest-${Date.now()}`,
+        phone: booking.phone,
+        name: booking.guestName.startsWith('Guest') ? '' : booking.guestName,
+        email: booking.email,
+        bookingRef: booking.confirmationCode,
+        bookingDate: booking.bookingDate || 'Oct 04, 2026',
+        checkInDate: booking.startDate,
+        checkOutDate: booking.endDate,
+        dateRange: booking.dateRange,
+        roomType: booking.roomType,
+        suiteNumber: booking.suiteNumber || '104',
+        adultsCount: booking.adultsCount || 1,
+        totalAmount: booking.totalAmount || '$350.00',
+        status: (booking.status === 'Cancelled' ? 'Cancelled' : booking.status === 'Completed' ? 'Completed' : booking.status === 'In House' ? 'In House' : 'Arriving'),
+        hasBreakfastAccess: false,
+        restaurantStatus: booking.restaurantStatus || 'Not Checked In',
+        tableNumber: booking.tableNumber,
+        notes: booking.notes
+      };
+      openGuestUserDetailModal(synth);
+    }
   };
 
   // Filtered properties
@@ -2205,6 +2344,7 @@ const PropertyManagerDashboard: React.FC = () => {
                           onChange={(e) => setFilterBookingSource(e.target.value)}
                         >
                           <option value="all">All Sources</option>
+                          <option value="Direct Phone">Direct Phone (Guest User)</option>
                           <option value="Cloudbeds">Cloudbeds</option>
                           <option value="Direct Website">Direct Website</option>
                           <option value="Third Party">Third Party</option>
@@ -2225,6 +2365,20 @@ const PropertyManagerDashboard: React.FC = () => {
                           <option value="In House">In House</option>
                           <option value="Completed">Completed</option>
                           <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </div>
+
+                      {/* 10. Guest / Reservation Type */}
+                      <div className="admin-filter-group">
+                        <label className="admin-filter-label">Guest Type</label>
+                        <select
+                          className="admin-filter-select"
+                          value={filterGuestType}
+                          onChange={(e) => setFilterGuestType(e.target.value as any)}
+                        >
+                          <option value="all">All Guests (Members & Phone)</option>
+                          <option value="members">Registered Members</option>
+                          <option value="guest_users">Phone Guest Users (No Breakfast)</option>
                         </select>
                       </div>
                     </div>
@@ -2333,7 +2487,25 @@ const PropertyManagerDashboard: React.FC = () => {
 
                               {/* 3. Guest Name */}
                               <td style={{ padding: '14px 16px', color: '#17271f', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
-                                {booking.guestName}
+                                <div>{booking.guestName}</div>
+                                {booking.isGuestUser && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
+                                    <span style={{
+                                      fontSize: '0.70rem',
+                                      backgroundColor: '#fff7ed',
+                                      color: '#c2410c',
+                                      border: '1px solid #fed7aa',
+                                      padding: '1px 6px',
+                                      borderRadius: '4px',
+                                      fontWeight: 700,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}>
+                                      <Phone size={10} /> Phone Guest (No Breakfast)
+                                    </span>
+                                  </div>
+                                )}
                               </td>
 
                               {/* 4. Phone No (Separate Column) */}
@@ -2358,7 +2530,11 @@ const PropertyManagerDashboard: React.FC = () => {
 
                               {/* 8. Booking Source */}
                               <td style={{ padding: '14px 14px', color: '#334155', fontWeight: 500, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
-                                {booking.bookingSource || 'Cloudbeds'}
+                                {booking.isGuestUser ? (
+                                  <span style={{ color: '#c2410c', fontWeight: 700 }}>Direct Phone</span>
+                                ) : (
+                                  booking.bookingSource || 'Cloudbeds'
+                                )}
                               </td>
 
                               {/* 9. Status */}
@@ -2463,7 +2639,85 @@ const PropertyManagerDashboard: React.FC = () => {
                 )}
               </div>
 
-              {/* Collapsible Advanced Filters Section (Guest Management) */}
+              {/* Nested Sub-Tabs: Registered Members vs Guest Users (Phone Bookings) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                borderBottom: '2px solid #e2e8f0',
+                marginBottom: '20px',
+                paddingBottom: '2px'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setGuestManagementSubTab('members')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderBottom: guestManagementSubTab === 'members' ? '3px solid #17271f' : '3px solid transparent',
+                    backgroundColor: 'transparent',
+                    color: guestManagementSubTab === 'members' ? '#17271f' : '#64748b',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    marginBottom: '-2px'
+                  }}
+                >
+                  <Users size={16} />
+                  <span>Registered Members</span>
+                  <span style={{
+                    backgroundColor: guestManagementSubTab === 'members' ? '#17271f' : '#e2e8f0',
+                    color: guestManagementSubTab === 'members' ? '#ffffff' : '#475569',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700
+                  }}>
+                    {guestsList.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGuestManagementSubTab('guest_users')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderBottom: guestManagementSubTab === 'guest_users' ? '3px solid #ea580c' : '3px solid transparent',
+                    backgroundColor: 'transparent',
+                    color: guestManagementSubTab === 'guest_users' ? '#ea580c' : '#64748b',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    marginBottom: '-2px'
+                  }}
+                >
+                  <Phone size={16} />
+                  <span>Guest Users (Phone Bookings)</span>
+                  <span style={{
+                    backgroundColor: guestManagementSubTab === 'guest_users' ? '#ea580c' : '#fee2e2',
+                    color: guestManagementSubTab === 'guest_users' ? '#ffffff' : '#b91c1c',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700
+                  }}>
+                    {phoneGuestUsersList.length}
+                  </span>
+                </button>
+              </div>
+
+              {guestManagementSubTab === 'members' ? (
+                <>
+                  {/* Collapsible Advanced Filters Section (Guest Management) */}
               <div className="admin-filters-card">
                 {/* Header Bar with Open / Collapse Toggle */}
                 <div
@@ -2785,8 +3039,400 @@ const PropertyManagerDashboard: React.FC = () => {
                   </table>
                 </div>
               </div>
+            </>
+          ) : (
+            /* ===============================================================
+               GUEST USERS (PHONE BOOKINGS) NESTED TAB VIEW
+            =============================================================== */
+            <div>
+              {/* Informational Policy & Feature Overview Banner */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '14px',
+                marginBottom: '20px'
+              }}>
+                <div style={{
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '8px',
+                    backgroundColor: '#e0f2fe',
+                    color: '#0369a1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Phone size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>
+                      Phone-Only Room Bookings
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '0.80rem', marginTop: '2px', lineHeight: 1.4 }}>
+                      Direct guest users book hotel suites using their mobile phone number only, without creating an account or loyalty profile.
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: '#fff7ed',
+                  border: '1px solid #fed7aa',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '8px',
+                    backgroundColor: '#ffedd5',
+                    color: '#c2410c',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Coffee size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#9a3412', fontSize: '0.90rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🚫 No Breakfast Access</span>
+                      <span style={{ fontSize: '0.70rem', backgroundColor: '#ea580c', color: '#fff', padding: '1px 5px', borderRadius: '4px' }}>
+                        Policy Enforced
+                      </span>
+                    </div>
+                    <div style={{ color: '#c2410c', fontSize: '0.80rem', marginTop: '2px', lineHeight: 1.4 }}>
+                      Strict room-only accommodation. Guest users have <strong>NO access</strong> to the complimentary breakfast buffet.
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '8px',
+                    backgroundColor: '#dcfce7',
+                    color: '#15803d',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <UtensilsCrossed size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#166534', fontSize: '0.90rem' }}>
+                      Restaurant Check-In Capture
+                    </div>
+                    <div style={{ color: '#15803d', fontSize: '0.80rem', marginTop: '2px', lineHeight: 1.4 }}>
+                      When a guest user arrives at the on-site restaurant or front desk, admins can add their full name, email, table and notes.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+                padding: '14px 18px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '14px',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1', minWidth: '260px' }}>
+                  <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+                    <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                      type="text"
+                      value={guestUserSearch}
+                      onChange={(e) => setGuestUserSearch(e.target.value)}
+                      placeholder="Search phone (+1 555...), ref, name..."
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px 8px 36px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label style={{ fontSize: '0.80rem', fontWeight: 600, color: '#475569' }}>Restaurant:</label>
+                    <select
+                      value={guestUserRestaurantFilter}
+                      onChange={(e) => setGuestUserRestaurantFilter(e.target.value as any)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.82rem',
+                        color: '#1e293b',
+                        outline: 'none',
+                        backgroundColor: '#ffffff'
+                      }}
+                    >
+                      <option value="all">All Restaurant Statuses</option>
+                      <option value="Not Checked In">Not Checked In</option>
+                      <option value="Checked In">Checked In</option>
+                      <option value="Details Captured">Details Captured</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label style={{ fontSize: '0.80rem', fontWeight: 600, color: '#475569' }}>Stay Status:</label>
+                    <select
+                      value={guestUserStatusFilter}
+                      onChange={(e) => setGuestUserStatusFilter(e.target.value as any)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.82rem',
+                        color: '#1e293b',
+                        outline: 'none',
+                        backgroundColor: '#ffffff'
+                      }}
+                    >
+                      <option value="all">All Stays</option>
+                      <option value="In House">In House</option>
+                      <option value="Arriving">Arriving</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guest Users Table Listing View */}
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <th style={{ padding: '12px 16px' }}>Phone Number</th>
+                        <th style={{ padding: '12px 16px' }}>Guest Name</th>
+                        <th style={{ padding: '12px 16px' }}>Booking Ref</th>
+                        <th style={{ padding: '12px 16px' }}>Booking Date</th>
+                        <th style={{ padding: '12px 16px' }}>Room & Dates</th>
+                        <th style={{ padding: '12px 16px' }}>Breakfast Access</th>
+                        <th style={{ padding: '12px 16px' }}>Restaurant Check-In</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredPhoneGuests.length > 0 ? (
+                        filteredPhoneGuests.map((guest, idx) => (
+                          <tr
+                            key={guest.id}
+                            style={{
+                              borderBottom: idx !== filteredPhoneGuests.length - 1 ? '1px solid #edf2f7' : 'none',
+                              transition: 'background-color 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fbfcfb')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
+                          >
+                            {/* 1. Phone Number */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#17271f' }}>
+                                <span style={{
+                                  width: '26px',
+                                  height: '26px',
+                                  borderRadius: '50%',
+                                  backgroundColor: '#e0f2fe',
+                                  color: '#0284c7',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}>
+                                  <Phone size={13} />
+                                </span>
+                                <span>{guest.phone}</span>
+                              </div>
+                            </td>
+
+                            {/* 2. Guest Name */}
+                            <td style={{ padding: '14px 16px' }}>
+                              {guest.name ? (
+                                <div>
+                                  <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>{guest.name}</div>
+                                  {guest.email && <div style={{ fontSize: '0.76rem', color: '#64748b' }}>{guest.email}</div>}
+                                </div>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.75rem',
+                                  color: '#94a3b8',
+                                  fontStyle: 'italic',
+                                  backgroundColor: '#f1f5f9',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px'
+                                }}>
+                                  Not provided (Phone Only)
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 3. Booking Ref */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              <span style={{
+                                fontFamily: 'monospace',
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                backgroundColor: '#f1f5f9',
+                                color: '#334155',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid #cbd5e1'
+                              }}>
+                                {guest.bookingRef}
+                              </span>
+                            </td>
+
+                            {/* 4. Booking Date */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.85rem' }}>
+                              {guest.bookingDate}
+                            </td>
+
+                            {/* 5. Room & Dates */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              <div style={{ fontWeight: 600, color: '#17271f', fontSize: '0.86rem' }}>
+                                Suite {guest.suiteNumber} • {guest.roomType}
+                              </div>
+                              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                                {guest.dateRange}
+                              </div>
+                            </td>
+
+                            {/* 6. Breakfast Access */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  color: '#b91c1c',
+                                  backgroundColor: '#fee2e2',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #fecaca'
+                                }}>
+                                  <span>🚫</span> No Breakfast Access
+                                </span>
+                                <span style={{ fontSize: '0.70rem', color: '#991b1b', marginLeft: '4px' }}>
+                                  Room Only • No Buffet
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* 7. Restaurant Check-In */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              {guest.restaurantStatus === 'Checked In' || guest.restaurantStatus === 'Details Captured' ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 700,
+                                  color: '#15803d',
+                                  backgroundColor: '#dcfce7',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #bbf7d0'
+                                }}>
+                                  <Check size={12} />
+                                  <span>{guest.restaurantStatus}</span>
+                                  {guest.tableNumber && <span>• {guest.tableNumber}</span>}
+                                </span>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.76rem',
+                                  color: '#64748b',
+                                  backgroundColor: '#f1f5f9',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px'
+                                }}>
+                                  Not Checked In
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 8. Action */}
+                            <td style={{ padding: '14px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <button
+                                type="button"
+                                onClick={() => openGuestUserDetailModal(guest)}
+                                style={{
+                                  padding: '6px 12px',
+                                  backgroundColor: '#17271f',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}
+                              >
+                                <UtensilsCrossed size={12} />
+                                <span>{guest.name ? 'Update / Restaurant' : 'Add Details / Check-in'}</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={8} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                            No guest user phone bookings found matching your search.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+        </div>
+      </div>
         ) : activeTab === 'rewards' ? (
           /* ===============================================================
              REWARDS MANAGEMENT VIEW — LISTING VIEW (PAGE 1) & INNER PAGE (PAGE 2)
@@ -7465,42 +8111,74 @@ const PropertyManagerDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Row 3: Breakfast order */}
-              <div className="admin-security-user-row">
-                <div style={{ flex: 1, paddingRight: '12px' }}>
-                  <h4 style={{ margin: '0 0 3px 0', fontSize: '1.02rem', fontWeight: 700, color: '#17271f' }}>
-                    Breakfast order {selectedBookingDetails.breakfastOrder?.orderNumber || 'K-2322'}
-                  </h4>
-                  <div style={{ color: '#55665e', fontSize: '0.85rem' }}>
-                    Assigned Suite {selectedBookingDetails.suiteNumber || '214'} • {selectedBookingDetails.breakfastOrder?.pickupTime || '8:15 AM pickup'} • {selectedBookingDetails.breakfastOrder?.platesCount || 2} plates
+              {/* Row 3: Breakfast order or Guest User No-Breakfast Policy */}
+              {selectedBookingDetails.isGuestUser ? (
+                <div className="admin-security-user-row" style={{ backgroundColor: '#fff7ed', borderRadius: '8px', padding: '14px 18px', border: '1px solid #fed7aa' }}>
+                  <div style={{ flex: 1, paddingRight: '12px' }}>
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: '1.02rem', fontWeight: 700, color: '#9a3412', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>🚫 No Breakfast Access</span>
+                      <span style={{ fontSize: '0.72rem', backgroundColor: '#ea580c', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                        Policy Enforced
+                      </span>
+                    </h4>
+                    <div style={{ color: '#c2410c', fontSize: '0.85rem' }}>
+                      Direct Phone Booking • Room-Only Stay (Ineligible for Complimentary Breakfast Buffet).
+                    </div>
+                    {selectedBookingDetails.restaurantStatus && (
+                      <div style={{ color: '#7c2d12', fontSize: '0.82rem', marginTop: '4px', fontWeight: 600 }}>
+                        Restaurant Status: {selectedBookingDetails.restaurantStatus} {selectedBookingDetails.tableNumber ? `(${selectedBookingDetails.tableNumber})` : ''}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ color: '#6a7c73', fontSize: '0.82rem', marginTop: '2px' }}>
-                    Connected to reservation {selectedBookingDetails.confirmationCode}; Kitchen status changes update this record.
+                  <div>
+                    <button
+                      type="button"
+                      className="admin-btn-security-action"
+                      style={{ backgroundColor: '#17271f', color: '#ffffff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      onClick={() => openGuestUserModalFromBooking(selectedBookingDetails)}
+                    >
+                      <UtensilsCrossed size={14} />
+                      <span>Restaurant Check-In</span>
+                    </button>
                   </div>
                 </div>
+              ) : (
+                <div className="admin-security-user-row">
+                  <div style={{ flex: 1, paddingRight: '12px' }}>
+                    <h4 style={{ margin: '0 0 3px 0', fontSize: '1.02rem', fontWeight: 700, color: '#17271f' }}>
+                      Breakfast order {selectedBookingDetails.breakfastOrder?.orderNumber || 'K-2322'}
+                    </h4>
+                    <div style={{ color: '#55665e', fontSize: '0.85rem' }}>
+                      Assigned Suite {selectedBookingDetails.suiteNumber || '214'} • {selectedBookingDetails.breakfastOrder?.pickupTime || '8:15 AM pickup'} • {selectedBookingDetails.breakfastOrder?.platesCount || 2} plates
+                    </div>
+                    <div style={{ color: '#6a7c73', fontSize: '0.82rem', marginTop: '2px' }}>
+                      Connected to reservation {selectedBookingDetails.confirmationCode}; Kitchen status changes update this record.
+                    </div>
+                  </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontWeight: 600, color: '#17271f', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-                    {selectedBookingDetails.breakfastOrder?.status || 'Not Started'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ fontWeight: 600, color: '#17271f', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                      {selectedBookingDetails.breakfastOrder?.status || 'Not Started'}
+                    </span>
 
-                  <button
-                    type="button"
-                    className="admin-btn-security-action"
-                    onClick={() => setSelectedBreakfastOrder({
-                      orderNumber: selectedBookingDetails.breakfastOrder?.orderNumber || 'K-2322',
-                      suiteNumber: selectedBookingDetails.suiteNumber || '214',
-                      guestName: selectedBookingDetails.guestName,
-                      pickupTime: selectedBookingDetails.breakfastOrder?.pickupTime || '8:15 AM pickup',
-                      platesCount: selectedBookingDetails.breakfastOrder?.platesCount || 2,
-                      status: selectedBookingDetails.breakfastOrder?.status || 'Not Started',
-                      confirmationCode: selectedBookingDetails.confirmationCode
-                    })}
-                  >
-                    View Breakfast Order
-                  </button>
+                    <button
+                      type="button"
+                      className="admin-btn-security-action"
+                      onClick={() => setSelectedBreakfastOrder({
+                        orderNumber: selectedBookingDetails.breakfastOrder?.orderNumber || 'K-2322',
+                        suiteNumber: selectedBookingDetails.suiteNumber || '214',
+                        guestName: selectedBookingDetails.guestName,
+                        pickupTime: selectedBookingDetails.breakfastOrder?.pickupTime || '8:15 AM pickup',
+                        platesCount: selectedBookingDetails.breakfastOrder?.platesCount || 2,
+                        status: selectedBookingDetails.breakfastOrder?.status || 'Not Started',
+                        confirmationCode: selectedBookingDetails.confirmationCode
+                      })}
+                    >
+                      View Breakfast Order
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Row 4: Cloudbeds synchronization */}
               <div className="admin-security-user-row">
@@ -7779,6 +8457,293 @@ const PropertyManagerDashboard: React.FC = () => {
                 }}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ===================================================================
+          MODAL: RESTAURANT CHECK-IN & GUEST USER PROFILE CAPTURE
+      =================================================================== */}
+      {selectedGuestUserForModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(14, 26, 20, 0.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            maxWidth: '560px',
+            width: '100%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '18px 24px',
+              backgroundColor: '#17271f',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <UtensilsCrossed size={18} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
+                    Restaurant Check-In & Guest Profile
+                  </h3>
+                  <div style={{ fontSize: '0.78rem', color: '#93c5aa', marginTop: '2px' }}>
+                    Phone Booking: {selectedGuestUserForModal.phone} • Ref: {selectedGuestUserForModal.bookingRef}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedGuestUserForModal(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#93c5aa',
+                  cursor: 'pointer',
+                  fontSize: '1.1rem',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '22px 24px', maxHeight: '76vh', overflowY: 'auto' }}>
+              {/* Notice / Policy Banner */}
+              <div style={{
+                backgroundColor: '#fff7ed',
+                border: '1px solid #fed7aa',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginBottom: '18px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px'
+              }}>
+                <AlertCircle size={18} style={{ color: '#ea580c', flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ fontSize: '0.82rem', color: '#9a3412', lineHeight: 1.45 }}>
+                  <strong>Guest User Policy:</strong> This guest booked room-only via mobile phone number (<strong>No Breakfast Buffet Access</strong>). When the guest arrives at the restaurant or front desk, capture their details below.
+                </div>
+              </div>
+
+              {/* Booking Context Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '10px',
+                backgroundColor: '#f8fafc',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                marginBottom: '18px',
+                fontSize: '0.82rem'
+              }}>
+                <div>
+                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>ROOM BOOKED</span>
+                  <strong style={{ color: '#1e293b' }}>{selectedGuestUserForModal.roomType}</strong>
+                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Suite {selectedGuestUserForModal.suiteNumber}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>BOOKING DATE</span>
+                  <strong style={{ color: '#1e293b' }}>{selectedGuestUserForModal.bookingDate}</strong>
+                  <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{selectedGuestUserForModal.dateRange}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#64748b', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>BREAKFAST STATUS</span>
+                  <strong style={{ color: '#dc2626' }}>🚫 No Access</strong>
+                  <div style={{ color: '#dc2626', fontSize: '0.75rem' }}>Room Only</div>
+                </div>
+              </div>
+
+              {/* Form Inputs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Guest Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={modalGuestName}
+                    onChange={(e) => setModalGuestName(e.target.value)}
+                    placeholder="Enter guest full name (e.g. Liam Davis)"
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Email Address (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={modalGuestEmail}
+                    onChange={(e) => setModalGuestEmail(e.target.value)}
+                    placeholder="e.g. guest@example.com for receipts"
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Restaurant Check-in Card */}
+                <div style={{
+                  border: '1.5px solid #bbf7d0',
+                  backgroundColor: '#f0fdf4',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, color: '#166534', fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={modalRestaurantCheckedIn}
+                      onChange={(e) => setModalRestaurantCheckedIn(e.target.checked)}
+                      style={{ width: '16px', height: '16px', accentColor: '#166534' }}
+                    />
+                    <span>Check In Guest to Restaurant</span>
+                  </label>
+                  <div style={{ fontSize: '0.78rem', color: '#15803d', marginLeft: '24px' }}>
+                    Toggle on when the guest arrives at the dining room or restaurant host stand.
+                  </div>
+
+                  {modalRestaurantCheckedIn && (
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px', marginLeft: '24px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#166534', marginBottom: '4px' }}>
+                          Table Number / Seating Area
+                        </label>
+                        <input
+                          type="text"
+                          value={modalTableNumber}
+                          onChange={(e) => setModalTableNumber(e.target.value)}
+                          placeholder="e.g. Table 6 or Patio Booth"
+                          style={{
+                            width: '100%',
+                            padding: '7px 10px',
+                            borderRadius: '5px',
+                            border: '1px solid #86efac',
+                            fontSize: '0.84rem',
+                            backgroundColor: '#ffffff',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Front Desk / Dining Notes
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={modalGuestNotes}
+                    onChange={(e) => setModalGuestNotes(e.target.value)}
+                    placeholder="e.g. Inquired about lunch menu, bill charged to room."
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.84rem',
+                      outline: 'none',
+                      resize: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '14px 24px',
+              backgroundColor: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '10px'
+            }}>
+              <button
+                type="button"
+                onClick={() => setSelectedGuestUserForModal(null)}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  color: '#475569',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveGuestUserDetails}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: '#17271f',
+                  color: '#ffffff',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Check size={15} />
+                <span>Save Details & Update Booking</span>
               </button>
             </div>
           </div>
