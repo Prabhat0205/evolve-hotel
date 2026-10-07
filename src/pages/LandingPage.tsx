@@ -1205,57 +1205,6 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* =========================================================================
-          SITE FOOTER
-         ========================================================================= */}
-      <footer style={{ backgroundColor: '#17271f', color: '#e2ded5', padding: '60px 24px 40px' }}>
-        <div className="landing-section-shell">
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '40px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '40px', marginBottom: '32px' }}>
-            <div>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.65rem', color: '#dda943', fontWeight: 700, marginBottom: '12px' }}>
-                EVOLVE HOTELS &amp; SUITES
-              </div>
-              <p style={{ maxWidth: '360px', color: '#b5c0bc', fontSize: '0.9375rem', lineHeight: 1.6 }}>
-                Fine Dining &amp; Spa · 5420 Crossroad Parkway, Texarkana, AR 71854. Elevating comfort, dining, and loyalty rewards across America.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '48px', flexWrap: 'wrap' }}>
-              <div>
-                <h4 style={{ color: '#ffffff', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>Quick Navigation</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.875rem', color: '#b5c0bc' }}>
-                  <span style={{ cursor: 'pointer' }} onClick={() => scrollToSection('difference')}>Overview</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => scrollToSection('rooms')}>Suites &amp; Amenities</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => scrollToSection('breakfast')}>Breakfast Ordering</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => scrollToSection('dining')}>The Gourmet Kitchen</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => scrollToSection('wellness')}>Hydrotherapy Spa</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => scrollToSection('rewards')}>Evolve Rewards</span>
-                </div>
-              </div>
-
-              <div>
-                <h4 style={{ color: '#ffffff', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>Direct Support</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.875rem', color: '#b5c0bc' }}>
-                  <a href="tel:+18702168084" style={{ color: 'inherit', textDecoration: 'none' }}>870-216-8084</a>
-                  <a href="mailto:hello@stayatevolve.com" style={{ color: 'inherit', textDecoration: 'none' }}>hello@stayatevolve.com</a>
-                  <span style={{ cursor: 'pointer' }} onClick={() => navigateTo('corporate-booking')}>Group Rates &amp; Corporate</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => navigateTo('support')}>Guest Support Center</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', fontSize: '0.8125rem', color: '#889690' }}>
-            <p style={{ margin: 0 }}>© 2026 Evolve Hotels &amp; Suites. All rights reserved.</p>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <span style={{ cursor: 'pointer' }} onClick={() => navigateTo('support')}>Privacy Policy</span>
-              <span style={{ cursor: 'pointer' }} onClick={() => navigateTo('support')}>Terms of Use</span>
-              <span style={{ cursor: 'pointer' }} onClick={() => navigateTo('support')}>Accessibility</span>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
