@@ -1,6 +1,7 @@
 /* ==========================================================================
    EVOLVE HOTELS & RESORTS — KITCHEN DISPATCH APP
    EXACT REPLICA OF THE SPECIFIED BREAKFAST QUEUE & BUFFET MENU MANAGEMENT
+   LUXURY BRANDING & COMPREHENSIVE MOBILE/TABLET RESPONSIVENESS
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -14,46 +15,153 @@
   color: #17271f;
   font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE & TABLET TOPBAR (Visible only below 1024px)
+   -------------------------------------------------------------------------- */
+.kitchen-mobile-topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  background-color: #0f241c;
+  color: #ffffff;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.kitchen-mobile-menu-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.kitchen-mobile-menu-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.kitchen-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kitchen-mobile-brand-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+.kitchen-mobile-brand-dot {
+  color: #dda943;
+  font-size: 0.9rem;
+}
+
+.kitchen-mobile-brand-sub {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #dda943;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(221, 169, 67, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(221, 169, 67, 0.3);
+}
+
+.kitchen-mobile-active-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  background-color: rgba(221, 169, 67, 0.18);
+  color: #dda943;
+  border: 1px solid rgba(221, 169, 67, 0.35);
+  padding: 3px 10px;
+  border-radius: 12px;
 }
 
 /* --------------------------------------------------------------------------
    PANEL 1: LEFT DEEP FOREST SIDEBAR
    -------------------------------------------------------------------------- */
+.kitchen-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: rgba(14, 26, 21, 0.65);
+  backdrop-filter: blur(3px);
+}
+
 .kitchen-sidebar-panel {
-  width: 200px;
+  width: 220px;
   background-color: #0f241c;
   color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 14px;
+  padding: 24px 16px;
   box-sizing: border-box;
   flex-shrink: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.kitchen-sidebar-mobile-close {
+  display: none;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.kitchen-sidebar-close-btn {
+  background: none;
+  border: none;
+  color: #b7c7c0;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.kitchen-sidebar-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .kitchen-sidebar-brand {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
   padding: 0 8px;
 }
 
 .kitchen-sidebar-brand-name {
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   color: #ffffff;
-  text-transform: uppercase;
-  line-height: 1.25;
+  line-height: 1.2;
   display: block;
 }
 
 .kitchen-sidebar-brand-sub {
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #dda943;
   text-transform: uppercase;
   display: block;
+  margin-top: 3px;
 }
 
 .kitchen-sidebar-nav {
@@ -72,7 +180,7 @@
   color: #b7c7c0;
   background: transparent;
   border: none;
-  font-size: 0.92rem;
+  font-size: 0.90rem;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
@@ -90,6 +198,7 @@
   background-color: #1e3e33;
   color: #ffffff;
   font-weight: 700;
+  border-left: 3px solid #dda943;
 }
 
 .kitchen-sidebar-item-badge {
@@ -124,7 +233,7 @@
   padding: 28px 24px;
   box-sizing: border-box;
   overflow-y: auto;
-  max-width: calc(100% - 200px - 360px);
+  min-width: 0;
 }
 
 /* Center Header */
@@ -160,7 +269,7 @@
 }
 
 .kitchen-dropdown-btn {
-  padding: 8px 14px;
+  padding: 9px 14px;
   border-radius: 8px;
   background: #ffffff;
   border: 1px solid #d4ded9;
@@ -179,7 +288,7 @@
 }
 
 .kitchen-search-room-input {
-  padding: 8px 14px;
+  padding: 9px 14px;
   border-radius: 8px;
   background: #ffffff;
   border: 1px solid #d4ded9;
@@ -192,10 +301,11 @@
 
 .kitchen-search-room-input:focus {
   border-color: #17271f;
+  box-shadow: 0 0 0 3px rgba(23, 39, 31, 0.08);
 }
 
 .kitchen-action-outline-btn {
-  padding: 8px 14px;
+  padding: 9px 14px;
   border-radius: 8px;
   background: #ffffff;
   border: 1px solid #d4ded9;
@@ -224,34 +334,37 @@
 
 .kitchen-summary-card {
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
-  padding: 12px 14px;
+  padding: 14px 16px;
   box-sizing: border-box;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   cursor: pointer;
 }
 
 .kitchen-summary-card:hover {
   border-color: #cbd5e1;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(23, 39, 31, 0.06);
 }
 
 .kitchen-summary-card.active {
   border-color: #17271f;
   background-color: #fcfdfc;
+  box-shadow: 0 3px 10px rgba(23, 39, 31, 0.08);
 }
 
 .kitchen-summary-label {
   font-size: 0.78rem;
   font-weight: 700;
   color: #475569;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   display: block;
 }
 
 .kitchen-summary-number {
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.85rem;
   font-weight: 800;
   color: #17271f;
@@ -272,8 +385,14 @@
   align-items: center;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
   margin-bottom: 20px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kitchen-filter-pills-row::-webkit-scrollbar {
+  display: none;
 }
 
 .kitchen-filter-pill {
@@ -287,6 +406,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .kitchen-filter-pill:hover {
@@ -317,7 +437,7 @@
 
 .kitchen-order-row-card {
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
   padding: 16px 20px;
   display: flex;
@@ -331,13 +451,13 @@
 
 .kitchen-order-row-card:hover {
   border-color: #cbd5e1;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
 .kitchen-order-row-card.selected {
   border-color: #17271f;
   background-color: #fbfdfc;
-  box-shadow: 0 4px 14px rgba(23, 39, 31, 0.08);
+  box-shadow: 0 4px 16px rgba(23, 39, 31, 0.08);
 }
 
 /* Left yellow/amber stripe matching screenshot */
@@ -354,7 +474,8 @@
 .kitchen-order-row-left {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 28px;
+  min-width: 0;
 }
 
 .kitchen-order-time {
@@ -362,11 +483,13 @@
   font-weight: 800;
   color: #17271f;
   min-width: 75px;
+  flex-shrink: 0;
 }
 
 .kitchen-order-room-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .kitchen-order-room-title {
@@ -382,7 +505,7 @@
   margin-top: 2px;
 }
 
-/* Soft Mint Status Badge matching screenshot */
+/* Status Badges */
 .kitchen-status-pill-notstarted {
   background: #e2f3ec;
   color: #1f5945;
@@ -425,10 +548,10 @@
 }
 
 /* --------------------------------------------------------------------------
-   PANEL 3: RIGHT ORDER DETAILS & ACTION PANEL (MATCHING SCREENSHOT)
+   PANEL 3: RIGHT ORDER DETAILS & ACTION PANEL
    -------------------------------------------------------------------------- */
 .kitchen-details-panel {
-  width: 360px;
+  width: 380px;
   background-color: #ffffff;
   border-left: 1px solid #e5ebe7;
   padding: 28px 24px;
@@ -438,6 +561,14 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.kitchen-details-backdrop {
+  display: none;
+}
+
+.kitchen-details-mobile-header {
+  display: none;
 }
 
 .kitchen-details-ticket-id {
@@ -451,8 +582,9 @@
 }
 
 .kitchen-details-room-heading {
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 2.1rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #17271f;
   margin: 0 0 6px 0;
   line-height: 1.1;
@@ -505,21 +637,19 @@
   font-size: 0.92rem;
   color: #17271f;
   line-height: 1.4;
-  margin-top: 2px;
+  margin-top: 4px;
   display: flex;
   align-items: baseline;
   gap: 8px;
-}
-
-.kitchen-plate-special-req::before {
-  content: '•';
-  font-size: 1.1rem;
-  color: #17271f;
+  background-color: #fefce8;
+  border: 1px solid #fef08a;
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 
 .kitchen-plate-special-req strong {
   font-weight: 800;
-  color: #17271f;
+  color: #854d0e;
 }
 
 /* 2x2 Segmented Status Buttons (Matching Screenshot) */
@@ -600,7 +730,7 @@
   padding: 28px 32px;
   box-sizing: border-box;
   overflow-y: auto;
-  max-width: 100%;
+  min-width: 0;
 }
 
 .kitchen-buffet-header {
@@ -608,6 +738,8 @@
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .kitchen-buffet-title {
@@ -623,7 +755,7 @@
   border-radius: 8px;
   background-color: #17271f;
   color: #ffffff;
-  border: none;
+  border: 1px solid #dda943;
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
@@ -634,7 +766,8 @@
 }
 
 .kitchen-btn-add-buffet:hover {
-  background-color: #173f34;
+  background-color: #233f32;
+  box-shadow: 0 4px 12px rgba(23, 39, 31, 0.15);
 }
 
 .kitchen-buffet-grid {
@@ -646,16 +779,22 @@
 .kitchen-buffet-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
+  transition: all 0.15s ease;
+}
+
+.kitchen-buffet-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 /* --------------------------------------------------------------------------
-   MODAL STYLES (EDIT ORDER & ADD BUFFET ITEM)
+   MODAL STYLES (EDIT ORDER & ADD BUFFET ITEM & AUTH)
    -------------------------------------------------------------------------- */
 .kitchen-modal-backdrop {
   position: fixed;
@@ -665,28 +804,315 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 200;
   padding: 20px;
 }
 
 .kitchen-modal-box {
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid #e1e7e4;
   width: 100%;
-  max-width: 540px;
+  max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 28px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
 }
 
-/* Responsive */
-@media (max-width: 1100px) {
-  .kitchen-center-panel {
-    max-width: none;
+/* --------------------------------------------------------------------------
+   LANDING PAGE LUXURY THEME
+   -------------------------------------------------------------------------- */
+.kitchen-landing-screen {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fcfdfc 0%, #f4f7f5 100%);
+  color: #17271f;
+}
+
+.kitchen-landing-header {
+  height: 68px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8e5;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(23, 39, 31, 0.02);
+}
+
+.kitchen-landing-seal-wrapper {
+  margin-bottom: 24px;
+}
+
+.kitchen-landing-seal {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #17271f 0%, #0d1712 100%);
+  border: 3px double #dda943;
+  box-shadow: 0 12px 30px -4px rgba(23, 39, 31, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.kitchen-seal-stars {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: #dda943;
+  margin-top: 4px;
+}
+
+.kitchen-landing-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #17271f;
+  margin: 0 0 8px 0;
+  line-height: 1.25;
+}
+
+.kitchen-landing-sub {
+  font-size: 0.92rem;
+  color: #55665e;
+  max-width: 440px;
+  margin: 0 auto 28px auto;
+  line-height: 1.5;
+}
+
+.kitchen-landing-login-btn {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 24px;
+  background: #17271f;
+  color: #ffffff;
+  border: 1px solid #dda943;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(23, 39, 31, 0.15);
+}
+
+.kitchen-landing-login-btn:hover {
+  background: #254234;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(23, 39, 31, 0.22);
+}
+
+.kitchen-landing-notice {
+  font-size: 0.76rem;
+  color: #718379;
+  margin-top: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE DESIGN (TABLETS & MOBILES)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .kitchen-mobile-topbar {
+    display: flex;
   }
+
+  .kitchen-sidebar-backdrop {
+    display: block;
+  }
+
+  .kitchen-sidebar-panel {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 150;
+    width: 280px;
+    max-width: 82vw;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.3);
+  }
+
+  .kitchen-sidebar-panel.mobile-open {
+    transform: translateX(0);
+  }
+
+  .kitchen-sidebar-mobile-close {
+    display: flex;
+  }
+
+  .kitchen-center-panel {
+    padding: 20px 18px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Summary cards on tablet: 5 or 3 columns */
+  .kitchen-summary-cards-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Right details panel on tablet / mobile */
   .kitchen-details-panel {
     display: none;
   }
+
+  .kitchen-details-panel.mobile-open {
+    display: flex;
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: 100%;
+    max-width: 480px;
+    height: 100vh;
+    z-index: 160;
+    background: #ffffff;
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.25);
+    overflow-y: auto;
+  }
+
+  .kitchen-details-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 155;
+    background: rgba(14, 26, 21, 0.6);
+    backdrop-filter: blur(2px);
+  }
+
+  .kitchen-details-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #edf1ef;
+    margin-bottom: 16px;
+    background: #fafcfb;
+    border-radius: 8px;
+  }
+
+  .kitchen-btn-back-queue {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .kitchen-details-close-btn {
+    background: none;
+    border: none;
+    color: #55665e;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+  }
+
+  .kitchen-buffet-panel {
+    padding: 20px 18px;
+  }
+
+  .kitchen-buffet-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
+
+@media (max-width: 768px) {
+  .kitchen-landing-header {
+    padding: 0 16px;
+  }
+
+  .kitchen-landing-title {
+    font-size: 1.5rem;
+  }
+
+  .kitchen-queue-title {
+    font-size: 1.6rem;
+  }
+
+  .kitchen-queue-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .kitchen-queue-actions {
+    width: 100%;
+  }
+
+  .kitchen-search-room-input {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .kitchen-summary-cards-row {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 10px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .kitchen-summary-cards-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kitchen-summary-card {
+    min-width: 135px;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .kitchen-buffet-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kitchen-details-panel.mobile-open {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .kitchen-order-row-card {
+    padding: 14px 14px;
+  }
+
+  .kitchen-order-row-left {
+    gap: 14px;
+  }
+
+  .kitchen-order-time {
+    font-size: 0.95rem;
+    min-width: 65px;
+  }
+
+  .kitchen-order-room-title {
+    font-size: 0.95rem;
+  }
+
+  .kitchen-order-guest-plates {
+    font-size: 0.78rem;
+  }
+
+  .kitchen-modal-box {
+    padding: 20px 16px;
+  }
+}
+

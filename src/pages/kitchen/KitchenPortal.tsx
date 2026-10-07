@@ -39,7 +39,9 @@ export const KitchenPortal: React.FC = () => {
     }
   });
 
-  const [authStage, setAuthStage] = useState<'landing' | 'credentials' | '2fa' | 'register'>('landing');
+  const [authStage, setAuthStage] = useState<'landing' | 'credentials' | '2fa'>('landing');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isMobileDetailsOpen, setIsMobileDetailsOpen] = useState<boolean>(false);
   const [loginEmail, setLoginEmail] = useState<string>('prabhat.appzoro@gmail.com');
   const [loginPassword, setLoginPassword] = useState<string>('123456');
   const [authError, setAuthError] = useState<string>('');
@@ -294,6 +296,8 @@ export const KitchenPortal: React.FC = () => {
     setCurrentUser(null);
     localStorage.removeItem('evolve_kitchen_auth_user');
     setAuthStage('landing');
+    setIsMobileMenuOpen(false);
+    setIsMobileDetailsOpen(false);
     addToast('info', 'Signed Out', 'Signed out from Kitchen Staff Terminal.');
   };
 
@@ -302,22 +306,14 @@ export const KitchenPortal: React.FC = () => {
   // -------------------------------------------------------------------------
   if (!currentUser) {
     return (
-      <div className="kitchen-screen-wrapper" style={{ flexDirection: 'column' }}>
-        <header style={{
-          height: '64px',
-          background: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          padding: '0 32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', fontWeight: 900, fontStyle: 'italic', color: '#17271f' }}>
-              evolve
+      <div className="kitchen-landing-screen">
+        <header className="kitchen-landing-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, letterSpacing: '0.02em', color: '#17271f' }}>
+              EVOLVE
             </span>
-            <span style={{ fontSize: '0.70rem', fontWeight: 800, background: '#fdf6e9', color: '#997125', padding: '2px 8px', borderRadius: '4px', border: '1px solid #fae2b8', textTransform: 'uppercase' }}>
-              KITCHEN
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#fdf6e9', color: '#997125', padding: '3px 8px', borderRadius: '4px', border: '1px solid #fae2b8', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              KITCHEN PARTNER
             </span>
           </div>
 
@@ -332,76 +328,35 @@ export const KitchenPortal: React.FC = () => {
         </header>
 
         <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
-          {/* Chef Cooking Illustration */}
-          <div style={{ maxWidth: '380px', width: '100%', marginBottom: '20px' }}>
-            <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: 'auto' }}>
-              <line x1="30" y1="260" x2="470" y2="260" stroke="#E2E8F0" strokeWidth="2" strokeDasharray="6 6" />
-              <rect x="250" y="160" width="180" height="12" rx="3" fill="#CBD5E1" />
-              <line x1="265" y1="172" x2="265" y2="260" stroke="#94A3B8" strokeWidth="4" />
-              <line x1="415" y1="172" x2="415" y2="260" stroke="#94A3B8" strokeWidth="4" />
-              <path d="M355 125 H395 L390 160 H360 Z" fill="#C99632" />
-              <rect x="110" y="170" width="105" height="90" rx="8" fill="#CBD5E1" />
-              <rect x="125" y="195" width="75" height="50" rx="4" fill="#FFFFFF" stroke="#94A3B8" strokeWidth="2" />
-              <rect x="140" y="155" width="40" height="15" rx="3" fill="#475569" />
-              <line x1="180" y1="162" x2="215" y2="150" stroke="#334155" strokeWidth="4" />
-              <path d="M152 155 C150 140, 160 135, 158 125 C165 132, 168 142, 162 155 Z" fill="#F97316" />
-              <line x1="228" y1="220" x2="225" y2="260" stroke="#1E293B" strokeWidth="12" strokeLinecap="round" />
-              <line x1="248" y1="220" x2="252" y2="260" stroke="#1E293B" strokeWidth="12" strokeLinecap="round" />
-              <path d="M220 160 Q238 155 256 160 L254 225 Q238 228 222 225 Z" fill="#F43F5E" />
-              <circle cx="239" cy="128" r="14" fill="#FBCFE8" />
-              <path d="M228 116 C222 104, 230 92, 239 92 C248 92, 256 104, 250 116 Z" fill="#0284C7" />
-            </svg>
+          {/* Luxury Evolve Culinary Partner Seal */}
+          <div className="kitchen-landing-seal-wrapper">
+            <div className="kitchen-landing-seal">
+              <ChefHat size={38} color="#dda943" strokeWidth={1.8} />
+              <div className="kitchen-seal-stars">★★★★★</div>
+            </div>
           </div>
 
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#1e293b', margin: '0 0 6px 0' }}>
-            Evolve Restaurant Partner dashboard
+          <h2 className="kitchen-landing-title">
+            Evolve Restaurant Partner
           </h2>
-          <p style={{ fontSize: '0.90rem', color: '#64748b', maxWidth: '420px', margin: '0 0 24px 0' }}>
+          <p className="kitchen-landing-sub">
             Breakfast order dispatch and real-time kitchen display system for suites & guest rooms.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '300px', maxWidth: '100%' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthError('');
-                setAuthStage('credentials');
-              }}
-              style={{
-                width: '100%',
-                padding: '13px',
-                background: '#1a67ed',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setLoginEmail('prabhat.appzoro@gmail.com');
-                setLoginPassword('123456');
-                setAuthStage('credentials');
-              }}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: '#ffffff',
-                color: '#1a67ed',
-                border: '1.5px solid #1a67ed',
-                borderRadius: '8px',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Register
-            </button>
+          <button
+            type="button"
+            className="kitchen-landing-login-btn"
+            onClick={() => {
+              setAuthError('');
+              setAuthStage('credentials');
+            }}
+          >
+            <Lock size={16} color="#dda943" />
+            <span>Staff Login to Kitchen KDS</span>
+          </button>
+
+          <div className="kitchen-landing-notice">
+            Authorized Culinary Staff Only • Secure 2FA Access
           </div>
         </main>
 
@@ -520,10 +475,58 @@ export const KitchenPortal: React.FC = () => {
   return (
     <div className="kitchen-screen-wrapper">
       {/* ===================================================================
+          MOBILE & TABLET TOPBAR (Visible only below 1024px)
+      =================================================================== */}
+      <header className="kitchen-mobile-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            className="kitchen-mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open kitchen navigation"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="kitchen-mobile-brand">
+            <span className="kitchen-mobile-brand-name">EVOLVE</span>
+            <span className="kitchen-mobile-brand-dot">·</span>
+            <span className="kitchen-mobile-brand-sub">KITCHEN</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="kitchen-mobile-active-badge">
+            {stats.upcomingCount + stats.preparingCount} Active
+          </span>
+        </div>
+      </header>
+
+      {/* Mobile Sidebar Backdrop Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="kitchen-sidebar-backdrop"
+          style={{ display: 'block' }}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* ===================================================================
           PANEL 1: LEFT DEEP FOREST SIDEBAR (EXACTLY LIKE SCREENSHOT)
       =================================================================== */}
-      <aside className="kitchen-sidebar-panel">
+      <aside className={`kitchen-sidebar-panel ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div>
+          {/* Mobile Close Button (Visible below 1024px) */}
+          <div className="kitchen-sidebar-mobile-close">
+            <button
+              type="button"
+              className="kitchen-sidebar-close-btn"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
           {/* Brand Logo */}
           <div className="kitchen-sidebar-brand">
             <span className="kitchen-sidebar-brand-name">EVOLVE ·</span>
@@ -538,6 +541,7 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('upcoming');
                 setActivePillFilter('upcoming');
+                setIsMobileMenuOpen(false);
               }}
             >
               <span>Upcoming</span>
@@ -550,6 +554,7 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('preparing');
                 setActivePillFilter('preparing');
+                setIsMobileMenuOpen(false);
               }}
             >
               <span>Preparing</span>
@@ -562,6 +567,7 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('ready');
                 setActivePillFilter('ready');
+                setIsMobileMenuOpen(false);
               }}
             >
               <span>Ready</span>
@@ -574,6 +580,7 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('picked_up');
                 setActivePillFilter('picked_up');
+                setIsMobileMenuOpen(false);
               }}
             >
               <span>Picked Up</span>
@@ -586,6 +593,7 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('all_orders');
                 setActivePillFilter('all_orders');
+                setIsMobileMenuOpen(false);
               }}
             >
               <span>All Orders</span>
@@ -598,6 +606,7 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('order_history');
                 setActivePillFilter('order_history');
+                setIsMobileMenuOpen(false);
               }}
             >
               <span>Order History</span>
@@ -607,7 +616,10 @@ export const KitchenPortal: React.FC = () => {
             <button
               type="button"
               className={`kitchen-sidebar-item ${activeTab === 'buffet_menu' ? 'active' : ''}`}
-              onClick={() => setActiveTab('buffet_menu')}
+              onClick={() => {
+                setActiveTab('buffet_menu');
+                setIsMobileMenuOpen(false);
+              }}
               style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -621,6 +633,7 @@ export const KitchenPortal: React.FC = () => {
               className={`kitchen-sidebar-item ${activeTab === 'reports' ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab('reports');
+                setIsMobileMenuOpen(false);
                 addToast('info', 'Kitchen Reports', 'Shift report: 15 breakfast plates served today.');
               }}
             >
@@ -632,6 +645,7 @@ export const KitchenPortal: React.FC = () => {
               className={`kitchen-sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab('settings');
+                setIsMobileMenuOpen(false);
                 addToast('info', 'Settings', 'Kitchen station configuration active.');
               }}
             >
@@ -891,7 +905,10 @@ export const KitchenPortal: React.FC = () => {
                   <div
                     key={ord.id}
                     className={`kitchen-order-row-card ${isNotStarted ? 'has-stripe' : ''} ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedOrderId(ord.id)}
+                    onClick={() => {
+                      setSelectedOrderId(ord.id);
+                      setIsMobileDetailsOpen(true);
+                    }}
                   >
                     <div className="kitchen-order-row-left">
                       <div className="kitchen-order-time">{ord.pickupTime}</div>
@@ -928,12 +945,41 @@ export const KitchenPortal: React.FC = () => {
         </main>
       )}
 
+      {/* Mobile Details Drawer Backdrop */}
+      {isMobileDetailsOpen && (
+        <div
+          className="kitchen-details-backdrop"
+          style={{ display: 'block' }}
+          onClick={() => setIsMobileDetailsOpen(false)}
+        />
+      )}
+
       {/* ===================================================================
           PANEL 3: RIGHT ORDER DETAILS & ACTION PANEL (EXACTLY LIKE SCREENSHOT)
       =================================================================== */}
       {selectedOrder && activeTab !== 'buffet_menu' && (
-        <aside className="kitchen-details-panel">
+        <aside className={`kitchen-details-panel ${isMobileDetailsOpen ? 'mobile-open' : ''}`}>
           <div>
+            {/* Mobile Drawer Header with Back to Queue & Close */}
+            <div className="kitchen-details-mobile-header">
+              <button
+                type="button"
+                className="kitchen-btn-back-queue"
+                onClick={() => setIsMobileDetailsOpen(false)}
+              >
+                <ArrowLeft size={14} />
+                <span>Back to Queue</span>
+              </button>
+              <button
+                type="button"
+                className="kitchen-details-close-btn"
+                onClick={() => setIsMobileDetailsOpen(false)}
+                aria-label="Close details"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
             {/* Header info */}
             <span className="kitchen-details-ticket-id">{selectedOrder.ticketId}</span>
             <h2 className="kitchen-details-room-heading">{selectedOrder.roomNumber}</h2>
