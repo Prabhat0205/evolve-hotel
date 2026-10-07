@@ -250,7 +250,7 @@ export const Header: React.FC = () => {
               </>
             ) : (
               <>
-                {['Overview', 'Suites', 'Amenities', 'Dining', 'Spa', 'Rewards', 'Location', 'Contact'].map(item => {
+                {['Overview', 'Suites', 'Amenities', 'Breakfast', 'Dining', 'Spa', 'Rewards', 'Location', 'Contact'].map(item => {
                   const idMap: Record<string, string> = {
                     'Overview': 'difference',
                     'Suites': 'rooms',
@@ -605,52 +605,6 @@ export const Header: React.FC = () => {
                       >
                         <ShieldCheck size={16} color="#173f34" /> Questions and supports
                       </button>
-
-                      <div style={{ borderTop: '1px solid #eeece5', margin: '4px 0', paddingTop: '4px' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', padding: '4px 10px 2px 10px', letterSpacing: '0.04em' }}>Staff & Ops</div>
-                        <button
-                          onClick={() => { navigateTo('admin'); setUserMenuOpen(false); }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.82rem',
-                            color: '#17271f',
-                            fontWeight: 700,
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            width: '100%',
-                            backgroundColor: '#edf4f0'
-                          }}
-                        >
-                          <span>Admin Portal (Square POS)</span>
-                          <span style={{ fontSize: '0.7rem', color: '#15803d' }}>↗</span>
-                        </button>
-                        <button
-                          onClick={() => { navigateTo('kitchen'); setUserMenuOpen(false); }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.82rem',
-                            color: '#475569',
-                            fontWeight: 600,
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            width: '100%',
-                            marginTop: '2px'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f6f3ec')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <span>Kitchen Queue App</span>
-                          <span style={{ fontSize: '0.7rem' }}>↗</span>
-                        </button>
-                      </div>
                     </div>
 
                     <div style={{ borderTop: '1px solid #eeece5', paddingTop: '8px' }}>
@@ -772,53 +726,6 @@ export const Header: React.FC = () => {
                       >
                         Sign in as Guest
                       </button>
-
-                      <div style={{ borderTop: '1px solid #e2ded5', paddingTop: '12px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Staff & Operations
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => { navigateTo('admin'); setUserMenuOpen(false); }}
-                          style={{
-                            backgroundColor: '#17271f',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '9px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            borderRadius: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between'
-                          }}
-                        >
-                          <span>Admin Portal (Square POS)</span>
-                          <span style={{ fontSize: '0.7rem', color: '#dda943' }}>↗</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { navigateTo('kitchen'); setUserMenuOpen(false); }}
-                          style={{
-                            backgroundColor: '#ffffff',
-                            color: '#17271f',
-                            border: '1px solid #d1d5db',
-                            padding: '8px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            borderRadius: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between'
-                          }}
-                        >
-                          <span>Kitchen Staff App</span>
-                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Queue ↗</span>
-                        </button>
-                      </div>
-
                     </div>
 
                     <div style={{ marginTop: '24px', fontSize: '0.875rem', color: '#17271f', textAlign: 'left', lineHeight: 1.5 }}>

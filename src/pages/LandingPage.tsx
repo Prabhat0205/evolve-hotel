@@ -148,30 +148,6 @@ export const LandingPage: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', color: '#17271f' }}>
       
-      {/* =========================================================================
-          SUB-NAVIGATION BAR (Sticky below header)
-         ========================================================================= */}
-      <nav className="landing-subnav" aria-label="Main hotel section navigation">
-        <div className="landing-subnav-inner">
-          <div className="landing-subnav-links">
-            <button className="landing-subnav-link" onClick={() => scrollToSection('difference')}>Overview</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('rooms')}>Rooms &amp; Suites</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('amenities')}>Amenities</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('breakfast')}>Breakfast</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('dining')}>Fine Dining</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('wellness')}>Spa</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('rewards')}>Rewards</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('location')}>Location</button>
-            <button className="landing-subnav-link" onClick={() => scrollToSection('contact')}>Contact</button>
-          </div>
-          <button 
-            className="landing-subnav-cta" 
-            onClick={() => scrollToSection('book')}
-          >
-            Book now ↗
-          </button>
-        </div>
-      </nav>
 
       {/* =========================================================================
           HERO STORY SLIDER (#top)
