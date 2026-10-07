@@ -15,7 +15,7 @@ export const PropertyDetailPage: React.FC = () => {
     navigateTo, searchDates, setSearchDates, isMember, openAuthModal, addToast 
   } = useApp();
 
-  const rooms = mockRoomsByProperty[selectedProperty.id] || mockRoomsByProperty['evolve-kyoto'];
+  const rooms = mockRoomsByProperty[selectedProperty?.id] || mockRoomsByProperty['evolve-texarkana'] || mockRoomsByProperty['evolve-kyoto'];
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [roomPhotoIndices, setRoomPhotoIndices] = useState<Record<string, number>>({});
   const [detailModalRoom, setDetailModalRoom] = useState<Room | null>(null);
@@ -70,7 +70,7 @@ export const PropertyDetailPage: React.FC = () => {
       <div className="app-container-wide">
         {/* Back Button */}
         <button
-          onClick={() => navigateTo('search')}
+          onClick={() => navigateTo('landing')}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -84,7 +84,7 @@ export const PropertyDetailPage: React.FC = () => {
             marginBottom: '20px'
           }}
         >
-          <ArrowLeft size={16} /> Back to All Sanctuaries
+          <ArrowLeft size={16} /> Back to Hotel Overview
         </button>
 
         {/* Property Overview Card */}

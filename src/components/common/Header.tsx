@@ -205,7 +205,7 @@ export const Header: React.FC = () => {
                   })
                   .map(item => {
                     const isItemActive = 
-                      (item === 'Book' && (currentRoute === 'search' || currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation')) ||
+                      (item === 'Book' && (currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation')) ||
                       (item === 'My Bookings' && currentRoute === 'stays') ||
                       (item === 'My Rewards' && (currentRoute === 'membership' || currentRoute === 'rewards-catalog')) ||
                       (item === 'Breakfast' && currentRoute === 'in-stay-breakfast');
@@ -214,7 +214,10 @@ export const Header: React.FC = () => {
                       <button
                         key={item}
                         onClick={() => {
-                          if (item === 'Book') navigateTo('search');
+                          if (item === 'Book') {
+                            setSelectedProperty(mockProperties[0]);
+                            navigateTo('property-detail');
+                          }
                           if (item === 'My Bookings') navigateTo('stays');
                           if (item === 'My Rewards') navigateTo('membership');
                           if (item === 'Breakfast') navigateTo('in-stay-breakfast');
@@ -801,13 +804,17 @@ export const Header: React.FC = () => {
             </button>
 
             <button
-              onClick={() => { navigateTo('search'); setMobileNavOpen(false); }}
+              onClick={() => {
+                setSelectedProperty(mockProperties[0]);
+                navigateTo('property-detail');
+                setMobileNavOpen(false);
+              }}
               style={{
                 padding: '12px 16px',
                 textAlign: 'left',
                 fontWeight: 600,
-                color: (currentRoute === 'search' || currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation') ? '#ffffff' : '#17271f',
-                backgroundColor: (currentRoute === 'search' || currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation') ? '#173f34' : 'transparent',
+                color: (currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation') ? '#ffffff' : '#17271f',
+                backgroundColor: (currentRoute === 'property-detail' || currentRoute === 'checkout' || currentRoute === 'confirmation') ? '#173f34' : 'transparent',
                 borderRadius: '10px'
               }}
             >

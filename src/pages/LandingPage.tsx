@@ -117,7 +117,7 @@ export const LandingPage: React.FC = () => {
       children: childrenCount,
     });
     setSelectedProperty(property);
-    navigateTo('search');
+    navigateTo('property-detail');
   };
 
   const handleSelectRoomDirectly = (room: any) => {

@@ -6,7 +6,6 @@ import { ToastContainer } from './components/common/Toast';
 import { AuthModal } from './components/common/AuthModal';
 
 import { LandingPage } from './pages/LandingPage';
-import { SearchPage } from './pages/SearchPage';
 import { PropertyDetailPage } from './pages/PropertyDetailPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { ConfirmationPage } from './pages/ConfirmationPage';
@@ -46,7 +45,6 @@ const AppContent: React.FC = () => {
       case 'landing':
         return <LandingPage />;
       case 'search':
-        return <SearchPage />;
       case 'property-detail':
         return <PropertyDetailPage />;
       case 'checkout':
