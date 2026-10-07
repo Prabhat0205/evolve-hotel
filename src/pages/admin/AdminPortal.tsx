@@ -1201,7 +1201,7 @@ const PropertyManagerDashboard: React.FC = () => {
       const synth: PhoneGuestUserBooking = {
         id: `phone-guest-${Date.now()}`,
         phone: booking.phone,
-        name: booking.guestName.startsWith('Guest') ? '' : booking.guestName,
+        name: booking.guestName || 'Guest User',
         email: booking.email,
         bookingRef: booking.confirmationCode,
         bookingDate: booking.bookingDate || 'Oct 04, 2026',
@@ -3385,27 +3385,9 @@ const PropertyManagerDashboard: React.FC = () => {
 
                             {/* 3. Guest Name */}
                             <td style={{ padding: '14px 16px' }}>
-                              {guest.name ? (
-                                <div>
-                                  <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>
-                                    {guest.name.replace(/\s*\(\+.*?\)/g, '')}
-                                  </div>
-                                </div>
-                              ) : (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  fontSize: '0.75rem',
-                                  color: '#94a3b8',
-                                  fontStyle: 'italic',
-                                  backgroundColor: '#f1f5f9',
-                                  padding: '2px 8px',
-                                  borderRadius: '4px'
-                                }}>
-                                  Not provided (Phone Only)
-                                </span>
-                              )}
+                              <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.90rem' }}>
+                                {(guest.name || 'Guest User').replace(/\s*\(\+.*?\)/g, '')}
+                              </div>
                             </td>
 
                             {/* 4. Booking Date */}
