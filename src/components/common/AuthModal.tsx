@@ -5,13 +5,13 @@ import { authService } from '../../services';
 import { User } from '../../types';
 
 export const AuthModal: React.FC = () => {
-  const { authModal, closeAuthModal, loginUser, loginAsGuest, convertToMember, switchPersona, addToast, navigateTo, activeGuestPhone } = useApp();
-  const [tab, setTab] = useState<'signin' | 'signup' | 'otp' | 'recovery' | 'guest_login' | 'convert_to_member'>('signin');
+  const { authModal, closeAuthModal, loginUser, convertToMember, switchPersona, addToast, navigateTo, activeGuestPhone } = useApp();
+  const [tab, setTab] = useState<'signin' | 'signup' | 'otp' | 'recovery' | 'convert_to_member'>('signin');
   const [pendingUser, setPendingUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (authModal.isOpen) {
-      setTab(authModal.mode || 'signin');
+      setTab(authModal.mode === 'guest_login' ? 'signin' : (authModal.mode || 'signin'));
     }
   }, [authModal.isOpen, authModal.mode]);
 
@@ -23,7 +23,6 @@ export const AuthModal: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
-  const [guestCode, setGuestCode] = useState('');
   const [joinRewards, setJoinRewards] = useState(true);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -130,15 +129,6 @@ export const AuthModal: React.FC = () => {
     setTab('signin');
   };
 
-  const handleGuestLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!guestCode || !phone) {
-      addToast('error', 'Required Fields', 'Both Guest Code and Mobile Number are required.');
-      return;
-    }
-    loginAsGuest(guestCode, phone);
-  };
-
   const handleConvertSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName || !lastName || !email || !convertPassword) {
@@ -190,7 +180,6 @@ export const AuthModal: React.FC = () => {
             {tab === 'signup' && 'Create Your Evolve Account'}
             {tab === 'otp' && 'Two-Factor Verification'}
             {tab === 'recovery' && 'Recover Account Access'}
-            {tab === 'guest_login' && 'Sign In as Guest'}
             {tab === 'convert_to_member' && 'Upgrade to Member Account'}
           </h2>
           <p style={{ fontSize: '0.875rem', color: '#6e7a76', marginTop: '6px' }}>
@@ -198,7 +187,6 @@ export const AuthModal: React.FC = () => {
             {tab === 'signup' && 'Enjoy member rates, expedited check-in, and tier privileges.'}
             {tab === 'otp' && 'Enter the 6-digit security code sent to your email or SMS.'}
             {tab === 'recovery' && 'Enter your email address to receive access recovery instructions.'}
-            {tab === 'guest_login' && 'Enter your Guest Code and Phone Number to access your reservation.'}
             {tab === 'convert_to_member' && 'Complete your profile to unlock member rates and Evolve Rewards.'}
           </p>
         </div>
@@ -329,17 +317,6 @@ export const AuthModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Direct Guest Booking Link */}
-            <div style={{ textAlign: 'center', marginTop: '18px' }}>
-              <button
-                type="button"
-                onClick={() => setTab('guest_login')}
-                className="btn btn-outline btn-full"
-                style={{ marginTop: '8px' }}
-              >
-                Sign in as Guest
-              </button>
-            </div>
           </form>
         )}
 
@@ -556,95 +533,7 @@ export const AuthModal: React.FC = () => {
           </form>
         )}
 
-        {/* TAB 5: GUEST LOGIN */}
-        {tab === 'guest_login' && (
-          <form onSubmit={handleGuestLoginSubmit}>
-            <div className="form-group">
-              <label className="form-label">Guest Code</label>
-              <input
-                type="text"
-                className="form-input"
-                value={guestCode}
-                onChange={(e) => setGuestCode(e.target.value)}
-                placeholder="e.g. GUEST-123456"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Mobile Number</label>
-              <input
-                type="tel"
-                className="form-input"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter the number used at booking"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-full"
-              style={{ marginTop: '16px', padding: '14px' }}
-            >
-              Access Guest Reservation
-            </button>
-
-            {/* Quick Demo Guest Fill Buttons */}
-            <div style={{
-              marginTop: '16px',
-              padding: '12px',
-              backgroundColor: '#fcf6eb',
-              borderRadius: '10px',
-              border: '1px dashed #dda943'
-            }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#997125', marginBottom: '8px', textTransform: 'uppercase' }}>
-                Pre-loaded Demo Guest Stays (Click to Test)
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGuestCode('GUEST-101010');
-                    setPhone('+1 (555) 234-5678');
-                  }}
-                  style={{ fontSize: '0.75rem', padding: '8px 10px', borderRadius: '6px', border: '1px solid #dcd7cb', backgroundColor: '#fff', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <strong>Guest 1: GUEST-101010</strong> · Houston Medical + Dallas (2 Stays)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGuestCode('GUEST-202020');
-                    setPhone('+1 (555) 987-6543');
-                  }}
-                  style={{ fontSize: '0.75rem', padding: '8px 10px', borderRadius: '6px', border: '1px solid #dcd7cb', backgroundColor: '#fff', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <strong>Guest 2: GUEST-202020</strong> · Texarkana Suite (1 Stay)
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setTab('signin')}
-              style={{
-                display: 'block',
-                margin: '14px auto 0',
-                background: 'none',
-                border: 'none',
-                color: '#6e7a76',
-                fontSize: '0.8125rem',
-                cursor: 'pointer'
-              }}
-            >
-              ← Back to Member Sign In
-            </button>
-          </form>
-        )}
-
-        {/* TAB 6: CONVERT TO MEMBER */}
+        {/* TAB 5: CONVERT TO MEMBER */}
         {tab === 'convert_to_member' && (
           <form onSubmit={handleConvertSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

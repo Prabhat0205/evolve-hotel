@@ -603,7 +603,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Auth modal helpers
   const openAuthModal = (mode: 'signin' | 'signup' | 'otp' | 'recovery' | 'guest_login' | 'convert_to_member' = 'signin') => {
-    setAuthModal({ isOpen: true, mode });
+    const safeMode = mode === 'guest_login' ? 'signin' : mode;
+    setAuthModal({ isOpen: true, mode: safeMode });
   };
   const closeAuthModal = () => {
     setAuthModal(prev => ({ ...prev, isOpen: false }));

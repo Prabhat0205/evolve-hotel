@@ -1717,13 +1717,6 @@ export const MyStaysPage: React.FC = () => {
               >
                 Sign In as Member
               </button>
-              <button 
-                onClick={() => openAuthModal('guest_login')}
-                className="btn btn-outline"
-                style={{ padding: '14px 28px', fontSize: '1rem' }}
-              >
-                Access with Guest Code
-              </button>
             </div>
 
             {/* Quick Testing Shortcuts Box */}
@@ -1757,22 +1750,6 @@ export const MyStaysPage: React.FC = () => {
                 >
                   <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.9rem' }}>Member: Alexander Wright</div>
                   <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>Texarkana & Dallas Stays (2 Bookings)</div>
-                </button>
-
-                <button
-                  onClick={() => loginAsGuest('GUEST-101010', '5552345678')}
-                  style={{ padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2ded5', backgroundColor: '#ffffff', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.9rem' }}>Guest 1: GUEST-101010</div>
-                  <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>Houston Medical + Dallas (2 Bookings)</div>
-                </button>
-
-                <button
-                  onClick={() => loginAsGuest('GUEST-202020', '5559876543')}
-                  style={{ padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2ded5', backgroundColor: '#ffffff', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.9rem' }}>Guest 2: GUEST-202020</div>
-                  <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>Texarkana Retreat (1 Booking)</div>
                 </button>
               </div>
             </div>

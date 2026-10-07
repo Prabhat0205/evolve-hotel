@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   CheckCircle2, Calendar, MapPin, Download, 
-  ArrowRight, ShieldCheck, Mail, Share2, Sparkles, Copy, X
+  ArrowRight, Mail, Share2, Sparkles 
 } from 'lucide-react';
 
 export const ConfirmationPage: React.FC = () => {
-  const { lastConfirmedReservation, navigateTo, currentUser, addToast, openAuthModal } = useApp();
-  const [showGuestCodeModal, setShowGuestCodeModal] = useState(false);
+  const { lastConfirmedReservation, navigateTo, currentUser } = useApp();
 
   // Fallback reservation if accessed directly
   const res = lastConfirmedReservation || {
@@ -35,18 +34,7 @@ export const ConfirmationPage: React.FC = () => {
     specialRequests: 'High floor, feather pillows, late check-out requested.',
   };
 
-  useEffect(() => {
-    if (res.guestCode) {
-      setShowGuestCodeModal(true);
-    }
-  }, [res.guestCode]);
 
-  const copyGuestCode = () => {
-    if (res.guestCode) {
-      navigator.clipboard.writeText(res.guestCode);
-      addToast('success', 'Copied!', 'Guest code copied to clipboard.');
-    }
-  };
 
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '40px 20px 80px' }}>
@@ -107,26 +95,6 @@ export const ConfirmationPage: React.FC = () => {
                 {res.confirmationCode}
               </div>
             </div>
-
-            {res.guestCode && (
-              <div>
-                <span style={{ fontSize: '0.75rem', color: '#929b98', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Guest Code
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#173f34', letterSpacing: '0.05em' }}>
-                    {res.guestCode}
-                  </div>
-                  <button 
-                    onClick={copyGuestCode}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dda943', padding: '4px' }}
-                    title="Copy to Clipboard"
-                  >
-                    <Copy size={20} />
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div style={{
               backgroundColor: '#eaf5ee',
@@ -275,93 +243,17 @@ export const ConfirmationPage: React.FC = () => {
               <Download size={15} /> Print / Save Voucher
             </button>
 
-            {!currentUser && res.guestCode ? (
-              <button
-                onClick={() => openAuthModal('guest_login')}
-                className="btn btn-primary"
-                style={{ padding: '12px 24px' }}
-              >
-                <span>Login as Guest</span>
-                <ArrowRight size={16} />
-              </button>
-            ) : (
-              <button
-                onClick={() => navigateTo('stays')}
-                className="btn btn-primary"
-                style={{ padding: '12px 24px' }}
-              >
-                <span>View In My Bookings</span>
-                <ArrowRight size={16} />
-              </button>
-            )}
+            <button
+              onClick={() => navigateTo('stays')}
+              className="btn btn-primary"
+              style={{ padding: '12px 24px' }}
+            >
+              <span>View In My Bookings</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       </div>
-
-      {/* Guest Code Modal */}
-      {showGuestCodeModal && res.guestCode && (
-        <div className="modal-overlay" onClick={() => setShowGuestCodeModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ padding: '40px', maxWidth: '500px', textAlign: 'center' }}>
-            <button 
-              onClick={() => setShowGuestCodeModal(false)}
-              style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6e7a76' }}
-            >
-              <X size={24} />
-            </button>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              backgroundColor: '#fcf6eb',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              color: '#dda943'
-            }}>
-              <ShieldCheck size={32} />
-            </div>
-            <h2 style={{ fontSize: '1.75rem', color: '#17271f', marginBottom: '12px', fontFamily: 'Playfair Display, serif' }}>Save Your Guest Code</h2>
-            <p style={{ color: '#6e7a76', fontSize: '1rem', lineHeight: 1.5, marginBottom: '24px' }}>
-              Because you booked as a guest, you will need this unique code along with your phone number to access your reservation online later.
-            </p>
-            <div style={{ 
-              backgroundColor: '#faf9f5', 
-              border: '2px dashed #dda943', 
-              borderRadius: '12px', 
-              padding: '24px',
-              marginBottom: '24px'
-            }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#173f34', letterSpacing: '0.05em', marginBottom: '12px' }}>
-                {res.guestCode}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button 
-                  onClick={copyGuestCode}
-                  className="btn btn-outline"
-                  style={{ width: '100%', padding: '12px', fontSize: '0.95rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-                >
-                  <Copy size={18} /> Copy to Clipboard
-                </button>
-                <button 
-                  onClick={() => {
-                    setShowGuestCodeModal(false);
-                    openAuthModal('guest_login');
-                  }}
-                  className="btn btn-primary"
-                  style={{ width: '100%', padding: '12px', fontSize: '0.95rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-                >
-                  <span>Log In as Guest Now</span>
-                  <ArrowRight size={18} />
-                </button>
-              </div>
-            </div>
-            <p style={{ color: '#929b98', fontSize: '0.875rem' }}>
-              You can always find this code on your confirmation page, but we recommend keeping it safe.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

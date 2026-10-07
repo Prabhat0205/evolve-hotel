@@ -711,24 +711,6 @@ export const Header: React.FC = () => {
                       >
                         Create a member account
                       </button>
-                      <button
-                        onClick={() => { openAuthModal('guest_login'); setUserMenuOpen(false); }}
-                        style={{
-                          backgroundColor: '#ffffff',
-                          color: '#17271f',
-                          border: '1px solid #e2ded5',
-                          padding: '12px',
-                          fontSize: '0.9375rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          width: '100%',
-                          textAlign: 'center',
-                          borderRadius: '8px',
-                          marginTop: '4px'
-                        }}
-                      >
-                        Sign in as Guest
-                      </button>
                     </div>
 
                     <div style={{ marginTop: '24px', fontSize: '0.875rem', color: '#17271f', textAlign: 'left', lineHeight: 1.5 }}>
