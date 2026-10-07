@@ -1136,9 +1136,7 @@ const PropertyManagerDashboard: React.FC = () => {
       const matchRoom = guest.roomType.toLowerCase().includes(q) || guest.suiteNumber.toLowerCase().includes(q);
       if (!matchPhone && !matchRef && !matchName && !matchRoom) return false;
     }
-    if (guestUserRestaurantFilter !== 'all') {
-      if (guest.restaurantStatus !== guestUserRestaurantFilter) return false;
-    }
+
     if (guestUserStatusFilter !== 'all') {
       if (guest.status !== guestUserStatusFilter) return false;
     }
@@ -3274,28 +3272,6 @@ const PropertyManagerDashboard: React.FC = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <label style={{ fontSize: '0.80rem', fontWeight: 600, color: '#475569' }}>Restaurant:</label>
-                    <select
-                      value={guestUserRestaurantFilter}
-                      onChange={(e) => setGuestUserRestaurantFilter(e.target.value as any)}
-                      style={{
-                        padding: '6px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.82rem',
-                        color: '#1e293b',
-                        outline: 'none',
-                        backgroundColor: '#ffffff'
-                      }}
-                    >
-                      <option value="all">All Restaurant Statuses</option>
-                      <option value="Not Checked In">Not Checked In</option>
-                      <option value="Checked In">Checked In</option>
-                      <option value="Details Captured">Details Captured</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <label style={{ fontSize: '0.80rem', fontWeight: 600, color: '#475569' }}>Stay Status:</label>
                     <select
                       value={guestUserStatusFilter}
@@ -3329,9 +3305,6 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Phone Number</th>
                         <th style={{ padding: '12px 16px' }}>Guest Name</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
-                        <th style={{ padding: '12px 14px' }}>Suites</th>
-                        <th style={{ padding: '12px 16px' }}>Room No</th>
-                        <th style={{ padding: '12px 16px' }}>Room Type</th>
                         <th style={{ padding: '12px 16px' }}>Dates</th>
                         <th style={{ padding: '12px 16px' }}>Notes</th>
                       </tr>
@@ -3393,23 +3366,6 @@ const PropertyManagerDashboard: React.FC = () => {
                             {/* 4. Booking Date */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.85rem' }}>
                               {guest.bookingDate}
-                            </td>
-
-                            {/* 5. Suites */}
-                            <td style={{ padding: '14px 14px', whiteSpace: 'nowrap', color: '#17271f', fontWeight: 600, fontSize: '0.88rem' }}>
-                              {guest.suitesCount || (guest.suiteNumber.includes(',') ? guest.suiteNumber.split(',').length : 1)}
-                            </td>
-
-                            {/* 6. Room No */}
-                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                              <div style={{ fontWeight: 700, color: '#17271f', fontSize: '0.88rem' }}>
-                                {guest.suiteNumber.replace(/^Suite\s*/i, '')}
-                              </div>
-                            </td>
-
-                            {/* 7. Room Type (Separate Column) */}
-                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#334155', fontSize: '0.86rem' }}>
-                              {guest.roomType}
                             </td>
 
                             {/* 8. Dates */}
