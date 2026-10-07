@@ -21,7 +21,7 @@ import {
   Printer, ArrowLeft, LogOut, Check, X, ShieldAlert,
   SlidersHorizontal, Sparkles, Send, Eye, ShieldCheck,
   Menu, LayoutGrid, Columns, Table as TableIcon, Mail, Lock,
-  KeyRound, HelpCircle, ArrowRight, ChevronDown, Plus, Edit2, Trash2
+  KeyRound, HelpCircle, ArrowRight, ChevronDown, Plus, Edit2, Trash2, Download, FileText
 } from 'lucide-react';
 
 export const KitchenPortal: React.FC = () => {
@@ -53,8 +53,19 @@ export const KitchenPortal: React.FC = () => {
   // -------------------------------------------------------------------------
   const [orders, setOrders] = useState<KitchenOrderRecord[]>(() => {
     try {
-      const saved = localStorage.getItem('evolve_kitchen_orders_v3');
+      const saved = localStorage.getItem('evolve_kitchen_orders_v4');
       if (saved) return JSON.parse(saved);
+      const oldSaved = localStorage.getItem('evolve_kitchen_orders_v3');
+      if (oldSaved) {
+        const parsed: KitchenOrderRecord[] = JSON.parse(oldSaved);
+        const merged = [...parsed];
+        for (const init of initialKitchenOrders) {
+          if (!merged.some((o) => o.id === init.id)) {
+            merged.push(init);
+          }
+        }
+        return merged;
+      }
     } catch {}
     return initialKitchenOrders;
   });
@@ -67,9 +78,19 @@ export const KitchenPortal: React.FC = () => {
     return initialBuffetMenu;
   });
 
+  // Order audit record state
+  const [orderAudits, setOrderAudits] = useState<{ id: string; date: string; roomNumber: string; note: string; timestamp: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem('evolve_kitchen_audits_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     try {
-      localStorage.setItem('evolve_kitchen_orders_v3', JSON.stringify(orders));
+      localStorage.setItem('evolve_kitchen_orders_v4', JSON.stringify(orders));
     } catch {}
   }, [orders]);
 
@@ -78,6 +99,12 @@ export const KitchenPortal: React.FC = () => {
       localStorage.setItem('evolve_buffet_menu_v1', JSON.stringify(buffetMenu));
     } catch {}
   }, [buffetMenu]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('evolve_kitchen_audits_v1', JSON.stringify(orderAudits));
+    } catch {}
+  }, [orderAudits]);
 
   // Selected Order for the Right Details Panel (Defaults to Room 108)
   const [selectedOrderId, setSelectedOrderId] = useState<string>(() => {
@@ -97,6 +124,8 @@ export const KitchenPortal: React.FC = () => {
   // Modal States
   const [showEditOrderModal, setShowEditOrderModal] = useState<boolean>(false);
   const [showAddBuffetModal, setShowAddBuffetModal] = useState<boolean>(false);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [reportDateFilter, setReportDateFilter] = useState<'Yesterday' | 'Today' | 'Last 7 Days' | 'All Time'>('Yesterday');
 
   // New Buffet Item Form
   const [newBuffetCategory, setNewBuffetCategory] = useState<BuffetMenuItem['category']>('Eggs & Omelettes');
@@ -166,6 +195,97 @@ export const KitchenPortal: React.FC = () => {
     });
   }, [orders, activePillFilter, searchRoomQuery]);
 
+  // Computed report data & statistics matching screenshot
+  const reportOrders = useMemo(() => {
+    if (reportDateFilter === 'Yesterday') {
+      return orders.filter((o) => o.orderDate === 'Yesterday');
+    }
+    if (reportDateFilter === 'Today') {
+      return orders.filter((o) => o.orderDate === 'Today' || !o.orderDate);
+    }
+    return orders;
+  }, [orders, reportDateFilter]);
+
+  const reportStats = useMemo(() => {
+    const totalRooms = reportOrders.length;
+    const totalPlates = reportOrders.reduce((acc, o) => acc + o.platesCount, 0);
+    const pickedUp = reportOrders.filter((o) => o.status === 'PICKED_UP').length;
+
+    if (reportOrders.length === 0) {
+      return { totalRooms: 0, totalPlates: 0, pickedUp: 0, avgPickupTime: '--' };
+    }
+
+    const minutesList = reportOrders.map((o) => {
+      const parts = o.pickupTime.split(' ');
+      const timePart = parts[0] || '7:00';
+      const modifier = parts[1] || 'AM';
+      let [hours, minutes] = timePart.split(':').map(Number);
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+      return hours * 60 + (minutes || 0);
+    });
+
+    const avgMins = Math.round(minutesList.reduce((a, b) => a + b, 0) / minutesList.length);
+    let avgH = Math.floor(avgMins / 60);
+    const avgM = avgMins % 60;
+    const ampm = avgH >= 12 ? 'PM' : 'AM';
+    avgH = avgH % 12;
+    if (avgH === 0) avgH = 12;
+    const avgPickupTime = `${avgH}:${avgM < 10 ? '0' : ''}${avgM} ${ampm}`;
+
+    return {
+      totalRooms,
+      totalPlates,
+      pickedUp,
+      avgPickupTime,
+    };
+  }, [reportOrders]);
+
+  const handlePrintReport = () => {
+    window.print();
+    addToast('info', 'Printing Report', `Dispatched ${reportDateFilter} breakfast report to printer.`);
+  };
+
+  const handleDownloadCSV = () => {
+    const csvRows: string[] = [];
+    csvRows.push(['Date', 'Room Number', 'Guest Name', 'Ticket ID', 'Pickup Time', 'Status', 'Plates Count', 'Dishes Ordered', 'Special Requests'].join(','));
+
+    reportOrders.forEach((o) => {
+      const dishesStr = o.plates
+        .map((p) => `Plate ${p.plateNumber}: ${p.items.join('; ')}`)
+        .join(' | ')
+        .replace(/"/g, '""');
+      const reqStr = o.plates
+        .map((p) => p.specialRequest)
+        .filter(Boolean)
+        .join('; ')
+        .replace(/"/g, '""');
+
+      csvRows.push([
+        `"${reportDateFilter}"`,
+        `"${o.roomNumber}"`,
+        `"${o.guestName.replace(/"/g, '""')}"`,
+        `"${o.ticketId}"`,
+        `"${o.pickupTime}"`,
+        `"${o.status}"`,
+        `"${o.platesCount}"`,
+        `"${dishesStr}"`,
+        `"${reqStr || 'None'}"`,
+      ].join(','));
+    });
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `evolve_breakfast_report_${reportDateFilter.toLowerCase().replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addToast('success', 'Report Exported', `Breakfast records for ${reportDateFilter} exported to CSV.`);
+  };
+
   // -------------------------------------------------------------------------
   // 4. ACTION HANDLERS
   // -------------------------------------------------------------------------
@@ -206,6 +326,17 @@ export const KitchenPortal: React.FC = () => {
         };
       })
     );
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newAudit = {
+      id: `audit-${Date.now()}`,
+      date: 'Today',
+      roomNumber: selectedOrder.roomNumber,
+      note: `Order updated with ${editPlateItems.length} items on Plate 1`,
+      timestamp: timeStr,
+    };
+    setOrderAudits((prev) => [newAudit, ...prev]);
 
     setShowEditOrderModal(false);
     addToast('success', 'Breakfast Order Updated', `Changes saved for ${selectedOrder.roomNumber}.`);
@@ -634,10 +765,13 @@ export const KitchenPortal: React.FC = () => {
               onClick={() => {
                 setActiveTab('reports');
                 setIsMobileMenuOpen(false);
-                addToast('info', 'Kitchen Reports', 'Shift report: 15 breakfast plates served today.');
+                setShowReportModal(true);
               }}
             >
-              <span>Reports</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={15} color="#dda943" />
+                <span>Reports</span>
+              </div>
             </button>
 
             <button
@@ -764,6 +898,181 @@ export const KitchenPortal: React.FC = () => {
             ))}
           </div>
         </div>
+      ) : activeTab === 'reports' ? (
+        /* REPORTS DASHBOARD VIEW */
+        <main className="kitchen-center-panel" style={{ maxWidth: '980px', margin: '0 auto', width: '100%' }}>
+          <div className="kitchen-queue-header">
+            <div>
+              <span className="kitchen-report-badge">BREAKFAST KITCHEN</span>
+              <h1 className="kitchen-queue-title">Kitchen Reports & Archive</h1>
+              <p className="kitchen-queue-subtitle">Review breakfast operating summary, room manifest, and download audit logs.</p>
+            </div>
+
+            <div className="kitchen-queue-actions">
+              <button
+                type="button"
+                className="kitchen-action-outline-btn"
+                onClick={() => setShowReportModal(true)}
+              >
+                <span>Open Report Modal</span>
+              </button>
+              <button
+                type="button"
+                className="kitchen-action-outline-btn"
+                onClick={handlePrintReport}
+              >
+                <span>Print Report</span>
+              </button>
+              <button
+                type="button"
+                className="kitchen-btn-add-buffet"
+                onClick={handleDownloadCSV}
+              >
+                <Download size={15} />
+                <span>Download CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Report Date Select */}
+          <div className="kitchen-report-date-group" style={{ maxWidth: '320px' }}>
+            <label className="kitchen-report-label">Report date</label>
+            <select
+              className="kitchen-report-select"
+              value={reportDateFilter}
+              onChange={(e) => setReportDateFilter(e.target.value as any)}
+            >
+              <option value="Yesterday">Yesterday</option>
+              <option value="Today">Today</option>
+              <option value="Last 7 Days">Last 7 Days</option>
+              <option value="All Time">All Archive Records</option>
+            </select>
+          </div>
+
+          {/* Operating Summary (4-Row Card Matching Screenshot) */}
+          <div className="kitchen-report-summary-card">
+            <div className="kitchen-report-metric-row">
+              <div className="kitchen-report-metric-info">
+                <span className="kitchen-report-metric-title">Total rooms</span>
+                <span className="kitchen-report-metric-sub">Breakfast orders for the selected date</span>
+              </div>
+              <span className="kitchen-report-metric-val">{reportStats.totalRooms}</span>
+            </div>
+
+            <div className="kitchen-report-metric-row">
+              <div className="kitchen-report-metric-info">
+                <span className="kitchen-report-metric-title">Total plates</span>
+                <span className="kitchen-report-metric-sub">All individual plates</span>
+              </div>
+              <span className="kitchen-report-metric-val">{reportStats.totalPlates}</span>
+            </div>
+
+            <div className="kitchen-report-metric-row">
+              <div className="kitchen-report-metric-info">
+                <span className="kitchen-report-metric-title">Picked up</span>
+                <span className="kitchen-report-metric-sub">Completed room orders</span>
+              </div>
+              <span className="kitchen-report-metric-val">{reportStats.pickedUp}</span>
+            </div>
+
+            <div className="kitchen-report-metric-row">
+              <div className="kitchen-report-metric-info">
+                <span className="kitchen-report-metric-title">Average pickup time</span>
+                <span className="kitchen-report-metric-sub">Scheduled service average</span>
+              </div>
+              <span className="kitchen-report-metric-val">{reportStats.avgPickupTime}</span>
+            </div>
+          </div>
+
+          {/* Room Breakfast Order Records (User direct request) */}
+          <div style={{ marginBottom: '28px' }}>
+            <h3 className="kitchen-report-section-heading">Room Breakfast Order Records</h3>
+            <p className="kitchen-report-section-sub">
+              Complete record of all rooms and breakfast ordered for {reportDateFilter}.
+            </p>
+
+            {reportOrders.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', background: '#ffffff', borderRadius: '12px', color: '#64748b', border: '1px solid #e2e8f0' }}>
+                No breakfast orders recorded for this date.
+              </div>
+            ) : (
+              <div className="kitchen-report-rooms-list">
+                {reportOrders.map((ord) => (
+                  <div key={ord.id} className="kitchen-report-room-card" style={{ background: '#ffffff' }}>
+                    <div className="kitchen-report-room-top">
+                      <div className="kitchen-report-room-left">
+                        <span className="kitchen-report-room-badge">{ord.roomNumber}</span>
+                        <span className="kitchen-report-guest-meta">
+                          {ord.guestName}
+                          <span className="kitchen-report-guest-sub">· {ord.ticketId}</span>
+                        </span>
+                      </div>
+
+                      <div className="kitchen-report-time-status">
+                        <span className="kitchen-report-pickup-time">{ord.pickupTime}</span>
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          background: ord.status === 'PICKED_UP' ? '#dcfce7' : ord.status === 'PREPARING' ? '#ffedd5' : ord.status === 'READY' ? '#dbeafe' : '#fef9c3',
+                          color: ord.status === 'PICKED_UP' ? '#15803d' : ord.status === 'PREPARING' ? '#c2410c' : ord.status === 'READY' ? '#1d4ed8' : '#854d0e',
+                          textTransform: 'uppercase',
+                        }}>
+                          {ord.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="kitchen-report-plates-container">
+                      {ord.plates.map((plate) => (
+                        <div key={plate.id} className="kitchen-report-plate-item">
+                          <span className="kitchen-report-plate-title">
+                            Plate {plate.plateNumber} ({plate.items.length} items)
+                          </span>
+                          <span className="kitchen-report-dishes-text">
+                            {plate.items.join(' · ')}
+                          </span>
+                          {plate.specialRequest && (
+                            <span className="kitchen-report-special-note">
+                              <strong>Dietary / Note:</strong> {plate.specialRequest}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Order Edit Audit */}
+          <div style={{ marginBottom: '28px' }}>
+            <h3 className="kitchen-report-section-heading">Order Edit Audit</h3>
+            <div className="kitchen-report-audit-card">
+              {orderAudits.length === 0 ? (
+                <div>
+                  <div className="kitchen-report-audit-title">No order corrections</div>
+                  <div className="kitchen-report-audit-sub">No Breakfast orders were edited on this date.</div>
+                </div>
+              ) : (
+                <div>
+                  <div className="kitchen-report-audit-title" style={{ color: '#b4832c', marginBottom: '8px' }}>
+                    {orderAudits.length} Recorded Correction{orderAudits.length > 1 ? 's' : ''}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {orderAudits.map((a) => (
+                      <div key={a.id} style={{ fontSize: '0.84rem', color: '#17271f', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
+                        <strong>{a.roomNumber}</strong>: {a.note} <span style={{ color: '#64748b' }}>({a.timestamp})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
       ) : (
         /* STANDARD BREAKFAST QUEUE STREAM (MATCHING SCREENSHOT) */
         <main className="kitchen-center-panel">
@@ -957,7 +1266,7 @@ export const KitchenPortal: React.FC = () => {
       {/* ===================================================================
           PANEL 3: RIGHT ORDER DETAILS & ACTION PANEL (EXACTLY LIKE SCREENSHOT)
       =================================================================== */}
-      {selectedOrder && activeTab !== 'buffet_menu' && (
+      {selectedOrder && activeTab !== 'buffet_menu' && activeTab !== 'reports' && (
         <aside className={`kitchen-details-panel ${isMobileDetailsOpen ? 'mobile-open' : ''}`}>
           <div>
             {/* Mobile Drawer Header with Back to Queue & Close */}
@@ -1271,6 +1580,199 @@ export const KitchenPortal: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL: KITCHEN REPORTS & ARCHIVE (EXACT REPLICA + ROOM RECORDS)
+      =================================================================== */}
+      {showReportModal && (
+        <div className="kitchen-modal-backdrop" onClick={() => setShowReportModal(false)}>
+          <div className="kitchen-report-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+              <div>
+                <span className="kitchen-report-badge">BREAKFAST KITCHEN</span>
+                <h2 className="kitchen-report-title">Kitchen Reports & Archive</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+                aria-label="Close report"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="kitchen-report-sub">
+              Review the operating summary before printing or downloading it.
+            </p>
+
+            {/* Report date dropdown */}
+            <div className="kitchen-report-date-group">
+              <label className="kitchen-report-label">Report date</label>
+              <select
+                className="kitchen-report-select"
+                value={reportDateFilter}
+                onChange={(e) => setReportDateFilter(e.target.value as any)}
+              >
+                <option value="Yesterday">Yesterday</option>
+                <option value="Today">Today</option>
+                <option value="Last 7 Days">Last 7 Days</option>
+                <option value="All Time">All Archive Records</option>
+              </select>
+            </div>
+
+            {/* Operating Summary (4-Row Card - Exactly as in screenshot) */}
+            <div className="kitchen-report-summary-card">
+              <div className="kitchen-report-metric-row">
+                <div className="kitchen-report-metric-info">
+                  <span className="kitchen-report-metric-title">Total rooms</span>
+                  <span className="kitchen-report-metric-sub">Breakfast orders for the selected date</span>
+                </div>
+                <span className="kitchen-report-metric-val">{reportStats.totalRooms}</span>
+              </div>
+
+              <div className="kitchen-report-metric-row">
+                <div className="kitchen-report-metric-info">
+                  <span className="kitchen-report-metric-title">Total plates</span>
+                  <span className="kitchen-report-metric-sub">All individual plates</span>
+                </div>
+                <span className="kitchen-report-metric-val">{reportStats.totalPlates}</span>
+              </div>
+
+              <div className="kitchen-report-metric-row">
+                <div className="kitchen-report-metric-info">
+                  <span className="kitchen-report-metric-title">Picked up</span>
+                  <span className="kitchen-report-metric-sub">Completed room orders</span>
+                </div>
+                <span className="kitchen-report-metric-val">{reportStats.pickedUp}</span>
+              </div>
+
+              <div className="kitchen-report-metric-row">
+                <div className="kitchen-report-metric-info">
+                  <span className="kitchen-report-metric-title">Average pickup time</span>
+                  <span className="kitchen-report-metric-sub">Scheduled service average</span>
+                </div>
+                <span className="kitchen-report-metric-val">{reportStats.avgPickupTime}</span>
+              </div>
+            </div>
+
+            {/* ROOM BREAKFAST ORDER RECORDS (USER DIRECT REQUIREMENT) */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 className="kitchen-report-section-heading">Room Breakfast Order Records</h3>
+              <p className="kitchen-report-section-sub">
+                Complete manifest of all rooms and breakfast dishes ordered for {reportDateFilter}.
+              </p>
+
+              {reportOrders.length === 0 ? (
+                <div style={{ padding: '24px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', color: '#64748b', fontSize: '0.90rem', border: '1px dashed #cbd5e1' }}>
+                  No breakfast orders recorded for this date.
+                </div>
+              ) : (
+                <div className="kitchen-report-rooms-list">
+                  {reportOrders.map((ord) => (
+                    <div key={ord.id} className="kitchen-report-room-card">
+                      <div className="kitchen-report-room-top">
+                        <div className="kitchen-report-room-left">
+                          <span className="kitchen-report-room-badge">{ord.roomNumber}</span>
+                          <span className="kitchen-report-guest-meta">
+                            {ord.guestName}
+                            <span className="kitchen-report-guest-sub">· {ord.ticketId}</span>
+                          </span>
+                        </div>
+
+                        <div className="kitchen-report-time-status">
+                          <span className="kitchen-report-pickup-time">{ord.pickupTime}</span>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            background: ord.status === 'PICKED_UP' ? '#dcfce7' : ord.status === 'PREPARING' ? '#ffedd5' : ord.status === 'READY' ? '#dbeafe' : '#fef9c3',
+                            color: ord.status === 'PICKED_UP' ? '#15803d' : ord.status === 'PREPARING' ? '#c2410c' : ord.status === 'READY' ? '#1d4ed8' : '#854d0e',
+                            textTransform: 'uppercase',
+                          }}>
+                            {ord.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="kitchen-report-plates-container">
+                        {ord.plates.map((plate) => (
+                          <div key={plate.id} className="kitchen-report-plate-item">
+                            <span className="kitchen-report-plate-title">
+                              Plate {plate.plateNumber} ({plate.items.length} items)
+                            </span>
+                            <span className="kitchen-report-dishes-text">
+                              {plate.items.join(' · ')}
+                            </span>
+                            {plate.specialRequest && (
+                              <span className="kitchen-report-special-note">
+                                <strong>Dietary / Note:</strong> {plate.specialRequest}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ORDER EDIT AUDIT SECTION (MATCHING SCREENSHOT) */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 className="kitchen-report-section-heading">Order Edit Audit</h3>
+              <div className="kitchen-report-audit-card">
+                {orderAudits.length === 0 ? (
+                  <div>
+                    <div className="kitchen-report-audit-title">No order corrections</div>
+                    <div className="kitchen-report-audit-sub">No Breakfast orders were edited on this date.</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="kitchen-report-audit-title" style={{ color: '#b4832c', marginBottom: '8px' }}>
+                      {orderAudits.length} Recorded Correction{orderAudits.length > 1 ? 's' : ''}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {orderAudits.map((a) => (
+                        <div key={a.id} style={{ fontSize: '0.84rem', color: '#17271f', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
+                          <strong>{a.roomNumber}</strong>: {a.note} <span style={{ color: '#64748b' }}>({a.timestamp})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* FOOTER ACTIONS (MATCHING SCREENSHOT) */}
+            <div className="kitchen-report-actions-row">
+              <button
+                type="button"
+                className="kitchen-report-btn-secondary"
+                onClick={() => setShowReportModal(false)}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="kitchen-report-btn-secondary"
+                onClick={handlePrintReport}
+              >
+                Print Report
+              </button>
+              <button
+                type="button"
+                className="kitchen-report-btn-download"
+                onClick={handleDownloadCSV}
+              >
+                <Download size={15} />
+                <span>Download CSV</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

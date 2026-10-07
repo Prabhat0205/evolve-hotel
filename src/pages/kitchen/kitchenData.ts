@@ -199,6 +199,7 @@ export const initialKitchenOrders: KitchenOrderRecord[] = [
     pickupTime: '6:45 AM',
     platesCount: 2,
     status: 'PICKED_UP',
+    orderDate: 'Today',
     plates: [
       {
         id: 'p-501-1',
@@ -209,6 +210,48 @@ export const initialKitchenOrders: KitchenOrderRecord[] = [
         id: 'p-501-2',
         plateNumber: 2,
         items: ['Belgian waffle', 'Pure maple syrup', 'Fresh berries'],
+      },
+    ],
+  },
+
+  // 4. ARCHIVE / YESTERDAY ORDERS (Matching Screenshot: 2 rooms · 3 plates · 2 picked up · 7:47 AM avg)
+  {
+    id: 'kord-y-104',
+    ticketId: 'K-2308',
+    roomNumber: 'Room 104',
+    guestName: 'David Chen',
+    pickupTime: '7:30 AM',
+    platesCount: 2,
+    status: 'PICKED_UP',
+    orderDate: 'Yesterday',
+    plates: [
+      {
+        id: 'p-y104-1',
+        plateNumber: 1,
+        items: ['2 scrambled eggs', 'Applewood bacon', 'Sourdough toast'],
+      },
+      {
+        id: 'p-y104-2',
+        plateNumber: 2,
+        items: ['Belgian waffle', 'Pure maple syrup', 'Fresh strawberries'],
+      },
+    ],
+  },
+  {
+    id: 'kord-y-209',
+    ticketId: 'K-2309',
+    roomNumber: 'Room 209',
+    guestName: 'Elena Rostova',
+    pickupTime: '8:04 AM',
+    platesCount: 1,
+    status: 'PICKED_UP',
+    orderDate: 'Yesterday',
+    plates: [
+      {
+        id: 'p-y209-1',
+        plateNumber: 1,
+        items: ['Eggs Benedict', 'Canadian bacon', 'Fresh orange juice'],
+        specialRequest: 'Extra hollandaise on side',
       },
     ],
   },
