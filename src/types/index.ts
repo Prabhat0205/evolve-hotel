@@ -122,6 +122,7 @@ export interface Reservation {
   specialRequests?: string;
   guestName?: string;
   guestPhone?: string;
+  guestEmail?: string;
   guestCode?: string;
   userId?: string;
   bookedRooms?: Array<{

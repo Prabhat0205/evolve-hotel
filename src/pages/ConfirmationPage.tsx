@@ -60,7 +60,7 @@ export const ConfirmationPage: React.FC = () => {
             Your Sanctuary is Reserved.
           </h1>
           <p style={{ color: '#6e7a76', fontSize: '1rem', marginTop: '6px' }}>
-            Confirmation voucher dispatched to <strong>{currentUser?.email || 'guest@evolvehotels.com'}</strong>.
+            Confirmation voucher dispatched to <strong>{res.guestEmail || currentUser?.email || 'guest@evolvehotels.com'}</strong>.
           </p>
         </div>
 

@@ -3,9 +3,9 @@ import { useApp } from '../context/AppContext';
 import { 
   CreditCard, ShieldCheck, Lock, Calendar, Users, 
   Sparkles, CheckCircle2, ArrowLeft, Bed, Info, LogIn, UserPlus, UserCircle2, Check,
-  ShoppingBag, Plus, Minus, Trash2
+  ShoppingBag, Plus, Minus, Trash2, X
 } from 'lucide-react';
-import { Reservation } from '../types';
+import { Reservation, User } from '../types';
 
 export const CheckoutPage: React.FC = () => {
   const { 
@@ -13,7 +13,7 @@ export const CheckoutPage: React.FC = () => {
     selectedRooms, removeRoomFromOrder, updateRoomQuantity, clearRoomOrder,
     searchDates, currentUser, isMember, navigateTo, 
     setLastConfirmedReservation, addToast, openAuthModal,
-    activeGuestCode, activeGuestPhone, addReservation
+    activeGuestCode, activeGuestPhone, addReservation, loginUser
   } = useApp();
 
   // If no room selected, fallback to first room
@@ -32,13 +32,11 @@ export const CheckoutPage: React.FC = () => {
   };
 
   // Checkout Mode Logic
-  const [checkoutMode, setCheckoutMode] = useState<'prompt' | 'guest' | 'authenticated'>('prompt');
+  const [checkoutMode, setCheckoutMode] = useState<'guest' | 'authenticated'>(currentUser ? 'authenticated' : 'guest');
   
   useEffect(() => {
     if (currentUser) {
       setCheckoutMode('authenticated');
-    } else if (checkoutMode !== 'guest') {
-      setCheckoutMode('prompt');
     }
   }, [currentUser]);
 
@@ -140,16 +138,14 @@ export const CheckoutPage: React.FC = () => {
   const total = subtotal + taxesAndFees;
 
   // Form states
-  const [firstName, setFirstName] = useState(currentUser?.firstName || 'Alexander');
-  const [lastName, setLastName] = useState(currentUser?.lastName || 'Wright');
-  const [email, setEmail] = useState(currentUser?.email || 'alexander.wright@luxury.io');
-  const [phone, setPhone] = useState(currentUser?.phone || '+44 20 7946 0912');
-  const [specialRequests, setSpecialRequests] = useState('High floor, quiet room facing zen garden requested.');
-  const [cardNumber, setCardNumber] = useState('•••• •••• •••• 1004');
-  const [expiry, setExpiry] = useState('08/29');
-  const [cvc, setCvc] = useState('884');
+  const [firstName, setFirstName] = useState(currentUser?.firstName || '');
+  const [lastName, setLastName] = useState(currentUser?.lastName || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
+  const [specialRequests, setSpecialRequests] = useState('');
   const [agreedToPolicies, setAgreedToPolicies] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
 
   // Sync current user fields when user logs in during checkout
   useEffect(() => {
@@ -161,27 +157,15 @@ export const CheckoutPage: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleCompleteBooking = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!agreedToPolicies) {
-      addToast('error', 'Policy Acknowledgment Required', 'Please review and accept the cancellation policy.');
-      return;
-    }
-
-    if (checkoutMode === 'guest' && !phone) {
-      addToast('error', 'Phone Required', 'A mobile number is required for guest bookings.');
-      return;
-    }
-
+  const executeFinalizeBooking = (userToAttach?: User | null) => {
     setSubmitting(true);
     setTimeout(() => {
       const code = `EV-${Math.floor(100000 + Math.random() * 900000)}`;
-      const generatedGuestCode = checkoutMode === 'guest' ? `GUEST-${Math.floor(100000 + Math.random() * 900000)}` : undefined;
 
       const bookedRoomsList = orderItems.map(item => ({
         roomName: item.room.name,
         bedConfig: item.room.bedConfig,
-        rateTitle: isGuestCheckout ? (item.rate.title.includes('Member') ? 'Standard Suite Rate (Room Only)' : item.rate.title) : item.rate.title,
+        rateTitle: item.rate.title,
         nightlyRate: item.rate.nightlyPrice,
         quantity: item.quantity
       }));
@@ -210,12 +194,13 @@ export const CheckoutPage: React.FC = () => {
         taxesAndFees,
         totalAmount: total,
         currency: 'USD',
-        paymentMethod: { brand: 'amex', last4: '1004' },
+        paymentMethod: { brand: 'visa', last4: '4242' },
         cancellationDeadline: '48 hours prior to check-in (15:00 local time)',
-        specialRequests: `${spaAccessSelected && !isGuestCheckout ? 'Hydrotherapy Spa Access included. ' : ''}${specialRequests}`,
-        guestPhone: checkoutMode === 'guest' ? phone : undefined,
-        guestCode: generatedGuestCode,
-        userId: currentUser ? currentUser.id : undefined,
+        specialRequests: `${spaAccessSelected && userToAttach?.isMember ? 'Hydrotherapy Spa Access included. ' : ''}${specialRequests}`,
+        guestPhone: phone,
+        guestEmail: email,
+        guestName: `${firstName} ${lastName}`.trim(),
+        userId: userToAttach ? userToAttach.id : (currentUser ? currentUser.id : undefined),
         bookedRooms: bookedRoomsList
       };
 
@@ -224,72 +209,83 @@ export const CheckoutPage: React.FC = () => {
       clearRoomOrder();
       setSubmitting(false);
 
-      if (checkoutMode === 'guest' && generatedGuestCode) {
-        addToast('success', 'Guest Booking Confirmed!', `Your Guest Code is: ${generatedGuestCode}. Save this to view your reservation later.`);
+      if (userToAttach?.isMember) {
+        addToast('success', 'Evolve Rewards Member Booking!', `Reservation confirmed! Booking reference: ${code}`);
       } else {
         addToast('success', 'Reservation Confirmed!', `Booking reference: ${code}`);
       }
       
       navigateTo('confirmation');
-    }, 600);
+    }, 400);
   };
 
-  if (checkoutMode === 'prompt') {
-    return (
-      <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '60px 20px 80px', display: 'flex', justifyContent: 'center' }}>
-        <div className="evolve-card" style={{ maxWidth: '600px', width: '100%', padding: '48px', textAlign: 'center' }}>
-          <span className="eyebrow-text">ALMOST THERE</span>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2.5rem', color: '#17271f', margin: '8px 0 16px' }}>
-            How would you like to continue?
-          </h2>
-          <p style={{ color: '#6e7a76', fontSize: '1.05rem', marginBottom: '40px' }}>
-            Sign in to access your saved details and earn Reward Nights, or proceed as a guest.
-          </p>
+  const handleCompleteBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) {
+      addToast('error', 'Name Required', 'Please enter your first and last name.');
+      return;
+    }
+    if (!phone.trim()) {
+      addToast('error', 'Phone Required', 'A mobile phone number is required.');
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      addToast('error', 'Email Required', 'Please enter a valid email address.');
+      return;
+    }
+    if (!agreedToPolicies) {
+      addToast('error', 'Policy Acknowledgment Required', 'Please acknowledge the hotel cancellation policy.');
+      return;
+    }
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <button 
-              onClick={() => openAuthModal('signin')}
-              className="btn btn-primary"
-              style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1.1rem' }}
-            >
-              <LogIn size={20} /> Sign In
-            </button>
-            <button 
-              onClick={() => openAuthModal('signup')}
-              className="btn btn-secondary"
-              style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1.1rem' }}
-            >
-              <UserPlus size={20} /> Create an Account
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', color: '#d8d6cf' }}>
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2ded5' }}></div>
-              <span style={{ margin: '0 16px', color: '#8c8a82', fontSize: '0.875rem', fontWeight: 600 }}>OR</span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2ded5' }}></div>
-            </div>
-            <button 
-              onClick={() => setCheckoutMode('guest')}
-              className="btn btn-outline"
-              style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1.1rem', backgroundColor: '#ffffff' }}
-            >
-              <UserCircle2 size={20} /> Continue as Guest
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    // If user is not already a member, show the Evolve Rewards modal (Screenshot 3)
+    if (!currentUser?.isMember) {
+      setShowRewardsModal(true);
+      return;
+    }
+
+    executeFinalizeBooking(currentUser);
+  };
+
+  const handleJoinFree = () => {
+    setShowRewardsModal(false);
+    const memberId = `EV-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newMemberUser: User = {
+      id: `member-${Date.now()}`,
+      customerId: memberId,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      isEmailVerified: true,
+      isPhoneVerified: true,
+      isMember: true,
+      memberProfile: {
+        memberId,
+        tier: 'MEMBER',
+        unusedRewardNights: 0,
+        qualifyingNightsThisYear: nights,
+        qualifyingNightsNeededForNextTier: Math.max(0, 9 - nights),
+        lifetimeQualifyingNights: nights,
+        memberSinceYear: new Date().getFullYear(),
+      },
+      paymentMethods: [],
+      preferences: { quietRoom: true }
+    };
+    loginUser(newMemberUser);
+    executeFinalizeBooking(newMemberUser);
+  };
+
+  const handleNoThanks = () => {
+    setShowRewardsModal(false);
+    executeFinalizeBooking(null);
+  };
 
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div className="app-container" style={{ maxWidth: '1100px' }}>
         <button
-          onClick={() => {
-            if (checkoutMode === 'guest' && !currentUser) {
-              setCheckoutMode('prompt');
-            } else {
-              navigateTo('property-detail');
-            }
-          }}
+          onClick={() => navigateTo('property-detail')}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -303,7 +299,7 @@ export const CheckoutPage: React.FC = () => {
             marginBottom: '24px'
           }}
         >
-          <ArrowLeft size={16} /> {checkoutMode === 'guest' && !currentUser ? 'Back to Sign In Options' : 'Back to Room Selection'}
+          <ArrowLeft size={16} /> Back to Room Selection
         </button>
 
         <div style={{ marginBottom: '32px' }}>
@@ -453,119 +449,132 @@ export const CheckoutPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="evolve-card" style={{ padding: '28px' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
-                  1. Contact Information
-                </h3>
+              {/* Who's Checking In Card (Matching User Screenshot) */}
+              <div className="evolve-card" style={{ padding: '32px' }}>
+                <h2 style={{
+                  fontFamily: 'Playfair Display, Georgia, serif',
+                  fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
+                  color: '#17271f',
+                  margin: '0 0 24px 0',
+                  fontWeight: 700
+                }}>
+                  Who’s Checking In?
+                </h2>
 
-                {checkoutMode === 'authenticated' && (
-                  <>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                      <div className="form-group">
-                        <label className="form-label">First Name</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Last Name</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Email Address (For Confirmation & Folio)</label>
-                      <input
-                        type="email"
-                        className="form-input"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="form-group">
-                  <label className="form-label">Mobile Number</label>
-                  <input
-                    type="tel"
-                    className="form-input"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Enter phone number"
-                    required
-                  />
-                  {checkoutMode === 'guest' && (
-                    <p style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '6px', marginBottom: 0 }}>
-                      This number is required to access your guest booking later.
-                    </p>
-                  )}
-                </div>
-
-                {checkoutMode === 'authenticated' && (
-                  <div className="form-group">
-                    <label className="form-label">Special Requests (Optional)</label>
-                    <textarea
-                      className="form-textarea"
-                      rows={3}
-                      value={specialRequests}
-                      onChange={(e) => setSpecialRequests(e.target.value)}
-                      placeholder="E.g., high floor, quiet zone, feather-free pillows, late check-in..."
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, color: '#17271f', fontSize: '0.875rem', marginBottom: '6px' }}>
+                      First name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="First name"
+                      required
+                      style={{ borderRadius: '10px', padding: '12px 14px', border: '1.5px solid #dcd7cb' }}
                     />
                   </div>
-                )}
-              </div>
-
-              <div className="evolve-card" style={{ padding: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0 }}>
-                    2. Payment & Guarantee
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#17653e', fontWeight: 700 }}>
-                    <Lock size={13} /> 256-Bit SSL Encrypted
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, color: '#17271f', fontSize: '0.875rem', marginBottom: '6px' }}>
+                      Last name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Last name"
+                      required
+                      style={{ borderRadius: '10px', padding: '12px 14px', border: '1.5px solid #dcd7cb' }}
+                    />
                   </div>
                 </div>
 
-                {/* Member Only: Enhance your stay section (matches user screenshot) */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: '16px',
+                  marginBottom: '20px'
+                }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, color: '#17271f', fontSize: '0.875rem', marginBottom: '6px' }}>
+                      Mobile phone
+                    </label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="(555) 123-4567"
+                      required
+                      style={{ borderRadius: '10px', padding: '12px 14px', border: '1.5px solid #dcd7cb' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, color: '#17271f', fontSize: '0.875rem', marginBottom: '6px' }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="guest@example.com"
+                      required
+                      style={{ borderRadius: '10px', padding: '12px 14px', border: '1.5px solid #dcd7cb' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Special Requests */}
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label className="form-label" style={{ fontWeight: 600, color: '#55655f', fontSize: '0.8125rem', marginBottom: '6px' }}>
+                    Special Requests (Optional)
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={specialRequests}
+                    onChange={(e) => setSpecialRequests(e.target.value)}
+                    placeholder="E.g., high floor, quiet zone, feather-free pillows, late arrival..."
+                    style={{ borderRadius: '10px', padding: '10px 14px', border: '1.5px solid #dcd7cb' }}
+                  />
+                </div>
+
+                {/* Member Only: Enhance your stay section */}
                 {!isGuestCheckout && (
-                  <div style={{ marginBottom: '28px', paddingBottom: '24px', borderBottom: '1px solid #eeece5' }}>
-                    <h3 style={{ fontSize: '1.45rem', color: '#17271f', margin: '0 0 6px 0', fontWeight: 700 }}>
+                  <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #eeece5' }}>
+                    <h4 style={{ fontSize: '1.15rem', color: '#17271f', margin: '0 0 6px 0', fontWeight: 700 }}>
                       Enhance your stay
-                    </h3>
-                    <p style={{ color: '#6e7a76', fontSize: '0.9375rem', margin: '0 0 18px 0' }}>
+                    </h4>
+                    <p style={{ color: '#6e7a76', fontSize: '0.875rem', margin: '0 0 16px 0' }}>
                       Choose any optional benefits for this stay.
                     </p>
 
-                    {/* Option 1: Hydrotherapy Spa Access (Checked / Included) */}
                     <div 
                       onClick={() => setSpaAccessSelected(!spaAccessSelected)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        padding: '16px 20px',
-                        borderRadius: '14px',
+                        gap: '14px',
+                        padding: '14px 18px',
+                        borderRadius: '12px',
                         border: spaAccessSelected ? '2px solid #173f34' : '1.5px solid #d8d6cf',
                         backgroundColor: spaAccessSelected ? '#edf5f0' : '#ffffff',
                         cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        marginBottom: '12px'
+                        marginBottom: '10px'
                       }}
                     >
                       <div style={{
-                        width: '22px',
-                        height: '22px',
+                        width: '20px',
+                        height: '20px',
                         borderRadius: '5px',
                         backgroundColor: spaAccessSelected ? '#9aa9a1' : '#ffffff',
                         border: spaAccessSelected ? 'none' : '1.5px solid #cccccc',
@@ -574,19 +583,18 @@ export const CheckoutPage: React.FC = () => {
                         justifyContent: 'center',
                         flexShrink: 0
                       }}>
-                        {spaAccessSelected && <Check size={15} color="#ffffff" strokeWidth={3} />}
+                        {spaAccessSelected && <Check size={14} color="#ffffff" strokeWidth={3} />}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#17271f' }}>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#17271f' }}>
                           Hydrotherapy Spa Access
                         </div>
-                        <div style={{ fontSize: '0.875rem', color: '#55655f', marginTop: '3px' }}>
+                        <div style={{ fontSize: '0.8125rem', color: '#55655f' }}>
                           Included automatically with your Evolve membership
                         </div>
                       </div>
                     </div>
 
-                    {/* Option 2: Use 1 Free Night */}
                     <div 
                       onClick={() => {
                         const hasRewardNight = (currentUser?.memberProfile?.unusedRewardNights || 0) > 0;
@@ -601,19 +609,17 @@ export const CheckoutPage: React.FC = () => {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        padding: '16px 20px',
-                        borderRadius: '14px',
+                        gap: '14px',
+                        padding: '14px 18px',
+                        borderRadius: '12px',
                         border: useFreeNight ? '2px solid #173f34' : '1.5px solid #e2ded4',
                         backgroundColor: useFreeNight ? '#edf5f0' : '#f8f9fa',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        marginBottom: '14px'
+                        cursor: 'pointer'
                       }}
                     >
                       <div style={{
-                        width: '22px',
-                        height: '22px',
+                        width: '20px',
+                        height: '20px',
                         borderRadius: '5px',
                         backgroundColor: useFreeNight ? '#173f34' : '#ffffff',
                         border: useFreeNight ? 'none' : '1.5px solid #cccccc',
@@ -622,98 +628,45 @@ export const CheckoutPage: React.FC = () => {
                         justifyContent: 'center',
                         flexShrink: 0
                       }}>
-                        {useFreeNight && <Check size={15} color="#ffffff" strokeWidth={3} />}
+                        {useFreeNight && <Check size={14} color="#ffffff" strokeWidth={3} />}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: useFreeNight ? '#17271f' : '#8a9490' }}>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: useFreeNight ? '#17271f' : '#8a9490' }}>
                           Use 1 Free Night
                         </div>
-                        <div style={{ fontSize: '0.875rem', color: useFreeNight ? '#17653e' : '#8a9490', marginTop: '3px' }}>
+                        <div style={{ fontSize: '0.8125rem', color: useFreeNight ? '#17653e' : '#8a9490' }}>
                           {useFreeNight ? `Reward applied (-$${rate.nightlyPrice})` : 'Unlock after 9 qualifying nights'}
                         </div>
                       </div>
                     </div>
-
-                    {/* Cancellation Callout Banner */}
-                    <div style={{
-                      backgroundColor: '#fdf8ec',
-                      borderLeft: '4px solid #dda943',
-                      borderRadius: '10px',
-                      padding: '14px 18px',
-                      fontSize: '0.875rem',
-                      color: '#17271f',
-                      lineHeight: 1.5
-                    }}>
-                      <strong>Cancellation:</strong> Cancel by {getCancellationDateStr(searchDates.checkIn)} at 4:00 PM Central Time. After that deadline, the penalty is one night’s room rate plus applicable taxes.
-                    </div>
                   </div>
                 )}
 
-                <div className="form-group">
-                  <label className="form-label">Card Number</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      required
-                    />
-                    <CreditCard size={18} color="#6e7a76" style={{ position: 'absolute', right: '14px', top: '14px' }} />
-                  </div>
+                {/* Cancellation Callout Banner */}
+                <div style={{
+                  backgroundColor: '#fdf8ec',
+                  borderLeft: '4px solid #dda943',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  fontSize: '0.875rem',
+                  color: '#17271f',
+                  lineHeight: 1.5,
+                  marginBottom: '18px'
+                }}>
+                  <strong>Cancellation:</strong> Cancel by {getCancellationDateStr(searchDates.checkIn)} at 4:00 PM Central Time. After that deadline, the penalty is one night’s room rate plus applicable taxes.
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Expiry Date</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      placeholder="MM/YY"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Security CVC</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={cvc}
-                      onChange={(e) => setCvc(e.target.value)}
-                      placeholder="3 or 4 digits"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* For guest checkout, show cancellation banner below card */}
-                {isGuestCheckout && (
-                  <div style={{
-                    backgroundColor: '#fdf8ec',
-                    borderLeft: '4px solid #dda943',
-                    borderRadius: '10px',
-                    padding: '14px 18px',
-                    marginTop: '16px',
-                    fontSize: '0.875rem',
-                    color: '#17271f',
-                    lineHeight: 1.5
-                  }}>
-                    <strong>Cancellation:</strong> Cancel by {getCancellationDateStr(searchDates.checkIn)} at 4:00 PM Central Time. After that deadline, the penalty is one night’s room rate plus applicable taxes.
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '20px' }}>
+                {/* Policy Agreement Checkbox */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                   <input
                     type="checkbox"
                     id="policyCheck"
                     checked={agreedToPolicies}
                     onChange={(e) => setAgreedToPolicies(e.target.checked)}
-                    style={{ marginTop: '4px', accentColor: '#173f34', width: '18px', height: '18px', cursor: 'pointer' }}
+                    style={{ marginTop: '3px', accentColor: '#173f34', width: '18px', height: '18px', cursor: 'pointer' }}
                   />
-                  <label htmlFor="policyCheck" style={{ fontSize: '0.8125rem', color: '#17271f', cursor: 'pointer' }}>
-                    I acknowledge and agree to the <strong>Hotel Cancellation Policy</strong>, <strong>Terms of Service</strong>, and understand that my card will guarantee this reservation.
+                  <label htmlFor="policyCheck" style={{ fontSize: '0.8125rem', color: '#17271f', cursor: 'pointer', lineHeight: 1.4 }}>
+                    I acknowledge and agree to the <strong>Hotel Cancellation Policy</strong> and <strong>Terms of Service</strong>.
                   </label>
                 </div>
               </div>
@@ -831,6 +784,146 @@ export const CheckoutPage: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Rewards Enrollment Dialog (Screenshot 3) */}
+      {showRewardsModal && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setShowRewardsModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(23, 39, 31, 0.65)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div 
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              padding: '36px 32px',
+              maxWidth: '460px',
+              width: '100%',
+              position: 'relative',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.22)',
+              border: 'none',
+              textAlign: 'left'
+            }}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowRewardsModal(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'none',
+                border: 'none',
+                color: '#17271f',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              aria-label="Close"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+
+            {/* Eyebrow */}
+            <span style={{
+              display: 'block',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              color: '#997125',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginBottom: '10px'
+            }}>
+              EVOLVE REWARDS
+            </span>
+
+            {/* Title */}
+            <h2 style={{
+              fontFamily: 'Playfair Display, Georgia, serif',
+              fontSize: '1.95rem',
+              fontWeight: 700,
+              color: '#17271f',
+              lineHeight: 1.25,
+              margin: '0 0 14px 0'
+            }}>
+              Don’t let this stay go unrewarded.
+            </h2>
+
+            {/* Body */}
+            <p style={{
+              fontSize: '0.9375rem',
+              color: '#55655f',
+              lineHeight: 1.55,
+              margin: '0 0 28px 0'
+            }}>
+              Join Evolve Rewards FREE and earn Reward Nights toward Free Nights, Fine Dining Experiences, or $70 Gift Cards.
+            </p>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={handleJoinFree}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#173f34',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s ease',
+                  textAlign: 'center'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f2d24'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#173f34'}
+              >
+                Join Free
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNoThanks}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#ffffff',
+                  color: '#17271f',
+                  border: '1.5px solid #dcd7cb',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s ease',
+                  textAlign: 'center'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f6f3ec'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+              >
+                No Thanks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
