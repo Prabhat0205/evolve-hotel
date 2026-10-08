@@ -104,6 +104,7 @@ export const AccountPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [twoFactorSent, setTwoFactorSent] = useState(false);
+  const [showTwoFactorStep, setShowTwoFactorStep] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
@@ -126,7 +127,7 @@ export const AccountPage: React.FC = () => {
     addToast('info', '2FA Code Dispatched', `A 6-digit authentication code has been sent to ${phone || 'your verified mobile'}. (Demo code: 123456)`);
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleInitiatePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword) {
       addToast('error', 'Current Password Required', 'Please provide your current password.');
@@ -140,6 +141,14 @@ export const AccountPage: React.FC = () => {
       addToast('error', 'Password Mismatch', 'New password and confirmation do not match.');
       return;
     }
+
+    setTwoFactorSent(true);
+    setShowTwoFactorStep(true);
+    addToast('info', '2FA Code Dispatched', `A 6-digit authentication code has been sent to ${phone || 'your verified mobile'}. (Demo code: 123456)`);
+  };
+
+  const handleConfirmPasswordChange = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!twoFactorCode || twoFactorCode.length < 6) {
       addToast('error', '2FA Verification Required', 'Please enter the 6-digit verification code sent to your phone.');
       return;
@@ -151,6 +160,7 @@ export const AccountPage: React.FC = () => {
     setConfirmPassword('');
     setTwoFactorCode('');
     setTwoFactorSent(false);
+    setShowTwoFactorStep(false);
   };
 
   const handleAddCard = (e: React.FormEvent) => {
@@ -275,15 +285,55 @@ export const AccountPage: React.FC = () => {
 
         {/* TAB 1: PROFILE & PERSONAL DETAILS */}
         {activeTab === 'profile' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px', alignItems: 'start' }}>
-            <div className="evolve-card" style={{ padding: '28px' }}>
-              <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
-                Personal Information
-              </h3>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '28px',
+            alignItems: 'stretch'
+          }}>
+            {/* CARD 1: PERSONAL INFORMATION */}
+            <div className="evolve-card" style={{
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%'
+            }}>
+              <div>
+                {/* Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '20px',
+                  minHeight: '44px'
+                }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(23, 63, 52, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#173f34',
+                    flexShrink: 0
+                  }}>
+                    <UserIcon size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.2rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+                      Personal Information
+                    </h3>
+                    <p style={{ fontSize: '0.8125rem', color: '#6e7a76', margin: '2px 0 0 0' }}>
+                      Verified contact information & profile details
+                    </p>
+                  </div>
+                </div>
 
-                <form onSubmit={handleSaveProfile}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                    <div className="form-group">
+                <form id="profile-form" onSubmit={handleSaveProfile}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">First Name</label>
                       <input
                         type="text"
@@ -293,7 +343,7 @@ export const AccountPage: React.FC = () => {
                         required
                       />
                     </div>
-                    <div className="form-group">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Last Name</label>
                       <input
                         type="text"
@@ -305,7 +355,7 @@ export const AccountPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label className="form-label">Email Address</label>
                       <span style={{ fontSize: '0.75rem', color: '#17653e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -321,7 +371,7 @@ export const AccountPage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label className="form-label">Mobile Phone</label>
                       <span style={{ fontSize: '0.75rem', color: user.isPhoneVerified ? '#17653e' : '#997125', fontWeight: 700 }}>
@@ -336,35 +386,64 @@ export const AccountPage: React.FC = () => {
                       required
                     />
                   </div>
-
-                  <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: '16px' }}>
-                    Save Personal Details
-                  </button>
                 </form>
               </div>
 
-              {/* PASSWORD CHANGE & 2FA AUTHENTICATION CARD */}
-              <div className="evolve-card" style={{ padding: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ marginTop: '24px' }}>
+                <button
+                  type="submit"
+                  form="profile-form"
+                  className="btn btn-primary btn-full"
+                  style={{
+                    height: '46px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700
+                  }}
+                >
+                  Save Personal Details
+                </button>
+              </div>
+            </div>
+
+            {/* CARD 2: CHANGE PASSWORD & 2FA */}
+            <div className="evolve-card" style={{
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%'
+            }}>
+              <div>
+                {/* Header */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: '20px',
+                  minHeight: '44px'
+                }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{
-                      width: '36px',
-                      height: '36px',
+                      width: '38px',
+                      height: '38px',
                       borderRadius: '10px',
                       backgroundColor: 'rgba(23, 63, 52, 0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#173f34'
+                      color: '#173f34',
+                      flexShrink: 0
                     }}>
                       <Key size={18} />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.15rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+                      <h3 style={{ fontSize: '1.2rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
                         Change Password
                       </h3>
                       <p style={{ fontSize: '0.8125rem', color: '#6e7a76', margin: '2px 0 0 0' }}>
-                        Secured with Two-Factor Authentication (2FA)
+                        Protected with Two-Factor Authentication (2FA)
                       </p>
                     </div>
                   </div>
@@ -378,13 +457,18 @@ export const AccountPage: React.FC = () => {
                     fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '4px',
+                    flexShrink: 0
                   }}>
                     <ShieldCheck size={14} /> 2FA Active
                   </span>
                 </div>
 
-                <form onSubmit={handleChangePassword}>
+                <form
+                  id="password-form"
+                  onSubmit={showTwoFactorStep ? handleConfirmPasswordChange : handleInitiatePasswordChange}
+                >
+                  {/* Current Password */}
                   <div className="form-group" style={{ marginBottom: '14px' }}>
                     <label className="form-label">Current Password</label>
                     <div style={{ position: 'relative' }}>
@@ -394,47 +478,14 @@ export const AccountPage: React.FC = () => {
                         placeholder="Enter current password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
+                        disabled={showTwoFactorStep}
                         required
-                        style={{ paddingRight: '40px' }}
+                        style={{ paddingRight: '40px', backgroundColor: showTwoFactorStep ? '#f6f3ec' : '#ffffff' }}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        style={{
-                          position: 'absolute',
-                          right: '12px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          color: '#6e7a76',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: 0
-                        }}
-                      >
-                        {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                    <div className="form-group">
-                      <label className="form-label">New Password</label>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type={showNewPassword ? 'text' : 'password'}
-                          className="form-input"
-                          placeholder="Min 8 characters"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          required
-                          style={{ paddingRight: '40px' }}
-                        />
+                      {!showTwoFactorStep && (
                         <button
                           type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                           style={{
                             position: 'absolute',
                             right: '12px',
@@ -449,12 +500,52 @@ export const AccountPage: React.FC = () => {
                             padding: 0
                           }}
                         >
-                          {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* New and Confirm Password in 2 columns */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: showTwoFactorStep ? '14px' : 0 }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">New Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          className="form-input"
+                          placeholder="Min 8 characters"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          disabled={showTwoFactorStep}
+                          required
+                          style={{ paddingRight: '40px', backgroundColor: showTwoFactorStep ? '#f6f3ec' : '#ffffff' }}
+                        />
+                        {!showTwoFactorStep && (
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#6e7a76',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: 0
+                            }}
+                          >
+                            {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Confirm New Password</label>
                       <input
                         type={showNewPassword ? 'text' : 'password'}
@@ -462,51 +553,55 @@ export const AccountPage: React.FC = () => {
                         placeholder="Re-enter new password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={showTwoFactorStep}
                         required
+                        style={{ backgroundColor: showTwoFactorStep ? '#f6f3ec' : '#ffffff' }}
                       />
                     </div>
                   </div>
 
-                  {/* 2FA Verification Card */}
-                  <div style={{
-                    backgroundColor: '#faf8f5',
-                    border: '1px solid #eeece5',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginBottom: '18px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Lock size={15} color="#173f34" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#17271f' }}>
-                          Two-Factor Authorization Required
-                        </span>
+                  {/* 2FA Verification Box: Hidden until Change Password is clicked! */}
+                  {showTwoFactorStep ? (
+                    <div style={{
+                      backgroundColor: '#f2f6f4',
+                      border: '1.5px solid #173f34',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      marginTop: '14px',
+                      animation: 'fadeIn 0.25s ease'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Lock size={15} color="#173f34" />
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#17271f' }}>
+                            2FA Verification Code Sent
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSend2FACode}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#997125',
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Resend Code
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleSend2FACode}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#997125',
-                          fontSize: '0.8125rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          textDecoration: 'underline'
-                        }}
-                      >
-                        {twoFactorSent ? 'Resend 2FA Code' : 'Send 2FA Code via SMS'}
-                      </button>
-                    </div>
 
-                    <p style={{ fontSize: '0.78125rem', color: '#6e7a76', margin: '0 0 10px 0', lineHeight: 1.4 }}>
-                      To protect your member account, enter the 6-digit one-time code sent to <strong>{phone || '+1 (555) •••-4019'}</strong> to confirm password change.
-                    </p>
+                      <p style={{ fontSize: '0.78125rem', color: '#4e5b57', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                        Enter the 6-digit code sent to <strong>{phone || '+1 (214) 555-0192'}</strong> to confirm password update.
+                      </p>
 
-                    <div className="form-group" style={{ margin: 0 }}>
                       <input
                         type="text"
                         maxLength={6}
+                        autoFocus
                         className="form-input"
                         placeholder="Enter 6-digit code (e.g. 123456)"
                         value={twoFactorCode}
@@ -520,24 +615,76 @@ export const AccountPage: React.FC = () => {
                         }}
                       />
                     </div>
-                  </div>
+                  ) : (
+                    <div style={{
+                      fontSize: '0.78125rem',
+                      color: '#6e7a76',
+                      marginTop: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <Lock size={13} color="#997125" />
+                      <span>Two-factor SMS verification code will be requested upon proceeding.</span>
+                    </div>
+                  )}
+                </form>
+              </div>
 
+              {/* Action Button aligned parallel to Card 1 button */}
+              <div style={{ marginTop: '24px' }}>
+                {showTwoFactorStep ? (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowTwoFactorStep(false)}
+                      className="btn btn-outline"
+                      style={{
+                        height: '46px',
+                        flex: '0 0 100px',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      form="password-form"
+                      className="btn btn-primary"
+                      style={{
+                        height: '46px',
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontWeight: 700
+                      }}
+                    >
+                      <ShieldCheck size={16} />
+                      <span>Confirm & Save</span>
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="submit"
+                    form="password-form"
                     className="btn btn-primary btn-full"
                     style={{
+                      height: '46px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      padding: '12px'
+                      fontWeight: 700
                     }}
                   >
-                    <ShieldCheck size={16} />
-                    <span>Update Password with 2FA</span>
+                    <Key size={16} />
+                    <span>Proceed to Change Password</span>
                   </button>
-                </form>
+                )}
               </div>
+            </div>
           </div>
         )}
 
