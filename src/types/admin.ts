@@ -58,7 +58,7 @@ export interface DashboardGuestItem {
 export interface MemberRewardTransaction {
   id: string;
   date: string;
-  activity: 'Points Credited' | 'Points Redeemed';
+  activity: 'Points Credited' | 'Points Redeemed' | 'Nights Credited' | 'Nights Redeemed' | 'Giftgram Redeemed' | 'Fine Dining Redeemed' | string;
   stayOrBooking: string;
   squareRefId?: string;
   giftogramRefId?: string;

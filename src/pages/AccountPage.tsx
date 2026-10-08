@@ -11,17 +11,37 @@ import { mockPersonas } from '../data/mockUsers';
 const defaultMemberTransactions: MemberRewardTransaction[] = [
   {
     id: 'tx-101',
-    date: 'Sep 29, 2026',
-    activity: 'Points Redeemed',
-    stayOrBooking: 'EV-BK-4019',
-    points: -40,
+    date: 'Oct 02, 2026',
+    activity: 'Giftgram Redeemed',
+    stayOrBooking: 'GG-88210',
+    giftogramRefId: 'GG-88210',
+    points: -15,
     status: 'Redeemed',
-    notes: 'Points redeemed for suite upgrade & dining folio'
+    notes: 'Giftgram e-gift boutique card redemption'
   },
   {
     id: 'tx-102',
+    date: 'Sep 30, 2026',
+    activity: 'Fine Dining Redeemed',
+    stayOrBooking: 'FD-40182',
+    points: -15,
+    status: 'Redeemed',
+    notes: 'Chef tasting dinner experience at Le Jardin'
+  },
+  {
+    id: 'tx-103',
+    date: 'Sep 29, 2026',
+    activity: 'Nights Redeemed',
+    stayOrBooking: 'EV-BK-4019',
+    nights: 1,
+    points: -10,
+    status: 'Redeemed',
+    notes: 'Reward nights redeemed for suite stay & room upgrade'
+  },
+  {
+    id: 'tx-104',
     date: 'Sep 28, 2026',
-    activity: 'Points Credited',
+    activity: 'Nights Credited',
     stayOrBooking: 'CB-10245',
     nights: 3,
     points: 3,
@@ -29,9 +49,9 @@ const defaultMemberTransactions: MemberRewardTransaction[] = [
     notes: 'Completed 3-night stay at The Grand Manor'
   },
   {
-    id: 'tx-103',
+    id: 'tx-105',
     date: 'Sep 15, 2026',
-    activity: 'Points Credited',
+    activity: 'Nights Credited',
     stayOrBooking: 'CB-10122',
     nights: 2,
     points: 2,
@@ -39,9 +59,9 @@ const defaultMemberTransactions: MemberRewardTransaction[] = [
     notes: 'Completed 2-night stay at Cliffside Haven'
   },
   {
-    id: 'tx-104',
+    id: 'tx-106',
     date: 'Aug 20, 2026',
-    activity: 'Points Credited',
+    activity: 'Nights Credited',
     stayOrBooking: 'CB-9821',
     nights: 5,
     points: 5,
@@ -49,9 +69,9 @@ const defaultMemberTransactions: MemberRewardTransaction[] = [
     notes: 'Completed 5-night stay at Alpine Chalet'
   },
   {
-    id: 'tx-105',
+    id: 'tx-107',
     date: 'Jul 10, 2026',
-    activity: 'Points Credited',
+    activity: 'Nights Credited',
     stayOrBooking: 'CB-9410',
     nights: 115,
     points: 115,
@@ -67,11 +87,11 @@ export const AccountPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'rewards' | 'payment'>('profile');
   const [rewardsFilter, setRewardsFilter] = useState<'ALL' | 'CREDITED' | 'REDEEMED'>('ALL');
 
-  // Rewards calculation
-  const totalPointsEarned = 125;
-  const pointsRedeemed = 40;
-  // Available = Total Earned - Points Redeemed (calculated dynamically)
-  const pointsAvailable = totalPointsEarned - pointsRedeemed;
+  // Rewards calculation in nights
+  const totalNightsEarned = 125;
+  const nightsRedeemed = 40;
+  // Available = Total Earned - Nights Redeemed (calculated dynamically)
+  const nightsAvailable = totalNightsEarned - nightsRedeemed;
 
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
@@ -129,9 +149,15 @@ export const AccountPage: React.FC = () => {
     addToast('success', 'Payment Method Added', 'Card successfully verified and saved.');
   };
 
+  const isTransactionCredited = (tx: MemberRewardTransaction) =>
+    tx.activity.includes('Credited') || tx.points > 0;
+
+  const isTransactionRedeemed = (tx: MemberRewardTransaction) =>
+    tx.activity.includes('Redeem') || tx.points < 0;
+
   const filteredTransactions = defaultMemberTransactions.filter(tx => {
-    if (rewardsFilter === 'CREDITED') return tx.activity === 'Points Credited';
-    if (rewardsFilter === 'REDEEMED') return tx.activity === 'Points Redeemed';
+    if (rewardsFilter === 'CREDITED') return isTransactionCredited(tx);
+    if (rewardsFilter === 'REDEEMED') return isTransactionRedeemed(tx);
     return true;
   });
 
@@ -145,7 +171,7 @@ export const AccountPage: React.FC = () => {
             Member Profile & Account
           </h1>
           <p style={{ color: '#6e7a76', fontSize: '1rem', marginTop: '6px' }}>
-            Manage your personal profile, hospitality preferences, and member reward points balance.
+            Manage your personal profile, hospitality preferences, and member reward nights balance.
           </p>
         </div>
 
@@ -195,7 +221,7 @@ export const AccountPage: React.FC = () => {
               transition: 'all 0.2s ease'
             }}
           >
-            <Award size={16} /> Rewards & Points
+            <Award size={16} /> Rewards & Nights
             <span style={{
               backgroundColor: activeTab === 'rewards' ? '#dda943' : '#e6e2d8',
               color: activeTab === 'rewards' ? '#17271f' : '#6e7a76',
@@ -204,7 +230,7 @@ export const AccountPage: React.FC = () => {
               borderRadius: '999px',
               fontWeight: 800
             }}>
-              {pointsAvailable} pts
+              {nightsAvailable} nights
             </span>
           </button>
 
@@ -413,10 +439,10 @@ export const AccountPage: React.FC = () => {
                     MEMBER REWARDS BALANCE
                   </span>
                   <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#17271f', marginTop: '4px' }}>
-                    {pointsAvailable} Points Available
+                    {nightsAvailable} Nights Available
                   </div>
                   <div style={{ fontSize: '0.8125rem', color: '#6e7a76', marginTop: '2px' }}>
-                    {totalPointsEarned} earned · {pointsRedeemed} redeemed
+                    {totalNightsEarned} earned · {nightsRedeemed} redeemed
                   </div>
                 </div>
                 <button
@@ -440,10 +466,10 @@ export const AccountPage: React.FC = () => {
               <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
-                    Rewards Points Summary
+                    Rewards Nights Summary
                   </h3>
                   <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
-                    Points earned from qualified completed stays and available for member redemptions.
+                    Nights earned from qualified completed stays and available for member redemptions.
                   </p>
                 </div>
                 <span style={{
@@ -462,7 +488,7 @@ export const AccountPage: React.FC = () => {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-                {/* Card 1: Total Points Earned */}
+                {/* Card 1: Total Nights Earned */}
                 <div style={{
                   backgroundColor: '#ffffff',
                   borderRadius: '16px',
@@ -476,7 +502,7 @@ export const AccountPage: React.FC = () => {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Total Points Earned
+                        Total Nights Earned
                       </span>
                       <div style={{
                         width: '36px',
@@ -492,7 +518,7 @@ export const AccountPage: React.FC = () => {
                       </div>
                     </div>
                     <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
-                      {totalPointsEarned}
+                      {totalNightsEarned}
                     </div>
                   </div>
                   <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
@@ -500,7 +526,7 @@ export const AccountPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 2: Points Redeemed */}
+                {/* Card 2: Nights Redeemed */}
                 <div style={{
                   backgroundColor: '#ffffff',
                   borderRadius: '16px',
@@ -514,7 +540,7 @@ export const AccountPage: React.FC = () => {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Points Redeemed
+                        Nights Redeemed
                       </span>
                       <div style={{
                         width: '36px',
@@ -530,15 +556,15 @@ export const AccountPage: React.FC = () => {
                       </div>
                     </div>
                     <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
-                      {pointsRedeemed}
+                      {nightsRedeemed}
                     </div>
                   </div>
                   <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
-                    Points already used for bookings & stays
+                    Nights already used for bookings & member rewards
                   </div>
                 </div>
 
-                {/* Card 3: Points Available / Remaining */}
+                {/* Card 3: Nights Available / Remaining */}
                 <div style={{
                   backgroundColor: '#173f34',
                   color: '#ffffff',
@@ -566,7 +592,7 @@ export const AccountPage: React.FC = () => {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ fontSize: '0.8125rem', color: '#dda943', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Points Available / Remaining
+                        Nights Available / Remaining
                       </span>
                       <span style={{
                         fontSize: '0.6875rem',
@@ -580,7 +606,7 @@ export const AccountPage: React.FC = () => {
                       </span>
                     </div>
                     <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>
-                      {pointsAvailable}
+                      {nightsAvailable}
                     </div>
                   </div>
 
@@ -594,14 +620,14 @@ export const AccountPage: React.FC = () => {
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <span>{totalPointsEarned} Earned − {pointsRedeemed} Redeemed</span>
+                    <span>{totalNightsEarned} Earned − {nightsRedeemed} Redeemed</span>
                     <span style={{ color: '#dda943', fontWeight: 700 }}>Active</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 2. Rewards Points History */}
+            {/* 2. Rewards Nights History */}
             <div style={{
               backgroundColor: '#ffffff',
               borderRadius: '16px',
@@ -620,10 +646,10 @@ export const AccountPage: React.FC = () => {
               }}>
                 <div>
                   <h3 style={{ fontSize: '1.2rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
-                    Rewards Points History
+                    Rewards Nights History
                   </h3>
                   <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
-                    Complete audit trail of earned stay credits and redeemed points.
+                    Complete audit trail of earned stay credits and redeemed nights.
                   </p>
                 </div>
 
@@ -660,7 +686,7 @@ export const AccountPage: React.FC = () => {
                       boxShadow: rewardsFilter === 'CREDITED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
                     }}
                   >
-                    Points Credited ({defaultMemberTransactions.filter(t => t.activity === 'Points Credited').length})
+                    Nights Credited ({defaultMemberTransactions.filter(isTransactionCredited).length})
                   </button>
                   <button
                     type="button"
@@ -677,7 +703,7 @@ export const AccountPage: React.FC = () => {
                       boxShadow: rewardsFilter === 'REDEEMED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
                     }}
                   >
-                    Points Redeemed ({defaultMemberTransactions.filter(t => t.activity === 'Points Redeemed').length})
+                    Nights Redeemed ({defaultMemberTransactions.filter(isTransactionRedeemed).length})
                   </button>
                 </div>
               </div>
@@ -700,7 +726,7 @@ export const AccountPage: React.FC = () => {
                         Nights
                       </th>
                       <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>
-                        Points
+                        Reward Nights
                       </th>
                       <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
                         Status
@@ -709,7 +735,7 @@ export const AccountPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {filteredTransactions.map((tx) => {
-                      const isCredited = tx.activity === 'Points Credited';
+                      const isCredited = isTransactionCredited(tx);
                       return (
                         <tr key={tx.id} style={{ borderBottom: '1px solid #f6f3ec', transition: 'background-color 0.15s ease' }}>
                           <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f', fontWeight: 600 }}>
@@ -796,7 +822,7 @@ export const AccountPage: React.FC = () => {
               }}>
                 <CheckCircle2 size={18} color="#17653e" style={{ flexShrink: 0 }} />
                 <div style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.5 }}>
-                  <strong style={{ color: '#17271f' }}>Cloudbeds Stay Calculation Rule:</strong> Reward points are calculated automatically based on qualified nights from completed Cloudbeds stays (e.g., <strong>3-night completed stay → +3 points</strong>). Points are credited immediately upon confirmed checkout.
+                  <strong style={{ color: '#17271f' }}>Cloudbeds Stay Calculation Rule:</strong> Reward nights are calculated automatically based on qualified nights from completed Cloudbeds stays (e.g., <strong>3-night completed stay → +3 reward nights</strong>). Nights are credited immediately upon confirmed checkout.
                 </div>
               </div>
             </div>
