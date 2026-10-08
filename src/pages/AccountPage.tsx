@@ -3,7 +3,8 @@ import { useApp } from '../context/AppContext';
 import { 
   User as UserIcon, CreditCard, ShieldCheck, Mail, 
   Phone, Plus, Check, Star, Lock, Heart, Settings,
-  Award, TrendingUp, ArrowDownRight, ArrowUpRight, BedDouble, Calendar, CheckCircle2, Clock
+  Award, TrendingUp, ArrowDownRight, ArrowUpRight, BedDouble, Calendar, CheckCircle2, Clock,
+  Eye, EyeOff, Key
 } from 'lucide-react';
 import { MemberRewardTransaction } from '../types/admin';
 import { mockPersonas } from '../data/mockUsers';
@@ -97,13 +98,15 @@ export const AccountPage: React.FC = () => {
   const [lastName, setLastName] = useState(user.lastName);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone);
-  const [idType, setIdType] = useState('PASSPORT');
-  const [idNumber, setIdNumber] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [stateProv, setStateProv] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('');
+  // Password Change & 2FA State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorSent, setTwoFactorSent] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   // Preferences
   const [floor, setFloor] = useState(user.preferences.roomFloor || 'HIGH');
   const [bed, setBed] = useState(user.preferences.bedType || 'KING');
@@ -122,6 +125,38 @@ export const AccountPage: React.FC = () => {
     user.email = email;
     user.phone = phone;
     addToast('success', 'Profile Updated', 'Personal information and verified contacts saved.');
+  };
+
+  const handleSend2FACode = () => {
+    setTwoFactorSent(true);
+    addToast('info', '2FA Code Dispatched', `A 6-digit authentication code has been sent to ${phone || 'your verified mobile'}. (Demo code: 123456)`);
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      addToast('error', 'Current Password Required', 'Please provide your current password.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      addToast('error', 'Weak Password', 'New password must contain at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      addToast('error', 'Password Mismatch', 'New password and confirmation do not match.');
+      return;
+    }
+    if (!twoFactorCode || twoFactorCode.length < 6) {
+      addToast('error', '2FA Verification Required', 'Please enter the 6-digit verification code sent to your phone.');
+      return;
+    }
+
+    addToast('success', 'Password Changed Successfully', 'Your account credentials have been updated securely with 2FA verification.');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setTwoFactorCode('');
+    setTwoFactorSent(false);
   };
 
   const handleSavePreferences = (e: React.FormEvent) => {
@@ -319,53 +354,205 @@ export const AccountPage: React.FC = () => {
                       required
                     />
                   </div>
-                  <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #eeece5' }} />
-                  
-                  <h4 style={{ fontSize: '1rem', color: '#17271f', marginBottom: '16px' }}>Identification Details</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                    <div className="form-group">
-                      <label className="form-label">Valid ID Type</label>
-                      <select className="form-input" value={idType} onChange={(e) => setIdType(e.target.value)}>
-                        <option value="PASSPORT">Passport</option>
-                        <option value="DRIVERS_LICENSE">Driver's License</option>
-                        <option value="NATIONAL_ID">National ID</option>
-                      </select>
+
+                  <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: '16px' }}>
+                    Save Personal Details
+                  </button>
+                </form>
+              </div>
+
+              {/* PASSWORD CHANGE & 2FA AUTHENTICATION CARD */}
+              <div className="evolve-card" style={{ padding: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(23, 63, 52, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#173f34'
+                    }}>
+                      <Key size={18} />
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">ID Number</label>
-                      <input type="text" className="form-input" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+                    <div>
+                      <h3 style={{ fontSize: '1.15rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+                        Change Password
+                      </h3>
+                      <p style={{ fontSize: '0.8125rem', color: '#6e7a76', margin: '2px 0 0 0' }}>
+                        Secured with Two-Factor Authentication (2FA)
+                      </p>
                     </div>
                   </div>
 
-                  <h4 style={{ fontSize: '1rem', color: '#17271f', marginBottom: '16px' }}>Residential Address</h4>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    backgroundColor: 'rgba(23, 101, 62, 0.1)',
+                    color: '#17653e',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <ShieldCheck size={14} /> 2FA Active
+                  </span>
+                </div>
+
+                <form onSubmit={handleChangePassword}>
                   <div className="form-group" style={{ marginBottom: '14px' }}>
-                    <label className="form-label">Street Address</label>
-                    <input type="text" className="form-input" value={address} onChange={(e) => setAddress(e.target.value)} />
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                    <div className="form-group">
-                      <label className="form-label">City</label>
-                      <input type="text" className="form-input" value={city} onChange={(e) => setCity(e.target.value)} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">State / Province</label>
-                      <input type="text" className="form-input" value={stateProv} onChange={(e) => setStateProv(e.target.value)} />
+                    <label className="form-label">Current Password</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        className="form-input"
+                        placeholder="Enter current password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                        style={{ paddingRight: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: '#6e7a76',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                      >
+                        {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
                     <div className="form-group">
-                      <label className="form-label">Postal Code</label>
-                      <input type="text" className="form-input" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+                      <label className="form-label">New Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          className="form-input"
+                          placeholder="Min 8 characters"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                          style={{ paddingRight: '40px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            color: '#6e7a76',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 0
+                          }}
+                        >
+                          {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
                     </div>
+
                     <div className="form-group">
-                      <label className="form-label">Country</label>
-                      <input type="text" className="form-input" value={country} onChange={(e) => setCountry(e.target.value)} />
+                      <label className="form-label">Confirm New Password</label>
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        className="form-input"
+                        placeholder="Re-enter new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
-                  <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: '12px' }}>
-                    Save Profile Details
+
+                  {/* 2FA Verification Card */}
+                  <div style={{
+                    backgroundColor: '#faf8f5',
+                    border: '1px solid #eeece5',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '18px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Lock size={15} color="#173f34" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#17271f' }}>
+                          Two-Factor Authorization Required
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSend2FACode}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#997125',
+                          fontSize: '0.8125rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        {twoFactorSent ? 'Resend 2FA Code' : 'Send 2FA Code via SMS'}
+                      </button>
+                    </div>
+
+                    <p style={{ fontSize: '0.78125rem', color: '#6e7a76', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                      To protect your member account, enter the 6-digit one-time code sent to <strong>{phone || '+1 (555) •••-4019'}</strong> to confirm password change.
+                    </p>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        className="form-input"
+                        placeholder="Enter 6-digit code (e.g. 123456)"
+                        value={twoFactorCode}
+                        onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                        required
+                        style={{
+                          letterSpacing: '0.2em',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          backgroundColor: '#ffffff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-full"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '12px'
+                    }}
+                  >
+                    <ShieldCheck size={16} />
+                    <span>Update Password with 2FA</span>
                   </button>
                 </form>
               </div>
