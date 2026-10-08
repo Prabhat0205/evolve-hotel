@@ -425,40 +425,62 @@ export const CheckoutPage: React.FC = () => {
               </h1>
             </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '32px',
-              alignItems: 'start'
-            }}>
+            <style>{`
+              .checkout-step1-container {
+                display: grid;
+                grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1.05fr);
+                gap: 32px;
+                align-items: start;
+              }
+              .checkout-step1-options {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+                margin-bottom: 28px;
+              }
+              @media (max-width: 920px) {
+                .checkout-step1-container {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+              @media (max-width: 720px) {
+                .checkout-step1-options {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+            `}</style>
+
+            <div className="checkout-step1-container">
               {/* Left Column: How would you like to continue? */}
-              <div className="evolve-card" style={{ padding: '36px 32px' }}>
+              <div className="evolve-card" style={{ padding: '36px 32px', backgroundColor: '#ffffff', borderRadius: '24px', border: '1px solid #e7e3da' }}>
                 <h2 style={{
-                  fontSize: '1.375rem',
+                  fontSize: '1.45rem',
                   fontWeight: 800,
                   color: '#17271f',
-                  margin: '0 0 20px 0'
+                  margin: '0 0 20px 0',
+                  fontFamily: 'Playfair Display, Georgia, serif'
                 }}>
                   How would you like to continue?
                 </h2>
 
                 {/* Evolve Rewards Promotion Banner */}
                 <div style={{
-                  background: 'linear-gradient(135deg, #fbf7ee 0%, #f4ede0 100%)',
-                  border: '1.5px solid #e6d3a8',
+                  background: 'linear-gradient(135deg, #fbf7ee 0%, #f6f0e4 100%)',
+                  border: '1.5px solid #e5d3ab',
                   borderRadius: '16px',
                   padding: '16px 20px',
-                  marginBottom: '24px',
+                  marginBottom: '26px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '14px'
+                  gap: '14px',
+                  boxShadow: '0 2px 10px rgba(184, 134, 11, 0.04)'
                 }}>
                   <div style={{
                     backgroundColor: '#dda943',
                     color: '#17271f',
                     width: '38px',
                     height: '38px',
-                    borderRadius: '50%',
+                    borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -466,23 +488,18 @@ export const CheckoutPage: React.FC = () => {
                   }}>
                     <Sparkles size={20} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' }}>
                       Evolve Rewards Promotion
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#17271f', fontWeight: 600, marginTop: '2px', lineHeight: 1.45 }}>
+                    <div style={{ fontSize: '0.86rem', color: '#17271f', fontWeight: 600, lineHeight: 1.45 }}>
                       Join as a Free Member to get Reward Points for each stay — redeem for Free Nights, Fine Dining Experiences, or $70 Gift Cards!
                     </div>
                   </div>
                 </div>
 
                 {/* 3 Selectable Continue Options (Matching Screenshot 1) */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                  gap: '16px',
-                  marginBottom: '28px'
-                }}>
+                <div className="checkout-step1-options">
                   {/* Option 1: Evolve Rewards Login */}
                   <div
                     onClick={() => setSelectedContinueOption('login')}
@@ -490,19 +507,20 @@ export const CheckoutPage: React.FC = () => {
                       border: selectedContinueOption === 'login' ? '2px solid #173f34' : '1.5px solid #dcd7cb',
                       backgroundColor: selectedContinueOption === 'login' ? '#f4f8f5' : '#ffffff',
                       borderRadius: '16px',
-                      padding: '22px 18px',
+                      padding: '24px 20px',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.18s ease',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
-                      boxShadow: selectedContinueOption === 'login' ? '0 4px 14px rgba(23,63,52,0.08)' : 'none'
+                      justifyContent: 'flex-start',
+                      minHeight: '160px',
+                      boxShadow: selectedContinueOption === 'login' ? '0 4px 16px rgba(23,63,52,0.1)' : 'none'
                     }}
                   >
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#17271f', lineHeight: 1.3 }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#17271f', lineHeight: 1.25, marginBottom: '8px' }}>
                       Evolve Rewards Login
                     </div>
-                    <div style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.45 }}>
+                    <div style={{ fontSize: '0.84rem', color: '#6e7a76', lineHeight: 1.45 }}>
                       Sign in to earn or use your rewards.
                     </div>
                   </div>
@@ -514,19 +532,20 @@ export const CheckoutPage: React.FC = () => {
                       border: selectedContinueOption === 'signup' ? '2px solid #173f34' : '1.5px solid #dcd7cb',
                       backgroundColor: selectedContinueOption === 'signup' ? '#f4f8f5' : '#ffffff',
                       borderRadius: '16px',
-                      padding: '22px 18px',
+                      padding: '24px 20px',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.18s ease',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
-                      boxShadow: selectedContinueOption === 'signup' ? '0 4px 14px rgba(23,63,52,0.08)' : 'none'
+                      justifyContent: 'flex-start',
+                      minHeight: '160px',
+                      boxShadow: selectedContinueOption === 'signup' ? '0 4px 16px rgba(23,63,52,0.1)' : 'none'
                     }}
                   >
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#17271f', lineHeight: 1.3 }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#17271f', lineHeight: 1.25, marginBottom: '8px' }}>
                       Sign Up
                     </div>
-                    <div style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.45 }}>
+                    <div style={{ fontSize: '0.84rem', color: '#6e7a76', lineHeight: 1.45 }}>
                       Create your free Evolve Rewards account using this booking’s information.
                     </div>
                   </div>
@@ -538,19 +557,20 @@ export const CheckoutPage: React.FC = () => {
                       border: selectedContinueOption === 'guest' ? '2px solid #173f34' : '1.5px solid #dcd7cb',
                       backgroundColor: selectedContinueOption === 'guest' ? '#f4f8f5' : '#ffffff',
                       borderRadius: '16px',
-                      padding: '22px 18px',
+                      padding: '24px 20px',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.18s ease',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
-                      boxShadow: selectedContinueOption === 'guest' ? '0 4px 14px rgba(23,63,52,0.08)' : 'none'
+                      justifyContent: 'flex-start',
+                      minHeight: '160px',
+                      boxShadow: selectedContinueOption === 'guest' ? '0 4px 16px rgba(23,63,52,0.1)' : 'none'
                     }}
                   >
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#17271f', lineHeight: 1.3 }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#17271f', lineHeight: 1.25, marginBottom: '8px' }}>
                       Continue as Guest
                     </div>
-                    <div style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.45 }}>
+                    <div style={{ fontSize: '0.84rem', color: '#6e7a76', lineHeight: 1.45 }}>
                       Book without joining Evolve Rewards.
                     </div>
                   </div>
@@ -563,10 +583,15 @@ export const CheckoutPage: React.FC = () => {
                   className="btn btn-primary"
                   style={{
                     width: '100%',
-                    padding: '16px',
+                    padding: '17px',
                     fontSize: '1.05rem',
                     fontWeight: 700,
-                    borderRadius: '12px'
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(23, 63, 52, 0.18)'
                   }}
                 >
                   Continue
@@ -574,15 +599,40 @@ export const CheckoutPage: React.FC = () => {
               </div>
 
               {/* Right Column: Your stay summary card */}
-              <div className="evolve-card" style={{ padding: '32px 28px' }}>
+              <div className="evolve-card" style={{ padding: '36px 30px', backgroundColor: '#ffffff', borderRadius: '24px', border: '1px solid #e7e3da' }}>
                 <h3 style={{
-                  fontSize: '1.25rem',
+                  fontSize: '1.3rem',
                   fontWeight: 800,
                   color: '#17271f',
-                  margin: '0 0 20px 0'
+                  margin: '0 0 20px 0',
+                  fontFamily: 'Playfair Display, Georgia, serif'
                 }}>
                   Your stay
                 </h3>
+
+                {/* Hotel Thumbnail Badge */}
+                <div style={{
+                  display: 'flex',
+                  gap: '14px',
+                  alignItems: 'center',
+                  paddingBottom: '18px',
+                  borderBottom: '1px solid #eeece5',
+                  marginBottom: '18px'
+                }}>
+                  <img
+                    src={selectedProperty.heroImage}
+                    alt={selectedProperty.name}
+                    style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#17271f', lineHeight: 1.3 }}>
+                      {selectedProperty.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '3px' }}>
+                      {selectedProperty.city}, {selectedProperty.country}
+                    </div>
+                  </div>
+                </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.9375rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -615,9 +665,9 @@ export const CheckoutPage: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    paddingTop: '16px',
+                    paddingTop: '18px',
                     borderTop: '1.5px solid #eeece5',
-                    fontSize: '1.2rem',
+                    fontSize: '1.25rem',
                     fontWeight: 800,
                     color: '#17271f'
                   }}>
