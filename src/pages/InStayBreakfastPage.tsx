@@ -1,20 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
-import { mockBreakfastMenu } from '../data/mockBreakfast';
 import { 
-  Smartphone, QrCode, ArrowLeft, ArrowUpRight, 
-  Clock, Coffee, Sparkles, ChefHat, CheckCircle2, 
-  Utensils, Info, Download, Apple, Play 
+  Smartphone, ArrowLeft, Clock, Utensils, Sparkles 
 } from 'lucide-react';
 
 export const InStayBreakfastPage: React.FC = () => {
   const { currentUser, navigateTo } = useApp();
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-
-  const filteredItems = mockBreakfastMenu.filter(item => {
-    if (selectedCategory !== 'ALL' && item.category !== selectedCategory) return false;
-    return true;
-  });
 
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '40px 20px 90px' }}>
@@ -45,14 +36,14 @@ export const InStayBreakfastPage: React.FC = () => {
           </button>
         </div>
 
-        {/* PRIMARY HERO CARD - Matches user reference screenshot exactly */}
+        {/* PRIMARY HERO CARD - Matches user reference screenshot */}
         <div style={{
           backgroundColor: '#ffffff',
           borderRadius: '24px',
           padding: '44px 48px',
           boxShadow: '0 8px 30px rgba(23, 39, 31, 0.06)',
           border: '1px solid #eeece5',
-          marginBottom: '40px'
+          marginBottom: '32px'
         }}>
           {/* Eyebrow */}
           <div style={{
@@ -340,8 +331,7 @@ export const InStayBreakfastPage: React.FC = () => {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
-          marginBottom: '40px'
+          gap: '20px'
         }}>
           {/* Card 1: Service Hours */}
           <div style={{
@@ -431,252 +421,8 @@ export const InStayBreakfastPage: React.FC = () => {
           </div>
         </div>
 
-        {/* INFORMATIVE MENU PREVIEW SHOWCASE */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          padding: '40px',
-          boxShadow: '0 8px 30px rgba(23, 39, 31, 0.04)',
-          border: '1px solid #eeece5'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            marginBottom: '28px',
-            gap: '16px'
-          }}>
-            <div>
-              <span style={{
-                fontSize: '0.75rem',
-                letterSpacing: '0.12em',
-                fontWeight: 800,
-                color: '#997125',
-                textTransform: 'uppercase'
-              }}>
-                INFORMATIVE MENU PREVIEW
-              </span>
-              <h2 style={{
-                fontFamily: 'Playfair Display, serif',
-                fontSize: '1.85rem',
-                fontWeight: 700,
-                color: '#17271f',
-                margin: '4px 0 6px'
-              }}>
-                Today's Chef-Curated Breakfast Offerings
-              </h2>
-              <p style={{ fontSize: '0.925rem', color: '#6e7a76', margin: 0 }}>
-                Available to order via the Evolve Guest App for in-suite dining or lounge pickup.
-              </p>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'ALL', label: 'All Items' },
-                { id: 'CONTINENTAL', label: 'Continental' },
-                { id: 'HOT_SPECIALS', label: 'Hot Specials' },
-                { id: 'WELLNESS_BOWLS', label: 'Wellness Bowls' },
-                { id: 'BEVERAGES', label: 'Beverages' }
-              ].map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  style={{
-                    padding: '7px 16px',
-                    borderRadius: '9999px',
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                    backgroundColor: selectedCategory === cat.id ? '#173f34' : 'transparent',
-                    color: selectedCategory === cat.id ? '#ffffff' : '#5b6763',
-                    border: selectedCategory === cat.id ? 'none' : '1px solid #dcd7ce',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Menu Items Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '24px'
-          }}>
-            {filteredItems.map(item => (
-              <div
-                key={item.id}
-                style={{
-                  borderRadius: '16px',
-                  border: '1px solid #eeece5',
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-              >
-                {/* Dish Photo */}
-                <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    backgroundColor: 'rgba(23, 63, 52, 0.88)',
-                    backdropFilter: 'blur(4px)',
-                    color: '#ffffff',
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    padding: '4px 10px',
-                    borderRadius: '9999px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em'
-                  }}>
-                    {item.category.replace('_', ' ')}
-                  </div>
-                  {item.isIncludedInPackage && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      backgroundColor: '#dda943',
-                      color: '#17271f',
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      padding: '4px 10px',
-                      borderRadius: '9999px'
-                    }}>
-                      Member Included
-                    </div>
-                  )}
-                </div>
-
-                {/* Details */}
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <h4 style={{
-                    fontSize: '1.05rem',
-                    fontWeight: 700,
-                    color: '#17271f',
-                    margin: '0 0 8px'
-                  }}>
-                    {item.name}
-                  </h4>
-                  <p style={{
-                    fontSize: '0.85rem',
-                    color: '#6e7a76',
-                    lineHeight: 1.5,
-                    margin: '0 0 16px',
-                    flex: 1
-                  }}>
-                    {item.description}
-                  </p>
-
-                  {/* Dietary tags */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
-                    {item.dietaryTags.map(tag => (
-                      <span
-                        key={tag}
-                        style={{
-                          fontSize: '0.6875rem',
-                          fontWeight: 700,
-                          backgroundColor: '#f6f3ec',
-                          color: '#5b6763',
-                          padding: '3px 8px',
-                          borderRadius: '6px'
-                        }}
-                      >
-                        {tag.replace('_', ' ')}
-                      </span>
-                    ))}
-                    {item.calories && (
-                      <span
-                        style={{
-                          fontSize: '0.6875rem',
-                          fontWeight: 600,
-                          backgroundColor: '#f6f3ec',
-                          color: '#8b9491',
-                          padding: '3px 8px',
-                          borderRadius: '6px'
-                        }}
-                      >
-                        {item.calories} kcal
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Informative Mobile App CTA Badge (Replaces order buttons) */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    backgroundColor: '#eef4f1',
-                    color: '#173f34',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    fontSize: '0.8125rem',
-                    fontWeight: 700,
-                    border: '1px solid #d4e3dc'
-                  }}>
-                    <Smartphone size={15} color="#173f34" />
-                    <span>Order via Evolve Mobile App</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer note */}
-          <div style={{
-            marginTop: '32px',
-            paddingTop: '20px',
-            borderTop: '1px solid #eeece5',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
-            fontSize: '0.8125rem',
-            color: '#8b9491'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Info size={15} color="#8b9491" />
-              <span>Menu items and seasonal specialties rotate daily based on fresh market arrivals.</span>
-            </div>
-            <button
-              onClick={() => navigateTo('membership')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#997125',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: 0
-              }}
-            >
-              <span>Explore Evolve Member Tiers</span>
-              <ArrowUpRight size={14} />
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   );
 };
+export default InStayBreakfastPage;
