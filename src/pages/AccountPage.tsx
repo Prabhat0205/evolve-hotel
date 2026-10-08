@@ -107,12 +107,6 @@ export const AccountPage: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  // Preferences
-  const [floor, setFloor] = useState(user.preferences.roomFloor || 'HIGH');
-  const [bed, setBed] = useState(user.preferences.bedType || 'KING');
-  const [quiet, setQuiet] = useState(user.preferences.quietRoom);
-  const [pillow, setPillow] = useState(user.preferences.pillowType || 'FEATHER');
-
   // Add Card Modal
   const [addCardModal, setAddCardModal] = useState(false);
   const [newCardNumber, setNewCardNumber] = useState('');
@@ -157,17 +151,6 @@ export const AccountPage: React.FC = () => {
     setConfirmPassword('');
     setTwoFactorCode('');
     setTwoFactorSent(false);
-  };
-
-  const handleSavePreferences = (e: React.FormEvent) => {
-    e.preventDefault();
-    user.preferences = {
-      roomFloor: floor as any,
-      bedType: bed as any,
-      quietRoom: quiet,
-      pillowType: pillow as any,
-    };
-    addToast('success', 'Preferences Saved', 'Your stay preferences have been updated across all Evolve properties.');
   };
 
   const handleAddCard = (e: React.FormEvent) => {
@@ -292,12 +275,11 @@ export const AccountPage: React.FC = () => {
 
         {/* TAB 1: PROFILE & PERSONAL DETAILS */}
         {activeTab === 'profile' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-              <div className="evolve-card" style={{ padding: '28px' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
-                  Personal Information
-                </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px', alignItems: 'start' }}>
+            <div className="evolve-card" style={{ padding: '28px' }}>
+              <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
+                Personal Information
+              </h3>
 
                 <form onSubmit={handleSaveProfile}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
@@ -556,62 +538,6 @@ export const AccountPage: React.FC = () => {
                   </button>
                 </form>
               </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-              <div className="evolve-card" style={{ padding: '28px' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#17271f', marginBottom: '20px' }}>
-                  Stay & Room Preferences
-                </h3>
-                <form onSubmit={handleSavePreferences}>
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label">Preferred Floor Level</label>
-                    <select className="form-input" value={floor} onChange={(e) => setFloor(e.target.value as any)}>
-                      <option value="HIGH">High Floor (Panoramic Views)</option>
-                      <option value="LOW">Ground / Low Floor (Fast Accessibility)</option>
-                      <option value="NO_PREFERENCE">No Preference</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label">Bed Setup</label>
-                    <select className="form-input" value={bed} onChange={(e) => setBed(e.target.value as any)}>
-                      <option value="KING">King Bed</option>
-                      <option value="TWIN">Two Twin Beds</option>
-                      <option value="NO_PREFERENCE">Standard Allocation</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label">Pillow Selection</label>
-                    <select className="form-input" value={pillow} onChange={(e) => setPillow(e.target.value as any)}>
-                      <option value="FEATHER">Goose Feather & Down</option>
-                      <option value="FOAM">Ergonomic Memory Foam</option>
-                      <option value="HYPOALLERGENIC">Hypoallergenic Microfiber</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '20px', marginBottom: '24px' }}>
-                    <input
-                      type="checkbox"
-                      id="quietRoom"
-                      checked={quiet}
-                      onChange={(e) => setQuiet(e.target.checked)}
-                      style={{ width: '18px', height: '18px', accentColor: '#173f34' }}
-                    />
-                    <label htmlFor="quietRoom" style={{ fontSize: '0.875rem', color: '#17271f', fontWeight: 600, cursor: 'pointer' }}>
-                      Prioritize quiet room away from elevators and service areas
-                    </label>
-                  </div>
-
-                  <button type="submit" className="btn btn-primary btn-full">
-                    Save Preferences
-                  </button>
-                </form>
-              </div>
-
-
-            </div>
           </div>
         )}
 
