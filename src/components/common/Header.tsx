@@ -137,7 +137,7 @@ export const Header: React.FC = () => {
             alignItems: 'center',
             gap: '8px'
           }}>
-            {currentUser || currentPersona === 'guest' || currentRoute !== 'landing' ? (
+            {currentUser ? (
               <>
                 <button
                   onClick={() => navigateTo('corporate-booking')}
@@ -195,9 +195,6 @@ export const Header: React.FC = () => {
                 </button>
                 {['Book', 'My Bookings', 'My Rewards', 'Breakfast']
                   .filter(item => {
-                    if (currentPersona === 'guest' || !currentUser) {
-                      return item !== 'My Rewards' && item !== 'Breakfast';
-                    }
                     if (!currentUser.isMember) {
                       return item !== 'Breakfast';
                     }
@@ -433,8 +430,8 @@ export const Header: React.FC = () => {
               </div>
             )}
 
-            {/* Authenticated User / Guest / Member Chip or Sign-In Button */}
-            {(currentUser || currentPersona === 'guest') ? (
+            {/* Authenticated User / Member Chip or Sign-In Button */}
+            {currentUser ? (
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -803,7 +800,7 @@ export const Header: React.FC = () => {
               Book Stays
             </button>
 
-            {(currentUser || currentPersona === 'guest') && (
+            {currentUser && (
               <button
                 onClick={() => { navigateTo('stays'); setMobileNavOpen(false); }}
                 style={{
