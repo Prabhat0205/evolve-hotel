@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
         }}>
           {/* Brand Logo */}
           <div 
-            onClick={() => navigateTo('landing')}
+            onClick={() => navigateTo(currentUser ? 'stays' : 'landing')}
             style={{ 
               cursor: 'pointer', 
               display: 'flex', 
@@ -165,34 +165,7 @@ export const Header: React.FC = () => {
                 >
                   Group Booking / Corporate Rate <ArrowUpRight size={15} strokeWidth={2.5} />
                 </button>
-                <button
-                  onClick={() => navigateTo('landing')}
-                  style={{
-                    backgroundColor: currentRoute === 'landing' ? '#173f34' : 'transparent',
-                    color: currentRoute === 'landing' ? '#ffffff' : '#5b6763',
-                    padding: '8px 18px',
-                    borderRadius: '9999px',
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (currentRoute !== 'landing') {
-                      e.currentTarget.style.color = '#173f34';
-                      e.currentTarget.style.backgroundColor = '#f6f3ec';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (currentRoute !== 'landing') {
-                      e.currentTarget.style.color = '#5b6763';
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
-                >
-                  Home
-                </button>
+
                 {['Book', 'My Bookings', 'My Rewards', 'Breakfast']
                   .filter(item => {
                     if (!currentUser.isMember) {
@@ -768,19 +741,21 @@ export const Header: React.FC = () => {
               <ArrowUpRight size={18} />
             </button>
 
-            <button
-              onClick={() => { navigateTo('landing'); setMobileNavOpen(false); }}
-              style={{
-                padding: '12px 16px',
-                textAlign: 'left',
-                fontWeight: 600,
-                color: currentRoute === 'landing' ? '#ffffff' : '#17271f',
-                backgroundColor: currentRoute === 'landing' ? '#173f34' : 'transparent',
-                borderRadius: '10px'
-              }}
-            >
-              Home
-            </button>
+            {!currentUser && (
+              <button
+                onClick={() => { navigateTo('landing'); setMobileNavOpen(false); }}
+                style={{
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  fontWeight: 600,
+                  color: currentRoute === 'landing' ? '#ffffff' : '#17271f',
+                  backgroundColor: currentRoute === 'landing' ? '#173f34' : 'transparent',
+                  borderRadius: '10px'
+                }}
+              >
+                Home
+              </button>
+            )}
 
             <button
               onClick={() => {

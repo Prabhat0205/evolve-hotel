@@ -20,7 +20,13 @@ import { AdminPortal } from './pages/admin/AdminPortal';
 import { KitchenPortal } from './pages/kitchen/KitchenPortal';
 
 const AppContent: React.FC = () => {
-  const { currentRoute } = useApp();
+  const { currentRoute, currentUser, navigateTo } = useApp();
+
+  React.useEffect(() => {
+    if (currentUser && currentRoute === 'landing') {
+      navigateTo('stays');
+    }
+  }, [currentUser, currentRoute, navigateTo]);
 
   if (currentRoute === 'kitchen') {
     return (
