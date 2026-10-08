@@ -610,37 +610,7 @@ export const AccountPage: React.FC = () => {
                 </form>
               </div>
 
-              {/* Quick Rewards Teaser */}
-              <div style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #eeece5',
-                borderRadius: '16px',
-                padding: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-              }}>
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    MEMBER REWARDS BALANCE
-                  </span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#17271f', marginTop: '4px' }}>
-                    {nightsAvailable} Nights Available
-                  </div>
-                  <div style={{ fontSize: '0.8125rem', color: '#6e7a76', marginTop: '2px' }}>
-                    {totalNightsEarned} earned · {nightsRedeemed} redeemed
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('rewards')}
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.875rem', padding: '8px 16px' }}
-                >
-                  View Rewards →
-                </button>
-              </div>
+
             </div>
           </div>
         )}
