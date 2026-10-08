@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   CheckCircle2, Calendar, MapPin, Download, 
-  ArrowRight, Mail, Share2, Sparkles 
+  ArrowRight, Mail, Share2, Sparkles, User, Home
 } from 'lucide-react';
 
 export const ConfirmationPage: React.FC = () => {
@@ -24,17 +24,20 @@ export const ConfirmationPage: React.FC = () => {
     nightsCount: 4,
     guestsCount: { adults: 2, children: 0 },
     status: 'CONFIRMED',
-    rateType: 'Evolve Member Privilege Suite Rate',
+    rateType: 'Standard Guest Rate',
     nightlyRate: 663,
     taxesAndFees: 318,
     totalAmount: 2970,
     currency: 'USD',
-    paymentMethod: { brand: 'amex', last4: '1004' },
+    paymentMethod: { brand: 'visa', last4: '4242' },
     cancellationDeadline: '48 hours prior to check-in',
     specialRequests: 'High floor, feather pillows, late check-out requested.',
+    guestName: 'Valued Guest',
+    guestEmail: 'guest@example.com',
+    guestPhone: '(555) 123-4567'
   };
 
-
+  const isGuestBooking = !currentUser || !res.userId || !currentUser.isMember;
 
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '40px 20px 80px' }}>
@@ -156,14 +159,52 @@ export const ConfirmationPage: React.FC = () => {
 
             <div>
               <div style={{ fontSize: '0.75rem', color: '#929b98', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                Total Paid (Guaranteed)
+                Total Amount
               </div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#17271f' }}>
                 ${res.totalAmount} USD
               </div>
-              <div style={{ fontSize: '0.8125rem', color: '#6e7a76', marginTop: '2px' }}>
-                Charged to {res.paymentMethod.brand.toUpperCase()} ending {res.paymentMethod.last4}
+            </div>
+          </div>
+
+          {/* Guest Details Section (Captured during guest checkout) */}
+          <div style={{
+            backgroundColor: '#faf9f5',
+            borderRadius: '14px',
+            padding: '20px 24px',
+            border: '1px solid #eeece5',
+            marginBottom: '24px'
+          }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#17271f', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <User size={15} color="#dda943" /> Guest Details
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              fontSize: '0.875rem'
+            }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#929b98', display: 'block', textTransform: 'uppercase' }}>Guest Name</span>
+                <strong style={{ color: '#17271f' }}>{res.guestName || 'Valued Guest'}</strong>
               </div>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#929b98', display: 'block', textTransform: 'uppercase' }}>Email Address</span>
+                <strong style={{ color: '#17271f' }}>{res.guestEmail || 'Not provided'}</strong>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#929b98', display: 'block', textTransform: 'uppercase' }}>Mobile Phone</span>
+                <strong style={{ color: '#17271f' }}>{res.guestPhone || 'Not provided'}</strong>
+              </div>
+              {res.specialRequests && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#929b98', display: 'block', textTransform: 'uppercase' }}>Special Requests</span>
+                  <span style={{ color: '#17271f' }}>{res.specialRequests}</span>
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed #e2ded5', fontSize: '0.75rem', color: '#6e7a76' }}>
+              ✉️ Confirmation receipt, digital voucher, and stay itinerary have been dispatched to your email and phone. No website account login required.
             </div>
           </div>
 
@@ -212,7 +253,11 @@ export const ConfirmationPage: React.FC = () => {
             color: '#6e7a76',
             lineHeight: 1.6
           }}>
-            <strong style={{ color: '#17271f' }}>Cancellation Policy:</strong> Free cancellation permitted until 48 hours prior to check-in date. Self-service modifications and cancellations are available inside the <strong style={{ color: '#173f34' }}>My Bookings</strong> portal.
+            <strong style={{ color: '#17271f' }}>Cancellation Policy:</strong> Free cancellation permitted until 48 hours prior to check-in date. {isGuestBooking ? (
+              <>For modifications or cancellations, please contact the hotel directly referencing your booking code <strong>{res.confirmationCode}</strong> or reply to your email confirmation.</>
+            ) : (
+              <>Self-service modifications and cancellations are available inside the <strong style={{ color: '#173f34' }}>My Bookings</strong> portal.</>
+            )}
           </div>
 
           {/* Actions */}
@@ -231,7 +276,7 @@ export const ConfirmationPage: React.FC = () => {
                 color: '#173f34',
                 border: '1px solid #e2ded5',
                 borderRadius: '10px',
-                padding: '10px 18px',
+                padding: '12px 20px',
                 fontWeight: 700,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
@@ -243,14 +288,25 @@ export const ConfirmationPage: React.FC = () => {
               <Download size={15} /> Print / Save Voucher
             </button>
 
-            <button
-              onClick={() => navigateTo('stays')}
-              className="btn btn-primary"
-              style={{ padding: '12px 24px' }}
-            >
-              <span>View In My Bookings</span>
-              <ArrowRight size={16} />
-            </button>
+            {isGuestBooking ? (
+              <button
+                onClick={() => navigateTo('landing')}
+                className="btn btn-primary"
+                style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>Back to Home</span>
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={() => navigateTo('stays')}
+                className="btn btn-primary"
+                style={{ padding: '12px 24px' }}
+              >
+                <span>View In My Bookings</span>
+                <ArrowRight size={16} />
+              </button>
+            )}
           </div>
         </div>
       </div>
