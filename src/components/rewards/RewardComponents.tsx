@@ -1,6 +1,11 @@
 import React from 'react';
 import { RewardItem, RewardRedemption, MemberProfile, MembershipTier } from '../../types';
-import { Sparkles, Check, Clock, ShieldCheck, Gift, UtensilsCrossed, Moon, ArrowRight, Bed, Info } from 'lucide-react';
+import { 
+  Sparkles, Check, Clock, ShieldCheck, Gift, UtensilsCrossed, Moon, ArrowRight, Bed, Info,
+  Award, ArrowUpRight, ArrowDownRight, BedDouble, Calendar, CheckCircle2 
+} from 'lucide-react';
+import { defaultMemberRewardTransactions } from '../../data/mockRewards';
+import { MemberRewardTransaction } from '../../types/admin';
 
 /* =========================================================================
    1. RewardBalanceCard:
@@ -390,148 +395,470 @@ export const RedemptionModal: React.FC<RedemptionModalProps> = ({
    ========================================================================= */
 export const RedemptionHistoryTab: React.FC<{
   history: RewardRedemption[];
-  onExploreRewards: () => void;
-}> = ({ history, onExploreRewards }) => {
-  const [filter, setFilter] = React.useState<'All' | 'Free Nights' | 'Dining' | 'Gift Cards'>('All');
+  profile?: MemberProfile;
+  onExploreRewards?: () => void;
+}> = ({ history, profile }) => {
+  const [filter, setFilter] = React.useState<string>('ALL');
 
-  const filteredHistory = history.filter(record => {
-    if (filter === 'All') return true;
-    if (filter === 'Free Nights' && record.category === 'FREE_NIGHT') return true;
-    if (filter === 'Dining' && record.category === 'DINING') return true;
-    if (filter === 'Gift Cards' && record.category === 'GIFT_CARD') return true;
-    return false;
+  // Merge base verified transactions with any active dynamic redemptions from history that aren't already represented
+  const mergedTransactions: MemberRewardTransaction[] = React.useMemo(() => {
+    const list: MemberRewardTransaction[] = [...defaultMemberRewardTransactions];
+    history.forEach(r => {
+      const exists = list.some(tx => tx.stayOrBooking === r.voucherCode || tx.giftogramRefId === r.voucherCode);
+      if (!exists) {
+        list.unshift({
+          id: r.id,
+          date: r.redeemedAt || 'Today',
+          activity: r.category === 'DINING'
+            ? 'Fine Dining Redeemed'
+            : r.category === 'GIFT_CARD'
+            ? 'Giftgram Redeemed'
+            : 'Nights Redeemed',
+          stayOrBooking: r.voucherCode,
+          points: -r.nightsUsed,
+          nights: r.category === 'FREE_NIGHT' ? 1 : undefined,
+          status: 'Redeemed',
+          notes: r.propertyApplicable ? `Redeemed for ${r.propertyApplicable}` : `${r.rewardTitle} redeemed`
+        });
+      }
+    });
+    return list;
+  }, [history]);
+
+  const isTransactionCredited = (tx: MemberRewardTransaction) =>
+    tx.activity.includes('Credited') || tx.points > 0;
+
+  const isTransactionRedeemed = (tx: MemberRewardTransaction) =>
+    tx.activity.includes('Redeem') || tx.points < 0;
+
+  const totalNightsEarned = 125;
+  const nightsRedeemed = 40;
+  const nightsAvailable = totalNightsEarned - nightsRedeemed;
+
+  const creditedCount = mergedTransactions.filter(isTransactionCredited).length;
+  const redeemedCount = mergedTransactions.filter(isTransactionRedeemed).length;
+  const freeNightsCount = mergedTransactions.filter(tx => tx.activity.includes('Nights Redeemed')).length;
+  const diningCount = mergedTransactions.filter(tx => tx.activity.includes('Dining')).length;
+  const giftCardsCount = mergedTransactions.filter(tx => tx.activity.includes('Gift')).length;
+
+  const filteredTransactions = mergedTransactions.filter(tx => {
+    if (filter === 'ALL') return true;
+    if (filter === 'CREDITED') return isTransactionCredited(tx);
+    if (filter === 'REDEEMED') return isTransactionRedeemed(tx);
+    if (filter === 'FREE_NIGHT') return tx.activity.includes('Nights Redeemed');
+    if (filter === 'DINING') return tx.activity.includes('Dining');
+    if (filter === 'GIFT_CARD') return tx.activity.includes('Gift');
+    return true;
   });
 
-  const getMonthAndDay = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return { month: 'TBD', day: '--' };
-      const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-      const day = date.getDate().toString().padStart(2, '0');
-      return { month, day };
-    } catch {
-      return { month: 'TBD', day: '--' };
-    }
-  };
-
-  const getSubtext = (record: RewardRedemption) => {
-    if (record.category === 'DINING') {
-      return 'Square profile ending in 4567';
-    } else if (record.category === 'FREE_NIGHT') {
-      return 'Reservation EV-1028';
-    } else if (record.category === 'GIFT_CARD') {
-      return 'Sent to verified email';
-    }
-    return '';
-  };
-
-  const getThirdLine = (record: RewardRedemption) => {
-    if (record.category === 'DINING' || record.category === 'GIFT_CARD') {
-      return `Reference ${record.voucherCode}`;
-    } else if (record.category === 'FREE_NIGHT') {
-      return 'Stay completed June 4';
-    }
-    return '';
-  };
-
   return (
-    <div style={{ paddingBottom: '40px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>YOUR ACTIVITY</span>
-        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2.5rem', color: '#17271f', margin: 0 }}>Redemption history</h2>
-      </div>
-
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
-        {(['All', 'Free Nights', 'Dining', 'Gift Cards'] as const).map(label => {
-          const isActive = filter === label;
-          return (
-            <button
-              key={label}
-              onClick={() => setFilter(label)}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '9999px',
-                border: isActive ? 'none' : '1px solid #eeece5',
-                backgroundColor: isActive ? '#173f34' : '#ffffff',
-                color: isActive ? '#ffffff' : '#17271f',
-                fontSize: '0.9375rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: isActive ? 'none' : '0 2px 4px rgba(0,0,0,0.02)'
-              }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
-      {filteredHistory.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #eeece5', color: '#6e7a76' }}>
-          No redemptions found for this filter.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', paddingBottom: '40px' }}>
+      {/* 1. Rewards Summary Cards */}
+      <div>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+              Rewards Nights Summary
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
+              Nights earned from qualified completed stays and available for member redemptions.
+            </p>
+          </div>
+          <span style={{
+            fontSize: '0.8125rem',
+            backgroundColor: '#f0ede6',
+            color: '#173f34',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontWeight: 700,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <Award size={14} color="#dda943" /> Tier: {profile?.tier || 'PRESTIGE'}
+          </span>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {filteredHistory.map((record) => {
-            const { month, day } = getMonthAndDay(record.redeemedAt);
-            const statusBadgeText = record.status === 'ACTIVE' || record.category === 'GIFT_CARD' ? 'Delivered' : 'Used';
-            
-            return (
-              <div
-                key={record.id}
-                style={{
-                  padding: '24px',
-                  borderRadius: '16px',
-                  border: '1px solid #eeece5',
-                  backgroundColor: '#ffffff',
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+          {/* Card 1: Total Nights Earned */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid #eeece5',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Total Nights Earned
+                </span>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(23, 101, 62, 0.1)',
+                  color: '#17653e',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '24px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
-                }}
-              >
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flex: 1 }}>
-                  <div style={{ backgroundColor: '#eeece5', borderRadius: '12px', width: '70px', height: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76' }}>{month}</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>{day}</span>
-                  </div>
-                  
-                  <div>
-                    <h4 style={{ fontSize: '1.125rem', color: '#17271f', margin: '0 0 4px 0', fontWeight: 800 }}>
-                      {record.rewardTitle}
-                    </h4>
-                    <div style={{ fontSize: '0.9375rem', color: '#6e7a76', marginBottom: '2px' }}>
-                      {record.nightsUsed} Reward Nights deducted · {getSubtext(record)}
-                    </div>
-                    <div style={{ fontSize: '0.875rem', color: '#929b98' }}>
-                      {getThirdLine(record)}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ flexShrink: 0 }}>
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 800,
-                      padding: '4px 12px',
-                      borderRadius: '9999px',
-                      backgroundColor: '#eaf5ee',
-                      color: '#17653e',
-                    }}
-                  >
-                    {statusBadgeText}
-                  </span>
+                  justifyContent: 'center'
+                }}>
+                  <ArrowUpRight size={20} />
                 </div>
               </div>
-            );
-          })}
+              <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
+                {totalNightsEarned}
+              </div>
+            </div>
+            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
+              Earned through qualified completed stays
+            </div>
+          </div>
+
+          {/* Card 2: Nights Redeemed */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid #eeece5',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Nights Redeemed
+                </span>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(153, 113, 37, 0.1)',
+                  color: '#997125',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <ArrowDownRight size={20} />
+                </div>
+              </div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
+                {nightsRedeemed}
+              </div>
+            </div>
+            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
+              Nights already used for bookings & member rewards
+            </div>
+          </div>
+
+          {/* Card 3: Nights Available / Remaining */}
+          <div style={{
+            backgroundColor: '#173f34',
+            color: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid #173f34',
+            boxShadow: '0 4px 16px rgba(23, 63, 52, 0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '-15px',
+              right: '-15px',
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(221, 169, 67, 0.15)',
+              pointerEvents: 'none'
+            }} />
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.8125rem', color: '#dda943', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Nights Available / Remaining
+                </span>
+                <span style={{
+                  fontSize: '0.6875rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                  color: '#ffffff',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontWeight: 700
+                }}>
+                  CALCULATED
+                </span>
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>
+                {nightsAvailable}
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: '16px',
+              paddingTop: '14px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+              fontSize: '0.8125rem',
+              color: '#e2ddd5',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span>{totalNightsEarned} Earned − {nightsRedeemed} Redeemed</span>
+              <span style={{ color: '#dda943', fontWeight: 700 }}>Active</span>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* 2. Rewards Nights History Card & Table */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        border: '1px solid #eeece5',
+        padding: '24px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+      }}>
+        {/* Header and Filter */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          marginBottom: '20px'
+        }}>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
+              Rewards Nights History
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
+              Complete audit trail of earned stay credits and redeemed nights.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', backgroundColor: '#f6f3ec', padding: '4px', borderRadius: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setFilter('ALL')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: filter === 'ALL' ? '#ffffff' : 'transparent',
+                color: filter === 'ALL' ? '#17271f' : '#6e7a76',
+                boxShadow: filter === 'ALL' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              All ({mergedTransactions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('CREDITED')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: filter === 'CREDITED' ? '#ffffff' : 'transparent',
+                color: filter === 'CREDITED' ? '#17653e' : '#6e7a76',
+                boxShadow: filter === 'CREDITED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Nights Credited ({creditedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('REDEEMED')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: filter === 'REDEEMED' ? '#ffffff' : 'transparent',
+                color: filter === 'REDEEMED' ? '#997125' : '#6e7a76',
+                boxShadow: filter === 'REDEEMED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Nights Redeemed ({redeemedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('FREE_NIGHT')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: filter === 'FREE_NIGHT' ? '#ffffff' : 'transparent',
+                color: filter === 'FREE_NIGHT' ? '#17271f' : '#6e7a76',
+                boxShadow: filter === 'FREE_NIGHT' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Free Nights ({freeNightsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('DINING')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: filter === 'DINING' ? '#ffffff' : 'transparent',
+                color: filter === 'DINING' ? '#17271f' : '#6e7a76',
+                boxShadow: filter === 'DINING' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Dining ({diningCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('GIFT_CARD')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: filter === 'GIFT_CARD' ? '#ffffff' : 'transparent',
+                color: filter === 'GIFT_CARD' ? '#17271f' : '#6e7a76',
+                boxShadow: filter === 'GIFT_CARD' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Gift Cards ({giftCardsCount})
+            </button>
+          </div>
+        </div>
+
+        {/* Transaction Table */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #eeece5' }}>
+                <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Date
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Activity
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Stay / Booking
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Nights
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>
+                  Reward Nights
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.map((tx) => {
+                const isCredited = isTransactionCredited(tx);
+                return (
+                  <tr key={tx.id} style={{ borderBottom: '1px solid #f6f3ec', transition: 'background-color 0.15s ease' }}>
+                    <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={14} color="#6e7a76" />
+                        {tx.date}
+                      </div>
+                    </td>
+
+                    <td style={{ padding: '16px 14px', fontSize: '0.875rem' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontWeight: 700,
+                        fontSize: '0.8125rem',
+                        backgroundColor: isCredited ? 'rgba(23, 101, 62, 0.08)' : 'rgba(153, 113, 37, 0.08)',
+                        color: isCredited ? '#17653e' : '#997125'
+                      }}>
+                        {isCredited ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        {tx.activity}
+                      </span>
+                    </td>
+
+                    <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f' }}>
+                      <div style={{ fontWeight: 700, fontFamily: 'monospace', color: '#173f34' }}>
+                        {tx.stayOrBooking}
+                      </div>
+                      {tx.notes && (
+                        <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>
+                          {tx.notes}
+                        </div>
+                      )}
+                    </td>
+
+                    <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#6e7a76' }}>
+                      {tx.nights ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: '#17271f' }}>
+                          <BedDouble size={14} color="#6e7a76" /> {tx.nights} {tx.nights === 1 ? 'night' : 'nights'}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#aaa' }}>—</span>
+                      )}
+                    </td>
+
+                    <td style={{ padding: '16px 14px', fontSize: '1rem', fontWeight: 800, textAlign: 'right' }}>
+                      <span style={{ color: isCredited ? '#17653e' : '#b44a22' }}>
+                        {tx.points > 0 ? `+${tx.points}` : tx.points}
+                      </span>
+                    </td>
+
+                    <td style={{ padding: '16px 14px', textAlign: 'center' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        backgroundColor: tx.status === 'Credited' ? 'rgba(23, 101, 62, 0.1)' : 'rgba(153, 113, 37, 0.1)',
+                        color: tx.status === 'Credited' ? '#17653e' : '#997125'
+                      }}>
+                        <CheckCircle2 size={12} />
+                        {tx.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
+
 
 /* =========================================================================
    6. HowItWorksTab:

@@ -8,78 +8,8 @@ import {
 } from 'lucide-react';
 import { MemberRewardTransaction } from '../types/admin';
 import { mockPersonas } from '../data/mockUsers';
+import { defaultMemberRewardTransactions as defaultMemberTransactions } from '../data/mockRewards';
 
-const defaultMemberTransactions: MemberRewardTransaction[] = [
-  {
-    id: 'tx-101',
-    date: 'Oct 02, 2026',
-    activity: 'Giftgram Redeemed',
-    stayOrBooking: 'GG-88210',
-    giftogramRefId: 'GG-88210',
-    points: -15,
-    status: 'Redeemed',
-    notes: 'Giftgram e-gift boutique card redemption'
-  },
-  {
-    id: 'tx-102',
-    date: 'Sep 30, 2026',
-    activity: 'Fine Dining Redeemed',
-    stayOrBooking: 'FD-40182',
-    points: -15,
-    status: 'Redeemed',
-    notes: 'Chef tasting dinner experience at Le Jardin'
-  },
-  {
-    id: 'tx-103',
-    date: 'Sep 29, 2026',
-    activity: 'Nights Redeemed',
-    stayOrBooking: 'EV-BK-4019',
-    nights: 1,
-    points: -10,
-    status: 'Redeemed',
-    notes: 'Reward nights redeemed for suite stay & room upgrade'
-  },
-  {
-    id: 'tx-104',
-    date: 'Sep 28, 2026',
-    activity: 'Nights Credited',
-    stayOrBooking: 'CB-10245',
-    nights: 3,
-    points: 3,
-    status: 'Credited',
-    notes: 'Completed 3-night stay at The Grand Manor'
-  },
-  {
-    id: 'tx-105',
-    date: 'Sep 15, 2026',
-    activity: 'Nights Credited',
-    stayOrBooking: 'CB-10122',
-    nights: 2,
-    points: 2,
-    status: 'Credited',
-    notes: 'Completed 2-night stay at Cliffside Haven'
-  },
-  {
-    id: 'tx-106',
-    date: 'Aug 20, 2026',
-    activity: 'Nights Credited',
-    stayOrBooking: 'CB-9821',
-    nights: 5,
-    points: 5,
-    status: 'Credited',
-    notes: 'Completed 5-night stay at Alpine Chalet'
-  },
-  {
-    id: 'tx-107',
-    date: 'Jul 10, 2026',
-    activity: 'Nights Credited',
-    stayOrBooking: 'CB-9410',
-    nights: 115,
-    points: 115,
-    status: 'Credited',
-    notes: 'Historical verified completed stays'
-  }
-];
 
 export const AccountPage: React.FC = () => {
   const { currentUser, addToast } = useApp();

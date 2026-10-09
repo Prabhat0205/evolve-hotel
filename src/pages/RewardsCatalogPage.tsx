@@ -174,6 +174,7 @@ export const RewardsCatalogPage: React.FC = () => {
         {activeTab === 'HISTORY' && (
           <RedemptionHistoryTab
             history={redemptions}
+            profile={profile}
             onExploreRewards={() => setActiveTab('AVAILABLE')}
           />
         )}
