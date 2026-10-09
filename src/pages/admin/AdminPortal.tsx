@@ -41,7 +41,7 @@ import {
   LayoutDashboard, CalendarDays, Award, Gift, BarChart3,
   ChevronDown, ChevronUp, Filter, Plus, Check, Clock, Search, Download, ExternalLink,
   FileText, Printer, UserPlus, ShieldAlert, Key, History, Menu, SlidersHorizontal,
-  CheckCircle2, MessageSquare, Edit3, Phone, UtensilsCrossed, Coffee,
+  CheckCircle2, MessageSquare, Edit3, Phone, Mail, UtensilsCrossed, Coffee,
   Activity, X
 } from 'lucide-react';
 
@@ -1133,8 +1133,9 @@ const PropertyManagerDashboard: React.FC = () => {
       const matchPhone = guest.phone.toLowerCase().includes(q);
       const matchRef = guest.bookingRef.toLowerCase().includes(q);
       const matchName = guest.name ? guest.name.toLowerCase().includes(q) : false;
+      const matchEmail = guest.email ? guest.email.toLowerCase().includes(q) : false;
       const matchRoom = guest.roomType.toLowerCase().includes(q) || guest.suiteNumber.toLowerCase().includes(q);
-      if (!matchPhone && !matchRef && !matchName && !matchRoom) return false;
+      if (!matchPhone && !matchRef && !matchName && !matchEmail && !matchRoom) return false;
     }
 
     if (guestUserStatusFilter !== 'all') {
@@ -3304,8 +3305,8 @@ const PropertyManagerDashboard: React.FC = () => {
                         <th style={{ padding: '12px 16px' }}>Reservation ID</th>
                         <th style={{ padding: '12px 16px' }}>Phone Number</th>
                         <th style={{ padding: '12px 16px' }}>Guest Name</th>
+                        <th style={{ padding: '12px 16px' }}>Email ID</th>
                         <th style={{ padding: '12px 16px' }}>Booking Date</th>
-                        <th style={{ padding: '12px 16px' }}>Dates</th>
                         <th style={{ padding: '12px 16px' }}>Notes</th>
                       </tr>
                     </thead>
@@ -3363,17 +3364,36 @@ const PropertyManagerDashboard: React.FC = () => {
                               </div>
                             </td>
 
-                            {/* 4. Booking Date */}
+                            {/* 4. Email ID */}
+                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                              {guest.email ? (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#17271f', fontSize: '0.85rem' }}>
+                                  <span style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#f0fdf4',
+                                    color: '#16a34a',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                  }}>
+                                    <Mail size={12} />
+                                  </span>
+                                  <span style={{ fontWeight: 500 }}>{guest.email}</span>
+                                </div>
+                              ) : (
+                                <span style={{ color: '#94a3b8', fontSize: '0.80rem', fontStyle: 'italic' }}>—</span>
+                              )}
+                            </td>
+
+                            {/* 5. Booking Date */}
                             <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.85rem' }}>
                               {guest.bookingDate}
                             </td>
 
-                            {/* 8. Dates */}
-                            <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', color: '#475569', fontSize: '0.84rem' }}>
-                              {guest.dateRange}
-                            </td>
-
-                            {/* 9. Notes & Edit (Common Section) */}
+                            {/* 6. Notes & Edit (Common Section) */}
                             <td style={{ padding: '14px 16px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {guest.notes ? (
@@ -3439,7 +3459,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={9} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                          <td colSpan={6} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
                             No guest user phone bookings found matching your search.
                           </td>
                         </tr>
