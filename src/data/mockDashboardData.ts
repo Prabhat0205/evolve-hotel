@@ -266,11 +266,6 @@ export const mockQuickAccessTiles: QuickAccessTile[] = [
     description: 'Open identity-review queue',
   },
   {
-    id: 'api-status',
-    title: 'API Status',
-    description: 'Cloudbeds, Square, Giftogram',
-  },
-  {
     id: 'create-case',
     title: '+ Create Guest Case',
     description: 'Create a property case',
@@ -279,11 +274,6 @@ export const mockQuickAccessTiles: QuickAccessTile[] = [
     id: 'account-status',
     title: 'Guest Account Status',
     description: 'Find a member before managing status',
-  },
-  {
-    id: 'property-settings',
-    title: 'Property Settings',
-    description: 'Open access & configuration',
   },
 ];
 

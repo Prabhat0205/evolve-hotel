@@ -2211,11 +2211,6 @@ const PropertyManagerDashboard: React.FC = () => {
                       TileIcon = Phone;
                       iconBg = '#f0fdf4';
                       iconColor = '#16a34a';
-                    } else if (tile.id === 'api-status') {
-                      TileIcon = Activity;
-                      iconBg = '#ecfeff';
-                      iconColor = '#0891b2';
-                      isLiveApi = true;
                     } else if (tile.id === 'create-case') {
                       TileIcon = UserPlus;
                       iconBg = '#f5f3ff';
@@ -2224,10 +2219,6 @@ const PropertyManagerDashboard: React.FC = () => {
                       TileIcon = ShieldCheck;
                       iconBg = '#eff6ff';
                       iconColor = '#2563eb';
-                    } else if (tile.id === 'property-settings') {
-                      TileIcon = SlidersHorizontal;
-                      iconBg = '#f8fafc';
-                      iconColor = '#475569';
                     }
 
                     return (
@@ -2235,13 +2226,7 @@ const PropertyManagerDashboard: React.FC = () => {
                         key={tile.id}
                         type="button"
                         className="admin-quick-access-tile"
-                        onClick={() => {
-                          if (tile.id === 'property-settings') {
-                            setActiveTab('properties');
-                          } else {
-                            setActiveQuickAccess(tile);
-                          }
-                        }}
+                        onClick={() => setActiveQuickAccess(tile)}
                       >
                         <div className="admin-tile-header">
                           <div className="admin-tile-icon-wrap" style={{ backgroundColor: iconBg, color: iconColor }}>
@@ -7942,23 +7927,6 @@ const PropertyManagerDashboard: React.FC = () => {
                   >
                     Send SMS Code
                   </button>
-                </div>
-              </div>
-            )}
-
-            {activeQuickAccess.id === 'api-status' && (
-              <div style={{ backgroundColor: '#f9fafb', borderRadius: '8px', padding: '16px', border: '1px solid #e5e7eb', marginBottom: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem' }}>
-                  <span>PMS Core Engine (Cloudbeds):</span>
-                  <strong style={{ color: '#15803d' }}>ONLINE (99.99%)</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem' }}>
-                  <span>SynXis CRS Distribution:</span>
-                  <strong style={{ color: '#15803d' }}>ONLINE (Synced 1m ago)</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                  <span>Evolve Rewards Engine:</span>
-                  <strong style={{ color: '#15803d' }}>OPERATIONAL</strong>
                 </div>
               </div>
             )}
