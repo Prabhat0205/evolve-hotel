@@ -3,26 +3,15 @@ import { useApp } from '../context/AppContext';
 import { 
   User as UserIcon, CreditCard, ShieldCheck, Mail, 
   Phone, Plus, Check, Star, Lock, Heart, Settings,
-  Award, TrendingUp, ArrowDownRight, ArrowUpRight, BedDouble, Calendar, CheckCircle2, Clock,
   Eye, EyeOff, Key
 } from 'lucide-react';
-import { MemberRewardTransaction } from '../types/admin';
 import { mockPersonas } from '../data/mockUsers';
-import { defaultMemberRewardTransactions as defaultMemberTransactions } from '../data/mockRewards';
-
 
 export const AccountPage: React.FC = () => {
   const { currentUser, addToast } = useApp();
   const user = currentUser || mockPersonas['member_prestige'];
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'rewards' | 'payment'>('profile');
-  const [rewardsFilter, setRewardsFilter] = useState<'ALL' | 'CREDITED' | 'REDEEMED'>('ALL');
-
-  // Rewards calculation in nights
-  const totalNightsEarned = 125;
-  const nightsRedeemed = 40;
-  // Available = Total Earned - Nights Redeemed (calculated dynamically)
-  const nightsAvailable = totalNightsEarned - nightsRedeemed;
+  const [activeTab, setActiveTab] = useState<'profile' | 'payment'>('profile');
 
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
@@ -107,29 +96,17 @@ export const AccountPage: React.FC = () => {
     addToast('success', 'Payment Method Added', 'Card successfully verified and saved.');
   };
 
-  const isTransactionCredited = (tx: MemberRewardTransaction) =>
-    tx.activity.includes('Credited') || tx.points > 0;
-
-  const isTransactionRedeemed = (tx: MemberRewardTransaction) =>
-    tx.activity.includes('Redeem') || tx.points < 0;
-
-  const filteredTransactions = defaultMemberTransactions.filter(tx => {
-    if (rewardsFilter === 'CREDITED') return isTransactionCredited(tx);
-    if (rewardsFilter === 'REDEEMED') return isTransactionRedeemed(tx);
-    return true;
-  });
-
   return (
     <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '36px 20px 80px' }}>
       <div className="app-container" style={{ maxWidth: '1050px' }}>
         {/* Header */}
         <div style={{ marginBottom: '28px' }}>
-          <span className="eyebrow-text">GUEST SETTINGS & REWARDS</span>
+          <span className="eyebrow-text">GUEST SETTINGS & SECURITY</span>
           <h1 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', color: '#17271f' }}>
             Member Profile & Account
           </h1>
           <p style={{ color: '#6e7a76', fontSize: '1rem', marginTop: '6px' }}>
-            Manage your personal profile, hospitality preferences, and member reward nights balance.
+            Manage your personal profile, contact information, and account security.
           </p>
         </div>
 
@@ -160,36 +137,6 @@ export const AccountPage: React.FC = () => {
             }}
           >
             <UserIcon size={16} /> Profile & Details
-          </button>
-
-          <button
-            onClick={() => setActiveTab('rewards')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              backgroundColor: activeTab === 'rewards' ? '#173f34' : 'transparent',
-              color: activeTab === 'rewards' ? '#ffffff' : '#6e7a76',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Award size={16} /> Rewards & Nights
-            <span style={{
-              backgroundColor: activeTab === 'rewards' ? '#dda943' : '#e6e2d8',
-              color: activeTab === 'rewards' ? '#17271f' : '#6e7a76',
-              fontSize: '0.75rem',
-              padding: '2px 8px',
-              borderRadius: '999px',
-              fontWeight: 800
-            }}>
-              {nightsAvailable} nights
-            </span>
           </button>
 
           <button
@@ -618,378 +565,7 @@ export const AccountPage: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: DEDICATED REWARDS SECTION */}
-        {activeTab === 'rewards' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-            {/* 1. Rewards Summary Cards */}
-            <div>
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
-                    Rewards Nights Summary
-                  </h3>
-                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
-                    Nights earned from qualified completed stays and available for member redemptions.
-                  </p>
-                </div>
-                <span style={{
-                  fontSize: '0.8125rem',
-                  backgroundColor: '#f0ede6',
-                  color: '#173f34',
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <Award size={14} color="#dda943" /> Tier: {user.memberProfile?.tier || 'PRESTIGE'}
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-                {/* Card 1: Total Nights Earned */}
-                <div style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  border: '1px solid #eeece5',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Total Nights Earned
-                      </span>
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        backgroundColor: 'rgba(23, 101, 62, 0.1)',
-                        color: '#17653e',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <ArrowUpRight size={20} />
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
-                      {totalNightsEarned}
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
-                    Earned through qualified completed stays
-                  </div>
-                </div>
-
-                {/* Card 2: Nights Redeemed */}
-                <div style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  border: '1px solid #eeece5',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.8125rem', color: '#6e7a76', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Nights Redeemed
-                      </span>
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        backgroundColor: 'rgba(153, 113, 37, 0.1)',
-                        color: '#997125',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <ArrowDownRight size={20} />
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: '#17271f', lineHeight: 1 }}>
-                      {nightsRedeemed}
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f6f3ec', fontSize: '0.8125rem', color: '#6e7a76' }}>
-                    Nights already used for bookings & member rewards
-                  </div>
-                </div>
-
-                {/* Card 3: Nights Available / Remaining */}
-                <div style={{
-                  backgroundColor: '#173f34',
-                  color: '#ffffff',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  border: '1px solid #173f34',
-                  boxShadow: '0 4px 16px rgba(23, 63, 52, 0.15)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '-15px',
-                    right: '-15px',
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(221, 169, 67, 0.15)',
-                    pointerEvents: 'none'
-                  }} />
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.8125rem', color: '#dda943', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Nights Available / Remaining
-                      </span>
-                      <span style={{
-                        fontSize: '0.6875rem',
-                        backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                        color: '#ffffff',
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        fontWeight: 700
-                      }}>
-                        CALCULATED
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>
-                      {nightsAvailable}
-                    </div>
-                  </div>
-
-                  <div style={{
-                    marginTop: '16px',
-                    paddingTop: '14px',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-                    fontSize: '0.8125rem',
-                    color: '#e2ddd5',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span>{totalNightsEarned} Earned − {nightsRedeemed} Redeemed</span>
-                    <span style={{ color: '#dda943', fontWeight: 700 }}>Active</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Rewards Nights History */}
-            <div style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #eeece5',
-              padding: '24px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
-            }}>
-              {/* Header and Filter */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '16px',
-                marginBottom: '20px'
-              }}>
-                <div>
-                  <h3 style={{ fontSize: '1.2rem', color: '#17271f', margin: 0, fontWeight: 700 }}>
-                    Rewards Nights History
-                  </h3>
-                  <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '4px 0 0 0' }}>
-                    Complete audit trail of earned stay credits and redeemed nights.
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', backgroundColor: '#f6f3ec', padding: '4px', borderRadius: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setRewardsFilter('ALL')}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      fontSize: '0.8125rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: rewardsFilter === 'ALL' ? '#ffffff' : 'transparent',
-                      color: rewardsFilter === 'ALL' ? '#17271f' : '#6e7a76',
-                      boxShadow: rewardsFilter === 'ALL' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
-                    }}
-                  >
-                    All ({defaultMemberTransactions.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRewardsFilter('CREDITED')}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      fontSize: '0.8125rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: rewardsFilter === 'CREDITED' ? '#ffffff' : 'transparent',
-                      color: rewardsFilter === 'CREDITED' ? '#17653e' : '#6e7a76',
-                      boxShadow: rewardsFilter === 'CREDITED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
-                    }}
-                  >
-                    Nights Credited ({defaultMemberTransactions.filter(isTransactionCredited).length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRewardsFilter('REDEEMED')}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      fontSize: '0.8125rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: rewardsFilter === 'REDEEMED' ? '#ffffff' : 'transparent',
-                      color: rewardsFilter === 'REDEEMED' ? '#997125' : '#6e7a76',
-                      boxShadow: rewardsFilter === 'REDEEMED' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
-                    }}
-                  >
-                    Nights Redeemed ({defaultMemberTransactions.filter(isTransactionRedeemed).length})
-                  </button>
-                </div>
-              </div>
-
-              {/* Transaction Table */}
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #eeece5' }}>
-                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Date
-                      </th>
-                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Activity
-                      </th>
-                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Stay / Booking
-                      </th>
-                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Nights
-                      </th>
-                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>
-                        Reward Nights
-                      </th>
-                      <th style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 800, color: '#6e7a76', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTransactions.map((tx) => {
-                      const isCredited = isTransactionCredited(tx);
-                      return (
-                        <tr key={tx.id} style={{ borderBottom: '1px solid #f6f3ec', transition: 'background-color 0.15s ease' }}>
-                          <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f', fontWeight: 600 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Calendar size={14} color="#6e7a76" />
-                              {tx.date}
-                            </div>
-                          </td>
-
-                          <td style={{ padding: '16px 14px', fontSize: '0.875rem' }}>
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '4px 10px',
-                              borderRadius: '6px',
-                              fontWeight: 700,
-                              fontSize: '0.8125rem',
-                              backgroundColor: isCredited ? 'rgba(23, 101, 62, 0.08)' : 'rgba(153, 113, 37, 0.08)',
-                              color: isCredited ? '#17653e' : '#997125'
-                            }}>
-                              {isCredited ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                              {tx.activity}
-                            </span>
-                          </td>
-
-                          <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#17271f' }}>
-                            <div style={{ fontWeight: 700, fontFamily: 'monospace', color: '#173f34' }}>
-                              {tx.stayOrBooking}
-                            </div>
-                            {tx.notes && (
-                              <div style={{ fontSize: '0.75rem', color: '#6e7a76', marginTop: '2px' }}>
-                                {tx.notes}
-                              </div>
-                            )}
-                          </td>
-
-                          <td style={{ padding: '16px 14px', fontSize: '0.875rem', color: '#6e7a76' }}>
-                            {tx.nights ? (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: '#17271f' }}>
-                                <BedDouble size={14} color="#6e7a76" /> {tx.nights} {tx.nights === 1 ? 'night' : 'nights'}
-                              </span>
-                            ) : (
-                              <span style={{ color: '#aaa' }}>—</span>
-                            )}
-                          </td>
-
-                          <td style={{ padding: '16px 14px', fontSize: '1rem', fontWeight: 800, textAlign: 'right' }}>
-                            <span style={{ color: isCredited ? '#17653e' : '#b44a22' }}>
-                              {tx.points > 0 ? `+${tx.points}` : tx.points}
-                            </span>
-                          </td>
-
-                          <td style={{ padding: '16px 14px', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '3px 10px',
-                              borderRadius: '999px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              backgroundColor: tx.status === 'Credited' ? '#eaf5ee' : tx.status === 'Redeemed' ? '#fdf5e6' : '#f0f0f0',
-                              color: tx.status === 'Credited' ? '#17653e' : tx.status === 'Redeemed' ? '#997125' : '#666'
-                            }}>
-                              {tx.status}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Cloudbeds stay rule notice */}
-              <div style={{
-                marginTop: '20px',
-                padding: '14px 18px',
-                backgroundColor: '#f6f3ec',
-                borderRadius: '10px',
-                border: '1px solid #eeece5',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <CheckCircle2 size={18} color="#17653e" style={{ flexShrink: 0 }} />
-                <div style={{ fontSize: '0.8125rem', color: '#6e7a76', lineHeight: 1.5 }}>
-                  <strong style={{ color: '#17271f' }}>Cloudbeds Stay Calculation Rule:</strong> Reward nights are calculated automatically based on qualified nights from completed Cloudbeds stays (e.g., <strong>3-night completed stay → +3 reward nights</strong>). Nights are credited immediately upon confirmed checkout.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: PAYMENT & SECURITY */}
+        {/* TAB 2: PAYMENT & SECURITY */}
         {activeTab === 'payment' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
             <div className="evolve-card" style={{ padding: '28px' }}>
