@@ -2090,83 +2090,33 @@ const PropertyManagerDashboard: React.FC = () => {
                 <div className="admin-guest-list">
                   {filteredGuests.length > 0 ? (
                     filteredGuests.map(guest => {
-                      const initials = guest.name
-                        .split(' ')
-                        .filter(Boolean)
-                        .map(n => n[0])
-                        .slice(0, 2)
-                        .join('')
-                        .toUpperCase() || 'GU';
-
-                      const tierLower = (guest.tier || '').toLowerCase();
-                      const tierBadgeStyle =
-                        tierLower === 'prestige'
-                          ? { bg: '#fef3c7', color: '#92400e', border: '#fde68a' }
-                          : tierLower === 'elite'
-                          ? { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' }
-                          : { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
-
                       return (
                         <div key={guest.id} className="admin-guest-item">
-                          <div className="admin-guest-left">
-                            <div className="admin-guest-avatar">
-                              {initials}
-                            </div>
+                          <div className="admin-guest-left" style={{ minWidth: 0 }}>
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <span className="admin-guest-name">{guest.name}</span>
-                                <span className="admin-guest-id-chip">
-                                  {guest.customerId || 'CUST-1001'}
-                                </span>
-                                <span
-                                  className="admin-square-id-chip"
-                                  title={`Linked Square POS Customer ID: ${guest.squareId || 'sq_cust_1001'}. Real-time synchronization active.`}
-                                >
-                                  <span
-                                    style={{
-                                      width: '6px',
-                                      height: '6px',
-                                      borderRadius: '50%',
-                                      backgroundColor: guest.squareSyncStatus === 'Pending Sync' ? '#f59e0b' : '#22c55e',
-                                      display: 'inline-block'
-                                    }}
-                                  />
-                                  Square: {guest.squareId || `sq_cust_${guest.customerId?.replace('CUST-', '') || '1001'}`}
-                                </span>
+                              <div className="admin-guest-name">
+                                {guest.name}
                               </div>
-                              <div className="admin-guest-meta-row">
-                                <span>{guest.phone}</span>
-                                <span>•</span>
+                              <div className="admin-guest-meta-row" style={{ marginTop: '4px' }}>
                                 <span>{guest.email}</span>
                                 <span>•</span>
-                                <span
-                                  className="admin-guest-tier-badge"
-                                  style={{
-                                    backgroundColor: tierBadgeStyle.bg,
-                                    color: tierBadgeStyle.color,
-                                    border: `1px solid ${tierBadgeStyle.border}`
-                                  }}
-                                >
-                                  {guest.tier}
-                                </span>
-                                <span>•</span>
-                                <span style={{ fontWeight: 600, color: '#17271f' }}>
-                                  {guest.rewardNights ?? 0} Nights
-                                </span>
+                                <span>{guest.phone}</span>
                               </div>
                             </div>
                           </div>
                           <button
                             type="button"
                             className="admin-btn-adjust"
+                            title={`View profile for ${guest.name}`}
+                            aria-label={`View profile for ${guest.name}`}
                             onClick={() => {
                               openGuestProfile(guest, 'profile');
                               setEditTier(guest.tier);
                               setPointAdjustment('');
                             }}
                           >
-                            <SlidersHorizontal size={13} />
-                            <span>View / Adjust</span>
+                            <Eye size={15} />
+                            <span>View</span>
                           </button>
                         </div>
                       );
