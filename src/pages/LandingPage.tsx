@@ -420,7 +420,7 @@ export const LandingPage: React.FC = () => {
          ========================================================================= */}
       <section id="rewards" className="landing-section landing-rewards-section">
         <div className="landing-section-shell">
-          <div style={{ textAlign: 'center', maxWidth: '840px', margin: '0 auto 40px' }}>
+          <div style={{ textAlign: 'center', maxWidth: '840px', margin: '0 auto 24px' }}>
             <div className="landing-rewards-distinction">
               <Sparkles size={16} /> One of the Most Unique and Flexible Hotel Rewards Experiences
             </div>
@@ -477,7 +477,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Additional Member Benefits */}
-          <div style={{ marginTop: '48px' }}>
+          <div style={{ marginTop: '24px' }}>
             <span className="landing-tag light">Additional Member Benefits</span>
             <div className="landing-benefits-grid">
               <div className="landing-benefit-card">
@@ -547,7 +547,7 @@ export const LandingPage: React.FC = () => {
          ========================================================================= */}
       <section id="rooms" className="landing-section" style={{ backgroundColor: '#ffffff' }}>
         <div className="landing-section-shell">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
             <div>
               <span className="landing-tag">Rooms &amp; Suites</span>
               <h2 className="landing-heading">More space to settle in.</h2>
@@ -576,7 +576,7 @@ export const LandingPage: React.FC = () => {
                   <div className="landing-suite-body">
                     <h3>{room.name}</h3>
                     <p>{room.description}</p>
-                    <div style={{ display: 'flex', gap: '14px', fontSize: '0.8125rem', color: '#6e7a75', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', gap: '14px', fontSize: '0.8125rem', color: '#6e7a75', marginBottom: '14px' }}>
                       <span>• {room.maxGuests} Guests</span>
                       <span>• {room.bedConfig}</span>
                       <span>• {Math.round(room.sizeSqm * 10.764)} sq ft</span>
@@ -602,10 +602,10 @@ export const LandingPage: React.FC = () => {
           {/* Included in Every Suite: 12-Item Showcase */}
           <div className="landing-inclusions-box">
             <span className="landing-tag">Included in Every Suite</span>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#17271f', margin: '6px 0 16px' }}>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', color: '#17271f', margin: '4px 0 10px' }}>
               Thoughtful details, already included.
             </h3>
-            <p style={{ color: '#6e7a75', fontSize: '0.95rem', margin: 0, maxWidth: '680px' }}>
+            <p style={{ color: '#6e7a75', fontSize: '0.92rem', margin: 0, maxWidth: '680px' }}>
               From hospital-grade sanitation to Keurig coffee machines, every suite is outfitted with premium amenities to ensure your ultimate relaxation.
             </p>
 
@@ -823,16 +823,16 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ background: '#f5f7f5', border: '1px solid #e2ded5', borderRadius: '14px', padding: '16px 20px', margin: '20px 0' }}>
-                <p style={{ margin: '0 0 6px', fontSize: '0.875rem', color: '#17271f' }}>
+              <div style={{ background: '#f5f7f5', border: '1px solid #e2ded5', borderRadius: '12px', padding: '12px 16px', margin: '14px 0' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '0.85rem', color: '#17271f' }}>
                   <strong>Buffet favorites are also available:</strong> The buffet remains a separate option for guests who prefer grab-and-go convenience.
                 </p>
-                <p style={{ margin: 0, fontSize: '0.875rem', color: '#6e7a75' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6e7a75' }}>
                   <strong>Ordering for another registered guest?</strong> Eligible guests can receive their own mobile breakfast-ordering access.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '24px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
                 <button 
                   className="btn btn-primary"
                   onClick={() => navigateTo('in-stay-breakfast')}
@@ -908,7 +908,7 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ marginTop: '24px' }}>
+              <div style={{ marginTop: '16px' }}>
                 <button 
                   className="btn btn-secondary"
                   disabled
@@ -916,7 +916,7 @@ export const LandingPage: React.FC = () => {
                 >
                   View Live Square Menu — Coming Soon
                 </button>
-                <p style={{ fontSize: '0.8125rem', color: '#7a8781', marginTop: '8px' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#7a8781', marginTop: '6px' }}>
                   Menu, pricing, availability, and dining hours will be synced automatically once the Square connection goes live.
                 </p>
               </div>
@@ -964,14 +964,14 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ background: '#f8faf8', border: '1px solid #e2ded5', borderRadius: '12px', padding: '16px 20px', margin: '20px 0' }}>
+              <div style={{ background: '#f8faf8', border: '1px solid #e2ded5', borderRadius: '12px', padding: '12px 16px', margin: '14px 0' }}>
                 <strong style={{ fontSize: '0.875rem', color: '#173f34' }}>Access Information:</strong>
-                <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#6e7a75' }}>
+                <p style={{ margin: '3px 0 0', fontSize: '0.8125rem', color: '#6e7a75' }}>
                   Towels and entry instructions are provided by the hotel. Operating hours, age guidelines, and safety policies are posted in the spa pavilion.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '24px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
                 <button 
                   className="btn btn-secondary"
                   onClick={() => navigateTo('membership')}
@@ -1004,7 +1004,7 @@ export const LandingPage: React.FC = () => {
         <div className="landing-section-shell">
           <span className="landing-tag">Our Texarkana Location</span>
           <h2 className="landing-heading">Easy to find. Close to what matters.</h2>
-          <p style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontWeight: 600, fontSize: '1rem', marginBottom: '24px' }}>
+          <p style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontWeight: 600, fontSize: '0.95rem', marginBottom: '16px' }}>
             <MapPin size={20} color="#dda943" />
             5420 Crossroad Parkway, Texarkana, Arkansas 71854
           </p>
@@ -1022,7 +1022,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Nearby Points of Interest */}
             <div>
-              <h3 style={{ fontSize: '1.15rem', color: '#17271f', marginBottom: '16px', fontWeight: 700 }}>Nearby Landmarks</h3>
+              <h3 style={{ fontSize: '1.15rem', color: '#17271f', marginBottom: '14px', fontWeight: 700 }}>Nearby Landmarks</h3>
               <div className="landing-nearby-list">
                 <div className="landing-nearby-item">
                   <Compass size={22} color="#173f34" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -1058,7 +1058,7 @@ export const LandingPage: React.FC = () => {
 
                 <a 
                   className="btn btn-secondary" 
-                  style={{ width: '100%', marginTop: '8px' }}
+                  style={{ width: '100%', marginTop: '6px' }}
                   href="https://maps.google.com/?q=5420+Crossroad+Parkway+Texarkana+Arkansas+71854" 
                   target="_blank" 
                   rel="noreferrer"
@@ -1080,7 +1080,7 @@ export const LandingPage: React.FC = () => {
             <div>
               <span className="landing-tag light">Contact Evolve</span>
               <h2 className="landing-heading light">Questions before your stay?</h2>
-              <p className="landing-subheading light" style={{ marginBottom: '28px' }}>
+              <p className="landing-subheading light" style={{ marginBottom: '18px' }}>
                 We’re here to help with reservations, group stays, dining inquiries, and the complete Evolve experience.
               </p>
               <button 
