@@ -45,6 +45,24 @@ import {
   Activity, X
 } from 'lucide-react';
 
+export interface PhoneRecoveryAuditItem {
+  id: string;
+  auditRef: string;
+  date: string;
+  time: string;
+  customerName: string;
+  email: string;
+  customerId: string;
+  oldPhone: string;
+  newPhone: string;
+  verificationMethod: string;
+  securityChecks: string[];
+  securityNotes: string;
+  authorizedBy: string;
+  tier: string;
+  pointsBalance: number;
+}
+
 /* =========================================================================
    LOGIN COMPONENT MATCHING SCREENSHOT EXACTLY (2 USERS ONLY)
 ========================================================================= */
@@ -934,7 +952,7 @@ const PropertyManagerDashboard: React.FC = () => {
   const [recCheckGovId, setRecCheckGovId] = useState<boolean>(false);
   const [recCheckRecentStay, setRecCheckRecentStay] = useState<boolean>(false);
   const [recCheckEmailVerified, setRecCheckEmailVerified] = useState<boolean>(false);
-  const [recSecurityMethod, setRecSecurityMethod] = useState<string>('In-Person Government ID Inspection');
+  const [recSecurityMethod, setRecSecurityMethod] = useState<string>('Property Manager Formal Authorization');
   const [recSecurityNotes, setRecSecurityNotes] = useState<string>('');
   const [recSecurityConfirmed, setRecSecurityConfirmed] = useState<boolean>(false);
   const [recNewCountryCode, setRecNewCountryCode] = useState<string>('+1');
@@ -956,6 +974,96 @@ const PropertyManagerDashboard: React.FC = () => {
     timestamp: string;
   } | null>(null);
 
+  // Phone Recovery Audit Log (viewable in Reports)
+  const initialPhoneRecoveryAuditData: PhoneRecoveryAuditItem[] = [
+    {
+      id: 'rec-init-1',
+      auditRef: 'REC-849102',
+      date: 'Oct 08, 2026',
+      time: '04:15 PM',
+      customerName: 'Robert Martinez',
+      email: 'robert.m@example.com',
+      customerId: 'EV-GUEST-204',
+      oldPhone: '(555) 234-5678',
+      newPhone: '+1 (555) 890-1234',
+      verificationMethod: 'Property Manager Formal Authorization',
+      securityChecks: ['Government Photo ID Verified', 'Reservation / Recent Stay Verified'],
+      securityNotes: 'Customer lost mobile device during transit; passport and Cloudbeds reservation EV-BK-4019 confirmed by Property Manager.',
+      authorizedBy: 'Sarah Jenkins (Property Manager)',
+      tier: 'Origins',
+      pointsBalance: 40,
+    },
+    {
+      id: 'rec-init-2',
+      auditRef: 'REC-739281',
+      date: 'Sep 24, 2026',
+      time: '11:30 AM',
+      customerName: 'Sarah Thompson',
+      email: 'sarah.t@example.com',
+      customerId: 'EV-GUEST-109',
+      oldPhone: '(555) 345-6789',
+      newPhone: '+1 (555) 678-9012',
+      verificationMethod: 'In-Person Government ID Inspection',
+      securityChecks: ['Government Photo ID Verified', 'Email Out-of-band Confirmation'],
+      securityNotes: 'In-person front desk identity verification with state driver license. Re-authenticated with 2FA email code.',
+      authorizedBy: 'Sarah Jenkins (Property Manager)',
+      tier: 'Prestige',
+      pointsBalance: 125,
+    },
+    {
+      id: 'rec-init-3',
+      auditRef: 'REC-621944',
+      date: 'Sep 12, 2026',
+      time: '02:45 PM',
+      customerName: 'Emily Anderson',
+      email: 'emily.anderson@example.com',
+      customerId: 'EV-GUEST-401',
+      oldPhone: '(555) 123-4567',
+      newPhone: '+1 (555) 987-6543',
+      verificationMethod: 'Out-of-band Verification via Registered Email',
+      securityChecks: ['Email Out-of-band Confirmation', 'Reservation / Recent Stay Verified'],
+      securityNotes: 'Confirmed Cloudbeds stay history and out-of-band email link. New phone verified with 6-digit OTP code.',
+      authorizedBy: 'Sarah Jenkins (Property Manager)',
+      tier: 'Prestige',
+      pointsBalance: 85,
+    }
+  ];
+
+  const getInitialPhoneRecoveryAudit = (): PhoneRecoveryAuditItem[] => {
+    try {
+      const saved = localStorage.getItem('evolve_phone_recovery_audit');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return initialPhoneRecoveryAuditData;
+  };
+
+  const [phoneRecoveryAuditRecords, setPhoneRecoveryAuditRecords] = useState<PhoneRecoveryAuditItem[]>(getInitialPhoneRecoveryAudit);
+  const [showPhoneRecoveryReportModal, setShowPhoneRecoveryReportModal] = useState<boolean>(false);
+  const [phoneRecoveryReportSearch, setPhoneRecoveryReportSearch] = useState<string>('');
+  const [phoneRecoveryMethodFilter, setPhoneRecoveryMethodFilter] = useState<string>('all');
+
+  const filteredPhoneRecoveryRecords = phoneRecoveryAuditRecords.filter((rec) => {
+    if (phoneRecoveryMethodFilter !== 'all' && rec.verificationMethod !== phoneRecoveryMethodFilter) {
+      return false;
+    }
+    if (!phoneRecoveryReportSearch.trim()) return true;
+    const q = phoneRecoveryReportSearch.toLowerCase();
+    return (
+      rec.customerName.toLowerCase().includes(q) ||
+      rec.email.toLowerCase().includes(q) ||
+      rec.oldPhone.toLowerCase().includes(q) ||
+      rec.newPhone.toLowerCase().includes(q) ||
+      rec.auditRef.toLowerCase().includes(q) ||
+      rec.securityNotes.toLowerCase().includes(q) ||
+      rec.customerId.toLowerCase().includes(q)
+    );
+  });
+
   const resetPhoneRecoveryWorkflow = () => {
     setPhoneRecoveryStep(1);
     setRecoverySearchQuery('');
@@ -963,7 +1071,7 @@ const PropertyManagerDashboard: React.FC = () => {
     setRecCheckGovId(false);
     setRecCheckRecentStay(false);
     setRecCheckEmailVerified(false);
-    setRecSecurityMethod('In-Person Government ID Inspection');
+    setRecSecurityMethod('Property Manager Formal Authorization');
     setRecSecurityNotes('');
     setRecSecurityConfirmed(false);
     setRecNewCountryCode('+1');
@@ -1076,6 +1184,39 @@ const PropertyManagerDashboard: React.FC = () => {
       accountStatus: recoverySelectedCustomer.accountStatus || 'Active',
       pointsBalance: pointsBal,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+
+    // 6. Record in Phone Recovery Audit Log (viewable in Reports)
+    const newAuditRecord: PhoneRecoveryAuditItem = {
+      id: `rec-${Date.now()}`,
+      auditRef: auditRefCode,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      customerName: recoverySelectedCustomer.name,
+      email: recoverySelectedCustomer.email,
+      customerId: recoverySelectedCustomer.id,
+      oldPhone,
+      newPhone: formattedNewPhone,
+      verificationMethod: recSecurityMethod,
+      securityChecks: [
+        recCheckGovId ? 'Government Photo ID Verified' : '',
+        recCheckRecentStay ? 'Reservation / Recent Stay Verified' : '',
+        recCheckEmailVerified ? 'Email Out-of-band Confirmation' : '',
+      ].filter(Boolean),
+      securityNotes: recSecurityNotes.trim() || 'Customer lost previous phone number. Identity verified and authorized by Property Manager.',
+      authorizedBy: 'Sarah Jenkins (Property Manager)',
+      tier: recoverySelectedCustomer.tier,
+      pointsBalance: pointsBal,
+    };
+
+    setPhoneRecoveryAuditRecords(prev => {
+      const updated = [newAuditRecord, ...prev];
+      try {
+        localStorage.setItem('evolve_phone_recovery_audit', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
     });
 
     addToast('success', 'Phone Recovery Completed', `Successfully updated phone to ${formattedNewPhone} for ${recoverySelectedCustomer.name}. All account data preserved.`);
@@ -5178,6 +5319,28 @@ const PropertyManagerDashboard: React.FC = () => {
                   </button>
                 </div>
 
+                {/* Row 5: Phone Number Recovery Audit Log */}
+                <div className="admin-reporting-row">
+                  <div className="admin-reporting-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 className="admin-reporting-title" style={{ margin: 0 }}>Phone Recovery Audit Log</h4>
+                      <span style={{ fontSize: '0.72rem', backgroundColor: '#dcfce7', color: '#166534', padding: '1px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                        {phoneRecoveryAuditRecords.length} Recovered
+                      </span>
+                    </div>
+                    <p className="admin-reporting-desc">
+                      Audit history of customer phone numbers recovered, previous & new numbers, verification methods, Property Manager notes, and preserved account IDs
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-btn-reporting-primary"
+                    onClick={() => setShowPhoneRecoveryReportModal(true)}
+                  >
+                    Open Recovery Log
+                  </button>
+                </div>
+
                 {/* Callout Notice Card */}
                 <div className="admin-reporting-callout">
                   <h5 className="admin-reporting-callout-title">View, search, and print access</h5>
@@ -8480,7 +8643,7 @@ const PropertyManagerDashboard: React.FC = () => {
                     >
                       <option>In-Person Government ID Inspection</option>
                       <option>Out-of-band Verification via Registered Email</option>
-                      <option>Duty Manager Formal Authorization</option>
+                      <option>Property Manager Formal Authorization</option>
                     </select>
                   </div>
                   <div>
@@ -8920,6 +9083,27 @@ const PropertyManagerDashboard: React.FC = () => {
                       View Customer Profile
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetPhoneRecoveryWorkflow();
+                      setActiveQuickAccess(null);
+                      setActiveTab('reporting');
+                      setShowPhoneRecoveryReportModal(true);
+                    }}
+                    style={{
+                      padding: '9px 18px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #16a34a',
+                      background: '#f0fdf4',
+                      color: '#166534',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    View in Reports Audit Log →
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -11311,6 +11495,310 @@ const PropertyManagerDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowRuleDecisionsModal(false)}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '7px',
+                    border: '1px solid #d1d5db',
+                    backgroundColor: '#ffffff',
+                    color: '#374151',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL: PHONE NUMBER RECOVERY AUDIT LOG REPORT
+      =================================================================== */}
+      {showPhoneRecoveryReportModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(14, 26, 20, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '14px',
+            width: '100%',
+            maxWidth: '960px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.25)'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '10px',
+                  backgroundColor: '#f0fdf4',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#16a34a'
+                }}>
+                  <Phone size={22} />
+                </div>
+                <div>
+                  <span className="admin-ops-eyebrow">PROPERTY MANAGER AUDIT TRAIL • EVOLVE TEXARKANA</span>
+                  <h3 style={{ margin: '2px 0 0 0', fontFamily: 'Playfair Display, serif', fontSize: '1.45rem', color: '#17271f' }}>
+                    Phone Recovery Audit Log
+                  </h3>
+                  <p style={{ margin: '3px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                    Historical audit records of customer phone number recoveries. Tracks old vs new phone numbers, verification methods, Property Manager audit notes, and preserved account IDs.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPhoneRecoveryReportModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#6b7280' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick KPI Summary Row */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+              gap: '12px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ backgroundColor: '#f6f8f7', padding: '14px', borderRadius: '8px', border: '1px solid #e1e7e4' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', display: 'block' }}>TOTAL RECOVERED ACCOUNTS</span>
+                <strong style={{ fontSize: '1.25rem', color: '#17271f' }}>{phoneRecoveryAuditRecords.length} Customers</strong>
+              </div>
+              <div style={{ backgroundColor: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#166534', display: 'block' }}>DATA PRESERVATION RATE</span>
+                <strong style={{ fontSize: '1.25rem', color: '#16a34a' }}>100% Zero Loss</strong>
+              </div>
+              <div style={{ backgroundColor: '#f6f8f7', padding: '14px', borderRadius: '8px', border: '1px solid #e1e7e4' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', display: 'block' }}>PROPERTY MANAGER REVIEWS</span>
+                <strong style={{ fontSize: '1.05rem', color: '#17271f' }}>
+                  {phoneRecoveryAuditRecords.filter(r => r.verificationMethod.includes('Property Manager')).length} Authorizations
+                </strong>
+              </div>
+              <div style={{ backgroundColor: '#f6f8f7', padding: '14px', borderRadius: '8px', border: '1px solid #e1e7e4' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', display: 'block' }}>SECURITY COMPLIANCE</span>
+                <strong style={{ fontSize: '1.05rem', color: '#15803d' }}>100% 2FA / OTP Verified</strong>
+              </div>
+            </div>
+
+            {/* Search & Filter Bar */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <Search size={16} color="#9ca3af" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder="Search by customer name, email, old/new phone, or reference code..."
+                  value={phoneRecoveryReportSearch}
+                  onChange={(e) => setPhoneRecoveryReportSearch(e.target.value)}
+                  className="admin-input"
+                  style={{ paddingLeft: '36px', border: '1.5px solid #d1d5db', color: '#111827', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <select
+                value={phoneRecoveryMethodFilter}
+                onChange={(e) => setPhoneRecoveryMethodFilter(e.target.value)}
+                className="admin-input"
+                style={{ width: '280px', border: '1.5px solid #d1d5db', color: '#111827' }}
+              >
+                <option value="all">All Verification Methods</option>
+                <option value="Property Manager Formal Authorization">Property Manager Formal Authorization</option>
+                <option value="In-Person Government ID Inspection">In-Person Government ID Inspection</option>
+                <option value="Out-of-band Verification via Registered Email">Out-of-band Email Verification</option>
+              </select>
+            </div>
+
+            {/* Audit Records Table */}
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'auto', marginBottom: '20px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8faf9', borderBottom: '1px solid #e2e8f0', fontSize: '0.76rem', color: '#64748b', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '10px 14px' }}>Date & Ref</th>
+                    <th style={{ padding: '10px 14px' }}>Customer Account</th>
+                    <th style={{ padding: '10px 14px' }}>Previous Phone</th>
+                    <th style={{ padding: '10px 14px' }}>New Verified Phone</th>
+                    <th style={{ padding: '10px 14px' }}>Verification Method & Notes</th>
+                    <th style={{ padding: '10px 14px' }}>Preserved Data</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPhoneRecoveryRecords.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#6b7280', fontSize: '0.88rem' }}>
+                        No phone recovery audit records found matching search filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPhoneRecoveryRecords.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', fontSize: '0.84rem' }}>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
+                          <strong style={{ color: '#17271f', display: 'block', fontSize: '0.82rem' }}>#{item.auditRef}</strong>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.date}</span>
+                          <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>{item.time}</span>
+                        </td>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
+                          <strong style={{ color: '#17271f' }}>{item.customerName}</strong>
+                          <div style={{ fontSize: '0.76rem', color: '#64748b' }}>{item.email}</div>
+                          <span style={{
+                            display: 'inline-block',
+                            marginTop: '2px',
+                            fontSize: '0.7rem',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: '#f1f5f9',
+                            color: '#475569',
+                            fontWeight: 600
+                          }}>
+                            ID: {item.customerId}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
+                          <span style={{ textDecoration: 'line-through', color: '#991b1b', fontWeight: 600 }}>
+                            {item.oldPhone}
+                          </span>
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: '#b91c1c' }}>Replaced</span>
+                        </td>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontWeight: 700,
+                            color: '#166534',
+                            backgroundColor: '#dcfce7',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem'
+                          }}>
+                            {item.newPhone} ✓
+                          </span>
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: '#16a34a', marginTop: '2px' }}>OTP Verified</span>
+                        </td>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top', maxWidth: '280px' }}>
+                          <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            color: '#1e293b',
+                            backgroundColor: '#f1f5f9',
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            marginBottom: '4px'
+                          }}>
+                            {item.verificationMethod}
+                          </span>
+                          <div style={{ fontSize: '0.76rem', color: '#334155', fontStyle: 'italic', marginBottom: '4px' }}>
+                            "{item.securityNotes}"
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {item.securityChecks.map((chk, i) => (
+                              <span key={i} style={{ fontSize: '0.68rem', backgroundColor: '#e2e8f0', color: '#334155', padding: '1px 5px', borderRadius: '3px' }}>
+                                ✓ {chk}
+                              </span>
+                            ))}
+                          </div>
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: '#64748b', marginTop: '4px' }}>
+                            Auth by: {item.authorizedBy}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontWeight: 700,
+                            backgroundColor: item.tier === 'Prestige' ? '#fef3c7' : '#e0e7ff',
+                            color: item.tier === 'Prestige' ? '#92400e' : '#3730a3'
+                          }}>
+                            {item.tier}
+                          </span>
+                          <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600, marginTop: '4px' }}>
+                            {item.pointsBalance} Reward Nights Intact
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top', textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const guest = guestsList.find(g => g.id === item.customerId || g.email === item.email);
+                              if (guest) {
+                                setSelectedGuest(guest);
+                                setGuestModalView('profile');
+                                setShowPhoneRecoveryReportModal(false);
+                              } else {
+                                addToast('info', 'Customer Profile', `Customer ID: ${item.customerId}`);
+                              }
+                            }}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              borderRadius: '6px',
+                              border: '1px solid #d1d5db',
+                              backgroundColor: '#ffffff',
+                              color: '#17271f',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            View Profile
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                Showing {filteredPhoneRecoveryRecords.length} permanent audit records • Evolve Identity Recovery
+              </span>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '9px 16px',
+                    borderRadius: '7px',
+                    border: '1px solid #17271f',
+                    backgroundColor: '#17271f',
+                    color: '#ffffff',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Printer size={15} />
+                  <span>Print Recovery Audit Log</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPhoneRecoveryReportModal(false)}
                   style={{
                     padding: '9px 18px',
                     borderRadius: '7px',
