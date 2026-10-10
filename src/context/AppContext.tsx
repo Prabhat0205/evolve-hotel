@@ -25,7 +25,8 @@ export type AppRoute =
   | 'support'
   | 'corporate-booking'
   | 'admin'
-  | 'kitchen';
+  | 'kitchen'
+  | 'guest-breakfast';
 
 export const isCurrentPathAdmin = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -53,6 +54,21 @@ export const isCurrentPathKitchen = (): boolean => {
     hash.startsWith('#/kitchen') || 
     hash.startsWith('#kitchen/') ||
     hash.startsWith('#kitchen-review')
+  );
+};
+
+export const isCurrentPathGuestBreakfast = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  return (
+    path === '/guest-breakfast' ||
+    path.startsWith('/guest-breakfast/') ||
+    path === '/guest-breakfast-preview' ||
+    hash === '#guest-breakfast' ||
+    hash.startsWith('#/guest-breakfast') ||
+    hash.startsWith('#guest-breakfast/') ||
+    window.location.search.includes('guest-breakfast')
   );
 };
 
@@ -163,12 +179,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const getInitialRoute = (): AppRoute => {
     if (isCurrentPathKitchen()) return 'kitchen';
     if (isCurrentPathAdmin()) return 'admin';
+    if (isCurrentPathGuestBreakfast()) return 'guest-breakfast';
     if (typeof window !== 'undefined') {
       const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
       const validRoutes: AppRoute[] = [
         'landing', 'search', 'property-detail', 'checkout', 'confirmation', 
         'stays', 'membership', 'rewards-catalog', 'in-stay-breakfast', 
-        'profile', 'support', 'corporate-booking'
+        'profile', 'support', 'corporate-booking', 'guest-breakfast'
       ];
       if (validRoutes.includes(cleanPath as AppRoute)) {
         return cleanPath as AppRoute;
@@ -187,12 +204,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setCurrentRoute('kitchen');
       } else if (isCurrentPathAdmin()) {
         setCurrentRoute('admin');
+      } else if (isCurrentPathGuestBreakfast()) {
+        setCurrentRoute('guest-breakfast');
       } else {
         const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
         const validRoutes: AppRoute[] = [
           'landing', 'search', 'property-detail', 'checkout', 'confirmation', 
           'stays', 'membership', 'rewards-catalog', 'in-stay-breakfast', 
-          'profile', 'support', 'corporate-booking'
+          'profile', 'support', 'corporate-booking', 'guest-breakfast'
         ];
         if (validRoutes.includes(cleanPath as AppRoute)) {
           setCurrentRoute(cleanPath as AppRoute);

@@ -18,6 +18,7 @@ import { SupportPage } from './pages/SupportPage';
 import { CorporateBookingPage } from './pages/CorporateBookingPage';
 import { AdminPortal } from './pages/admin/AdminPortal';
 import { KitchenPortal } from './pages/kitchen/KitchenPortal';
+import { GuestBreakfastPage } from './pages/GuestBreakfastPage';
 
 const AppContent: React.FC = () => {
   const { currentRoute, currentUser, navigateTo } = useApp();
@@ -27,6 +28,15 @@ const AppContent: React.FC = () => {
       navigateTo('stays');
     }
   }, [currentUser, currentRoute, navigateTo]);
+
+  if (currentRoute === 'guest-breakfast') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <GuestBreakfastPage />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   if (currentRoute === 'kitchen') {
     return (
