@@ -410,7 +410,7 @@ export const GuestBreakfastPage: React.FC = () => {
       <div style={{
         maxWidth: isPhoneView ? '430px' : '980px',
         margin: '24px auto',
-        padding: isPhoneView ? '0' : '0 20px',
+        padding: isPhoneView ? '0' : '0 clamp(10px, 3vw, 20px)',
         transition: 'all 0.3s ease'
       }}>
         
@@ -443,7 +443,7 @@ export const GuestBreakfastPage: React.FC = () => {
           )}
 
           {/* Content padding wrapper */}
-          <div style={{ padding: isPhoneView ? '20px 18px 40px' : '32px 36px 50px' }}>
+          <div style={{ padding: isPhoneView ? '20px 18px 40px' : 'clamp(18px, 4vw, 36px) clamp(16px, 4vw, 36px) 50px' }}>
 
             {/* SCREEN 1: GUEST TEXT MESSAGE PREVIEW (Screenshot 1) */}
             {activeView === 'sms_preview' && (

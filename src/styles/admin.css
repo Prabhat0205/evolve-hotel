@@ -1865,6 +1865,50 @@
   }
 }
 
+@media (max-width: 900px) {
+  .admin-ops-layout {
+    flex-direction: column !important;
+  }
+  .admin-ops-sidebar {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 14px 16px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  .admin-ops-sidebar.collapsed {
+    width: 100% !important;
+    padding: 10px 16px !important;
+  }
+  .admin-ops-sidebar.collapsed .admin-ops-nav,
+  .admin-ops-sidebar.collapsed .admin-ops-profile-card {
+    display: none !important;
+  }
+  .admin-ops-nav {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    gap: 6px !important;
+    margin: 12px 0 !important;
+  }
+  .admin-ops-nav-item {
+    padding: 8px 10px !important;
+    font-size: 0.8125rem !important;
+    justify-content: flex-start !important;
+  }
+  .admin-ops-profile-card {
+    margin-top: 10px !important;
+    padding: 8px 12px !important;
+  }
+  .admin-ops-main {
+    padding: 16px 12px 48px !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  .admin-ops-heading {
+    font-size: 1.75rem !important;
+  }
+}
+
 @media (max-width: 768px) {
   .admin-kpi-grid {
     grid-template-columns: 1fr;
@@ -1872,8 +1916,8 @@
   .admin-quick-access-grid {
     grid-template-columns: 1fr;
   }
-  .admin-ops-sidebar {
-    width: 220px;
+  .admin-ops-nav {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 

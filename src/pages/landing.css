@@ -1303,3 +1303,14 @@
     padding: 10px;
   }
 }
+
+@media (max-width: 520px) {
+  .landing-booking-form {
+    grid-template-columns: 1fr;
+  }
+  .landing-booking-field {
+    border-right: none;
+    border-bottom: 1px solid #eeece5;
+    padding: 10px 12px;
+  }
+}

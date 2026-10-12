@@ -164,7 +164,7 @@ export const AccountPage: React.FC = () => {
         {activeTab === 'profile' && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
             gap: '28px',
             alignItems: 'stretch'
           }}>
@@ -209,7 +209,7 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 <form id="profile-form" onSubmit={handleSaveProfile}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px', marginBottom: '14px' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">First Name</label>
                       <input
@@ -384,7 +384,7 @@ export const AccountPage: React.FC = () => {
                   </div>
 
                   {/* New and Confirm Password in 2 columns */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: showTwoFactorStep ? '14px' : 0 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px', marginBottom: showTwoFactorStep ? '14px' : 0 }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">New Password</label>
                       <div style={{ position: 'relative' }}>
@@ -567,7 +567,7 @@ export const AccountPage: React.FC = () => {
 
         {/* TAB 2: PAYMENT & SECURITY */}
         {activeTab === 'payment' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '32px' }}>
             <div className="evolve-card" style={{ padding: '28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: 0 }}>
@@ -689,7 +689,7 @@ export const AccountPage: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px' }}>
                   <div className="form-group">
                     <label className="form-label">Expiry (MM/YY)</label>
                     <input

@@ -91,7 +91,7 @@ export const PropertyDetailPage: React.FC = () => {
         <div className="evolve-card" style={{ padding: '32px', marginBottom: '40px' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
             gap: '36px',
             alignItems: 'center'
           }}>
@@ -478,16 +478,9 @@ export const PropertyDetailPage: React.FC = () => {
             return (
               <div
                 key={room.id}
+                className="evolve-room-card-grid"
                 style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
                   border: currentQty > 0 ? '2px solid #17653e' : '1px solid #e2ded5',
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(280px, 340px) 1fr minmax(210px, 240px)',
-                  boxShadow: '0 4px 16px rgba(23, 39, 31, 0.04)',
-                  alignItems: 'stretch',
-                  transition: 'border-color 0.2s, box-shadow 0.2s'
                 }}
               >
                 {/* Column 1: Photo Carousel (Matches Screenshot) */}
@@ -677,7 +670,7 @@ export const PropertyDetailPage: React.FC = () => {
                 </div>
 
                 {/* Column 3: Pricing & Quantity Stepper (Matches Screenshot) */}
-                <div style={{
+                <div className="evolve-room-card-pricing" style={{
                   borderLeft: '1px solid #eeece5',
                   padding: '30px 24px',
                   display: 'flex',
@@ -870,7 +863,7 @@ export const PropertyDetailPage: React.FC = () => {
             zIndex: 2000,
             padding: '20px'
           }}>
-            <div style={{
+            <div className="evolve-modal-container" style={{
               backgroundColor: '#ffffff',
               borderRadius: '24px',
               maxWidth: '780px',
@@ -1038,7 +1031,7 @@ export const PropertyDetailPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                    <div className="evolve-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                       <button
                         type="button"
                         onClick={() => setDetailModalRoom(null)}
@@ -1069,25 +1062,7 @@ export const PropertyDetailPage: React.FC = () => {
 
         {/* Floating Order Bar */}
         {selectedRooms.length > 0 && (
-          <div style={{
-            position: 'fixed',
-            bottom: '24px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'min(94%, 960px)',
-            backgroundColor: '#17271f',
-            color: '#ffffff',
-            borderRadius: '18px',
-            padding: '16px 24px',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.35)',
-            zIndex: 1000,
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            border: '1.5px solid #dda943'
-          }}>
+          <div className="evolve-floating-order-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{
                 width: '42px',

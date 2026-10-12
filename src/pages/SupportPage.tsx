@@ -50,11 +50,11 @@ export const SupportPage: React.FC = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: '60px 20px' }}>
+    <div style={{ backgroundColor: '#f6f3ec', minHeight: '100vh', padding: 'clamp(24px, 5vw, 60px) clamp(16px, 4vw, 20px)' }}>
       <div className="app-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: 'clamp(20px, 4vw, 40px)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
             <div>
               <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2rem', fontWeight: 800, color: '#17271f', marginBottom: '8px' }}>
                 Questions & Support
@@ -81,7 +81,7 @@ export const SupportPage: React.FC = () => {
             </button>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-responsive">
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #eeece5' }}>

@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
               }}>
                 EVOLVE
               </span>
-              <span style={{
+              <span className="header-brand-subtext" style={{
                 display: 'block',
                 fontSize: '0.625rem',
                 letterSpacing: '0.18em',
@@ -434,7 +434,7 @@ export const Header: React.FC = () => {
                   }}>
                     {currentUser ? `${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}` : 'G'}
                   </div>
-                  <div style={{ textAlign: 'left', lineHeight: 1.15 }}>
+                  <div className="header-user-btn-text" style={{ textAlign: 'left', lineHeight: 1.15 }}>
                     <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#17271f' }}>
                       {currentUser ? currentUser.firstName : 'Guest'}
                     </div>
@@ -842,12 +842,20 @@ export const Header: React.FC = () => {
 
       {/* Responsive CSS override for desktop vs mobile toggle */}
       <style>{`
-        @media (max-width: 900px) {
+        @media (max-width: 1150px) {
           .desktop-nav {
             display: none !important;
           }
           .mobile-nav-toggle {
             display: flex !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .header-brand-subtext {
+            display: none !important;
+          }
+          .header-user-btn-text {
+            display: none !important;
           }
         }
       `}</style>
