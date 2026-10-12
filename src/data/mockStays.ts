@@ -1,7 +1,7 @@
 import { Reservation } from '../types';
 
 export const mockReservations: Reservation[] = [
-  // 1. Julian Hayes (user-member-01) - EV-2041 matching Screenshot 2
+  // 1. Julian Hayes (user-member-01) - EV-2041 (Past completed stay)
   {
     id: 'res-member-ev2041',
     confirmationCode: 'EV-2041',
@@ -16,7 +16,7 @@ export const mockReservations: Reservation[] = [
     checkOutDate: '2026-09-22',
     nightsCount: 3,
     guestsCount: { adults: 2, children: 0 },
-    status: 'CONFIRMED',
+    status: 'COMPLETED',
     rateType: 'Member Exclusive Rate',
     nightlyRate: 150,
     taxesAndFees: 54,
@@ -27,6 +27,33 @@ export const mockReservations: Reservation[] = [
     specialRequests: 'High floor, quiet room away from elevator.',
     userId: 'user-member-01'
   },
+  // EV-347691 (From Screenshot): Within 24-hour check-in window (Locked from cancellation/modification)
+  {
+    id: 'res-member-ev347691',
+    confirmationCode: 'EV-347691',
+    propertyId: 'evolve-texarkana',
+    propertyName: 'Evolve Hotels & Suites Texarkana',
+    propertyCity: 'Texarkana, United States',
+    propertyAddress: '5420 Crossroad Parkway, Texarkana, AR 71854',
+    propertyImage: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80',
+    roomName: '2x Standard King Suite',
+    roomCategory: 'DELUXE',
+    checkInDate: '2026-10-13',
+    checkOutDate: '2026-10-17',
+    nightsCount: 4,
+    guestsCount: { adults: 2, children: 0 },
+    status: 'CONFIRMED',
+    rateType: 'Member Exclusive Rate',
+    nightlyRate: 149,
+    taxesAndFees: 58,
+    totalAmount: 654.00,
+    currency: 'USD',
+    paymentMethod: { brand: 'mastercard', last4: '3491' },
+    cancellationDeadline: '2026-10-12T16:00:00Z',
+    specialRequests: 'Adjoining rooms requested.',
+    userId: 'user-member-01'
+  },
+  // EV-424857: More than 24 hours away (>24h window - Free cancellation & Rebook eligible)
   {
     id: 'res-member-houston',
     confirmationCode: 'EV-424857',
@@ -37,18 +64,18 @@ export const mockReservations: Reservation[] = [
     propertyImage: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
     roomName: 'Medical Center King Suite',
     roomCategory: 'SUITE',
-    checkInDate: '2026-10-14',
-    checkOutDate: '2026-10-18',
+    checkInDate: '2026-10-18',
+    checkOutDate: '2026-10-22',
     nightsCount: 4,
     guestsCount: { adults: 1, children: 0 },
     status: 'CONFIRMED',
     rateType: 'Member Exclusive Rate',
     nightlyRate: 159,
     taxesAndFees: 60,
-    totalAmount: 696,
+    totalAmount: 696.00,
     currency: 'USD',
     paymentMethod: { brand: 'visa', last4: '4242' },
-    cancellationDeadline: '2026-10-13T15:00:00Z',
+    cancellationDeadline: '2026-10-17T15:00:00Z',
     specialRequests: 'Visiting Texas Medical Center Hospital. Ground floor room requested.',
     userId: 'user-member-01'
   },
