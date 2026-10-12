@@ -955,15 +955,21 @@
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
 .admin-card-title {
   font-family: var(--font-heading);
-  font-size: 1.75rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
   font-weight: 700;
   color: #17271f;
   margin: 4px 0 6px 0;
-  line-height: 1.2;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .admin-card-desc {
@@ -1907,6 +1913,23 @@
   .admin-ops-heading {
     font-size: 1.75rem !important;
   }
+  .admin-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .admin-card-header > div:first-child {
+    width: 100% !important;
+  }
+  .admin-btn-dashboard-back {
+    align-self: flex-start !important;
+  }
+  .admin-card-workspace {
+    padding: 14px 12px !important;
+  }
+  .admin-table-scroll-hint {
+    display: block !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1919,6 +1942,25 @@
   .admin-ops-nav {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+}
+
+/* Table touch scroll & minimum width preservation */
+.admin-card-workspace table {
+  min-width: 820px;
+}
+
+.admin-card-workspace div[style*="overflow"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table-scroll-hint {
+  display: none;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+  text-align: right;
+  margin-bottom: 6px;
+  padding: 0 4px;
 }
 
 /* =========================================================================

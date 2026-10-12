@@ -2203,7 +2203,11 @@ const PropertyManagerDashboard: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <div className="admin-ops-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '12px' }}>
+              <div>
+                <span className="admin-ops-brand-eyebrow">EVOLVE ADMINISTRATION</span>
+                <h2 className="admin-ops-title" style={{ margin: 0, fontSize: '1.25rem' }}>Operations</h2>
+              </div>
               <button
                 type="button"
                 className="admin-ops-toggle-btn"
@@ -2227,10 +2231,15 @@ const PropertyManagerDashboard: React.FC = () => {
                   type="button"
                   title={item.label}
                   className={`admin-ops-nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    if (window.innerWidth <= 900) {
+                      setIsSidebarCollapsed(true);
+                    }
+                  }}
                 >
                   <Icon size={18} />
-                  {!isSidebarCollapsed && <span>{item.label}</span>}
+                  <span>{item.label}</span>
                 </button>
               );
             })}
@@ -2881,9 +2890,12 @@ const PropertyManagerDashboard: React.FC = () => {
               </div>
 
               {/* Active Bookings Table Listing View - Stretched Full Width */}
+              <div className="admin-table-scroll-hint">
+                <span>← Swipe horizontally to view full booking details →</span>
+              </div>
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', marginBottom: '24px', width: '100%' }}>
-                <div style={{ overflowX: 'auto', width: '100%' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                  <table style={{ width: '100%', minWidth: '950px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '12px 18px', width: '10%' }}>Reservation ID</th>
@@ -3343,9 +3355,12 @@ const PropertyManagerDashboard: React.FC = () => {
               </div>
 
               {/* Guest Management Table Listing View */}
+              <div className="admin-table-scroll-hint">
+                <span>← Swipe horizontally to view full guest details →</span>
+              </div>
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                  <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '12px 16px' }}>Evolve ID</th>
@@ -3537,9 +3552,12 @@ const PropertyManagerDashboard: React.FC = () => {
               </div>
 
               {/* Guest Users Table Listing View */}
+              <div className="admin-table-scroll-hint">
+                <span>← Swipe horizontally to view full guest records →</span>
+              </div>
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                  <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '12px 16px' }}>Reservation ID</th>
@@ -3723,10 +3741,10 @@ const PropertyManagerDashboard: React.FC = () => {
               =========================================================== */
               <div className="admin-card-workspace">
                 {/* Header */}
-                <div className="admin-card-header" style={{ marginBottom: '18px', alignItems: 'center' }}>
-                  <div>
+                <div className="admin-card-header" style={{ marginBottom: '18px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <span className="admin-ops-eyebrow">PROFILE-LEVEL REWARDS MANAGEMENT</span>
-                    <h2 className="admin-card-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h2 className="admin-card-title">
                       <span>Evolve Texarkana • Member Rewards</span>
                       <span
                         style={{
@@ -3734,7 +3752,7 @@ const PropertyManagerDashboard: React.FC = () => {
                           alignItems: 'center',
                           backgroundColor: '#edf4f0',
                           color: '#17271f',
-                          fontSize: '0.9rem',
+                          fontSize: '0.85rem',
                           fontWeight: 700,
                           padding: '2px 10px',
                           borderRadius: '20px',
@@ -3752,6 +3770,7 @@ const PropertyManagerDashboard: React.FC = () => {
                     type="button"
                     className="admin-btn-dashboard-back"
                     onClick={() => setActiveTab('dashboard')}
+                    style={{ flexShrink: 0 }}
                   >
                     <ArrowLeft size={15} />
                     <span>Dashboard</span>
@@ -3775,7 +3794,7 @@ const PropertyManagerDashboard: React.FC = () => {
                   </div>
 
                   {/* Tier Filter Buttons */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {['all', 'Prestige', 'Origins', 'Elite'].map((t) => (
                       <button
                         key={t}
@@ -3838,8 +3857,11 @@ const PropertyManagerDashboard: React.FC = () => {
                 </div>
 
                 {/* Clean Members Listing Table */}
-                <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <div className="admin-table-scroll-hint">
+                  <span>← Swipe horizontally to view full table data →</span>
+                </div>
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                  <table style={{ width: '100%', minWidth: '880px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f8faf9', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         <th style={{ padding: '14px 18px' }}>Evolve ID</th>
@@ -4318,8 +4340,11 @@ const PropertyManagerDashboard: React.FC = () => {
                   </div>
 
                   {/* Points History Table */}
-                  <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                  <div className="admin-table-scroll-hint">
+                    <span>← Swipe horizontally to view points history →</span>
+                  </div>
+                  <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#f8faf9', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                           <th style={{ padding: '12px 16px' }}>Date</th>
@@ -4622,8 +4647,11 @@ const PropertyManagerDashboard: React.FC = () => {
               </div>
 
               {/* Customer Gift Requests Listing Table */}
-              <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <div className="admin-table-scroll-hint">
+                <span>← Swipe horizontally to view gift requests →</span>
+              </div>
+              <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8faf9', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       <th style={{ padding: '14px 18px' }}>Request ID</th>
@@ -5048,9 +5076,12 @@ const PropertyManagerDashboard: React.FC = () => {
               </div>
 
               {/* Guest Cases Table View */}
+              <div className="admin-table-scroll-hint">
+                <span>← Swipe horizontally to view case records →</span>
+              </div>
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                  <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '14px 18px', width: '18%' }}>Case No</th>
@@ -11053,8 +11084,11 @@ const PropertyManagerDashboard: React.FC = () => {
             </div>
 
             {/* Membership Table */}
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+            <div className="admin-table-scroll-hint">
+              <span>← Swipe horizontally to view full table data →</span>
+            </div>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', marginBottom: '20px' }}>
+              <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
                     <th style={{ padding: '10px 14px' }}>Guest Member</th>
@@ -11251,8 +11285,11 @@ const PropertyManagerDashboard: React.FC = () => {
             </div>
 
             {/* Ledger Table */}
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+            <div className="admin-table-scroll-hint">
+              <span>← Swipe horizontally to view ledger records →</span>
+            </div>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', marginBottom: '20px' }}>
+              <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
                     <th style={{ padding: '10px 14px' }}>Date</th>
@@ -12287,8 +12324,11 @@ const PropertyManagerDashboard: React.FC = () => {
             </div>
 
             {/* Security Log Table */}
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+            <div className="admin-table-scroll-hint">
+              <span>← Swipe horizontally to view audit logs →</span>
+            </div>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', marginBottom: '20px' }}>
+              <table style={{ width: '100%', minWidth: '720px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
                     <th style={{ padding: '10px 14px' }}>Timestamp</th>

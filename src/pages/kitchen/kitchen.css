@@ -924,8 +924,17 @@
    RESPONSIVE DESIGN (TABLETS & MOBILES)
    -------------------------------------------------------------------------- */
 @media (max-width: 1023px) {
+  .kitchen-screen-wrapper {
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+  }
+
   .kitchen-mobile-topbar {
-    display: flex;
+    display: flex !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
   }
 
   .kitchen-sidebar-backdrop {
