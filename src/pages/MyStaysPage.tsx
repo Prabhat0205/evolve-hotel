@@ -4,8 +4,37 @@ import { Reservation } from '../types';
 import { mockProperties } from '../data/mockProperties';
 import { 
   AlertCircle, ShieldCheck, Sparkles, Lock, ArrowRight, X, ArrowLeft, 
-  CheckCircle2, CreditCard, Calendar, Check, Info, ArrowUpRight, HelpCircle, Phone
+  CheckCircle2, CreditCard, Calendar, Check, Info, ArrowUpRight, HelpCircle, Phone,
+  Clock, FileText, MessageSquare, UserCheck, RefreshCw, Send
 } from 'lucide-react';
+
+export interface MissingStayResolutionNote {
+  id: string;
+  author: string;
+  role: 'Property Manager' | 'Project Manager' | 'Front Desk' | 'Cloudbeds Auditor' | 'Guest';
+  date: string;
+  message: string;
+  isResolution?: boolean;
+}
+
+export interface MissingStayRequestItem {
+  id: string;
+  refCode: string;
+  property: string;
+  confirmationNumber: string;
+  checkIn: string;
+  checkOut: string;
+  bookedChannel: string;
+  notes: string;
+  submittedAt: string;
+  status: string;
+  resolutionStatus?: 'Pending' | 'In Review' | 'Resolved' | 'Rejected';
+  resolutionOutcome?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  nightsCredited?: number;
+  resolutionNotes?: MissingStayResolutionNote[];
+}
 
 export const MyStaysPage: React.FC = () => {
   const { 
@@ -45,25 +74,63 @@ export const MyStaysPage: React.FC = () => {
   const [isSubmittingMissing, setIsSubmittingMissing] = useState(false);
 
   // Missing stay requests stored in localStorage
-  const [missingStayRequests, setMissingStayRequests] = useState<Array<{
-    id: string;
-    refCode: string;
-    property: string;
-    confirmationNumber: string;
-    checkIn: string;
-    checkOut: string;
-    bookedChannel: string;
-    notes: string;
-    submittedAt: string;
-    status: string;
-  }>>(() => {
+  const [missingStayRequests, setMissingStayRequests] = useState<MissingStayRequestItem[]>(() => {
     try {
       const saved = localStorage.getItem('evolve_missing_stays_v1');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return [
+        {
+          id: 'req-sample-4013',
+          refCode: 'MS-4013',
+          property: 'Evolve Hotels & Suites · Texarkana',
+          confirmationNumber: 'EV-4218',
+          checkIn: '2026-09-12',
+          checkOut: '2026-09-14',
+          bookedChannel: 'Evolve website',
+          notes: 'Completed 2-night stay with confirmation EV-4218. Stays and points have not appeared in my account yet.',
+          submittedAt: 'Oct 13, 2026',
+          status: 'RESOLVED · 2 Reward Nights Credited',
+          resolutionStatus: 'Resolved',
+          resolutionOutcome: 'Approved by Property Manager • 2 Qualifying Nights Credited to Evolve Rewards',
+          resolvedBy: 'Marcus Sterling (Property Manager)',
+          resolvedAt: 'Oct 13, 2026',
+          nightsCredited: 2,
+          resolutionNotes: [
+            {
+              id: 'note-s1',
+              author: 'Guest',
+              role: 'Guest',
+              date: 'Oct 13, 2026 • 09:30 AM',
+              message: 'Completed 2-night stay with confirmation EV-4218. Stays and points have not appeared in my account yet.'
+            },
+            {
+              id: 'note-s2',
+              author: 'Cloudbeds Auto-Audit',
+              role: 'Cloudbeds Auditor',
+              date: 'Oct 13, 2026 • 09:31 AM',
+              message: 'Confirmation EV-4218 located in Cloudbeds central database. Folio matched to guest mobile number. Forwarded to Texarkana Property Manager for nights approval.'
+            },
+            {
+              id: 'note-s3',
+              author: 'Marcus Sterling',
+              role: 'Property Manager',
+              date: 'Oct 13, 2026 • 10:15 AM',
+              message: 'Reviewed Cloudbeds EV-4218 folio records. Stay fully confirmed. 2 qualifying Reward Nights and 1,850 bonus points credited to your member profile. Case resolved.',
+              isResolution: true
+            }
+          ]
+        }
+      ];
     } catch {
       return [];
     }
   });
+
+  // Modal state for Resolution & Notes View
+  const [selectedResolutionCase, setSelectedResolutionCase] = useState<MissingStayRequestItem | null>(null);
+  const [newCaseReplyNote, setNewCaseReplyNote] = useState<string>('');
 
   // Filter reservations based on active session
   const userReservations = reservations.filter(r => {
@@ -161,6 +228,150 @@ export const MyStaysPage: React.FC = () => {
     addToast('success', 'Reservation Cancelled', `Reservation ${resCode} has been cancelled with zero fee. Viewing your Cancelled reservations.`);
   };
 
+  // Helper to get effective notes list for any request
+  const getEffectiveResolutionNotes = (req: MissingStayRequestItem): MissingStayResolutionNote[] => {
+    if (req.resolutionNotes && req.resolutionNotes.length > 0) {
+      return req.resolutionNotes;
+    }
+    const notes: MissingStayResolutionNote[] = [];
+    if (req.notes) {
+      notes.push({
+        id: `${req.id}-guest`,
+        author: 'Guest',
+        role: 'Guest',
+        date: req.submittedAt || 'Initial Submission',
+        message: req.notes
+      });
+    }
+    notes.push({
+      id: `${req.id}-audit`,
+      author: 'Cloudbeds Audit System',
+      role: 'Cloudbeds Auditor',
+      date: req.submittedAt || 'Initial Submission',
+      message: `Claim placed in audit queue for confirmation #${req.confirmationNumber || 'Pending'}. Assigned to Property Manager for folio review.`
+    });
+    if (req.status && (req.status.toLowerCase().includes('resolved') || req.resolutionStatus === 'Resolved')) {
+      notes.push({
+        id: `${req.id}-res`,
+        author: req.resolvedBy || 'Marcus Sterling',
+        role: 'Property Manager',
+        date: req.resolvedAt || 'Resolved',
+        message: req.resolutionOutcome || 'Stay verified in Cloudbeds ledger. 2 Reward Nights credited to member account.',
+        isResolution: true
+      });
+    }
+    return notes;
+  };
+
+  // Simulate manager resolving the claim
+  const handleSimulateManagerResolution = (reqId: string, customNote?: string) => {
+    const managerName = 'Marcus Sterling (Property Manager)';
+    const nowStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const noteText = customNote?.trim() || 'Reviewed Cloudbeds folio records. Reservation verified against guest records. Approved and credited +2 Reward Nights to member profile.';
+
+    const updated = missingStayRequests.map(r => {
+      if (r.id !== reqId) return r;
+      const currentNotes = getEffectiveResolutionNotes(r);
+      const resNote: MissingStayResolutionNote = {
+        id: `note-${Date.now()}`,
+        author: managerName,
+        role: 'Property Manager',
+        date: `${nowStr} • Resolution Approved`,
+        message: noteText,
+        isResolution: true
+      };
+      return {
+        ...r,
+        status: 'RESOLVED · 2 Reward Nights Credited',
+        resolutionStatus: 'Resolved' as const,
+        resolutionOutcome: 'Approved by Property Manager • 2 Qualifying Nights Credited',
+        resolvedBy: managerName,
+        resolvedAt: nowStr,
+        nightsCredited: 2,
+        resolutionNotes: [...currentNotes, resNote]
+      };
+    });
+
+    setMissingStayRequests(updated);
+    try {
+      localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(updated));
+    } catch {}
+
+    if (selectedResolutionCase && selectedResolutionCase.id === reqId) {
+      const match = updated.find(u => u.id === reqId);
+      if (match) setSelectedResolutionCase(match);
+    }
+    addToast('success', 'Case Resolved by Manager', 'Resolution note recorded and 2 Reward Nights credited.');
+  };
+
+  // Add a note to the case (as Guest or as Property Manager)
+  const handleAddCaseNote = (reqId: string, asManager: boolean = false) => {
+    if (!newCaseReplyNote.trim()) return;
+    const authorRole = asManager ? 'Property Manager' : 'Guest';
+    const authorName = asManager ? 'Marcus Sterling (Property Manager)' : memberDisplayName;
+    const nowStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    const updated = missingStayRequests.map(r => {
+      if (r.id !== reqId) return r;
+      const currentNotes = getEffectiveResolutionNotes(r);
+      const newNote: MissingStayResolutionNote = {
+        id: `note-${Date.now()}`,
+        author: authorName,
+        role: authorRole,
+        date: `${nowStr} • ${asManager ? 'Manager Note' : 'Guest Follow-up'}`,
+        message: newCaseReplyNote.trim(),
+        isResolution: asManager
+      };
+      return {
+        ...r,
+        status: asManager ? 'RESOLVED · 2 Reward Nights Credited' : r.status,
+        resolutionStatus: asManager ? ('Resolved' as const) : (r.resolutionStatus || 'In Review'),
+        resolutionOutcome: asManager ? `Resolution: ${newCaseReplyNote.trim()}` : r.resolutionOutcome,
+        resolvedBy: asManager ? authorName : r.resolvedBy,
+        resolvedAt: asManager ? nowStr : r.resolvedAt,
+        nightsCredited: asManager ? 2 : r.nightsCredited,
+        resolutionNotes: [...currentNotes, newNote]
+      };
+    });
+
+    setMissingStayRequests(updated);
+    try {
+      localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(updated));
+    } catch {}
+
+    if (selectedResolutionCase && selectedResolutionCase.id === reqId) {
+      const match = updated.find(u => u.id === reqId);
+      if (match) setSelectedResolutionCase(match);
+    }
+    setNewCaseReplyNote('');
+    addToast('success', 'Note Added', asManager ? 'Manager resolution note logged.' : 'Your note has been posted to the case.');
+  };
+
+  // Reset case to pending (for testing)
+  const handleResetCaseToPending = (reqId: string) => {
+    const updated = missingStayRequests.map(r => {
+      if (r.id !== reqId) return r;
+      return {
+        ...r,
+        status: 'PENDING VERIFICATION · Cloudbeds Match in Progress',
+        resolutionStatus: 'Pending' as const,
+        resolutionOutcome: undefined,
+        resolvedBy: undefined,
+        resolvedAt: undefined,
+        nightsCredited: undefined
+      };
+    });
+    setMissingStayRequests(updated);
+    try {
+      localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(updated));
+    } catch {}
+    if (selectedResolutionCase && selectedResolutionCase.id === reqId) {
+      const match = updated.find(u => u.id === reqId);
+      if (match) setSelectedResolutionCase(match);
+    }
+    addToast('info', 'Status Reset', 'Case status reset to pending review.');
+  };
+
   // Missing Stay Submission Handler
   const handleSubmitMissingStay = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +387,26 @@ export const MyStaysPage: React.FC = () => {
     setIsSubmittingMissing(true);
     setTimeout(() => {
       const refCode = `MS-${Math.floor(1000 + Math.random() * 9000)}`;
-      const newRequest = {
+      const nowStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      const initialNotesList: MissingStayResolutionNote[] = [
+        ...(missingNotes ? [{
+          id: `note-${Date.now()}-1`,
+          author: memberDisplayName,
+          role: 'Guest' as const,
+          date: nowStr,
+          message: missingNotes
+        }] : []),
+        {
+          id: `note-${Date.now()}-2`,
+          author: 'Cloudbeds Auto-Audit',
+          role: 'Cloudbeds Auditor' as const,
+          date: nowStr,
+          message: `Claim ${refCode} placed in audit ledger for ${missingProperty}. Assigned to Property Manager for folio review.`
+        }
+      ];
+
+      const newRequest: MissingStayRequestItem = {
         id: `req-${Date.now()}`,
         refCode,
         property: missingProperty,
@@ -185,8 +415,13 @@ export const MyStaysPage: React.FC = () => {
         checkOut: missingCheckOut || 'Recent stay',
         bookedChannel: missingBookedChannel,
         notes: missingNotes,
-        submittedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: 'PENDING VERIFICATION · Cloudbeds Match in Progress'
+        submittedAt: nowStr,
+        status: 'PENDING VERIFICATION · Cloudbeds Match in Progress',
+        resolutionStatus: 'Pending',
+        resolutionOutcome: undefined,
+        resolvedBy: undefined,
+        resolvedAt: undefined,
+        resolutionNotes: initialNotesList
       };
 
       const updated = [newRequest, ...missingStayRequests];
@@ -748,52 +983,196 @@ export const MyStaysPage: React.FC = () => {
                   </button>
                 </div>
 
-                {missingStayRequests.map(req => (
-                  <div key={req.id} style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', border: '1px solid #eeece5', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                      <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          REQUEST #{req.refCode}
+                {missingStayRequests.map(req => {
+                  const isResolved = req.status.toLowerCase().includes('resolved') || req.resolutionStatus === 'Resolved';
+                  const effectiveNotes = getEffectiveResolutionNotes(req);
+                  const latestManagerNote = [...effectiveNotes].reverse().find(n => n.role === 'Property Manager' || n.role === 'Project Manager');
+
+                  return (
+                    <div key={req.id} style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', border: '1px solid #eeece5', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            REQUEST #{req.refCode}
+                          </span>
+                          <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: '4px 0 0', fontWeight: 800 }}>
+                            {req.property}
+                          </h3>
+                        </div>
+                        <span style={{ 
+                          backgroundColor: isResolved ? '#dcfce7' : '#fef3c7', 
+                          color: isResolved ? '#15803d' : '#92400e', 
+                          padding: '6px 14px', 
+                          borderRadius: '999px', 
+                          fontSize: '0.8125rem', 
+                          fontWeight: 700,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          {isResolved ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                          {req.status}
                         </span>
-                        <h3 style={{ fontSize: '1.25rem', color: '#17271f', margin: '4px 0 0', fontWeight: 800 }}>
-                          {req.property}
-                        </h3>
                       </div>
-                      <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '6px 14px', borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 700 }}>
-                        {req.status}
-                      </span>
-                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', margin: '16px 0', padding: '14px', backgroundColor: '#fbfaf8', borderRadius: '10px' }}>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Confirmation Number</div>
-                        <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 700, marginTop: '2px' }}>{req.confirmationNumber}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', margin: '16px 0', padding: '14px', backgroundColor: '#fbfaf8', borderRadius: '10px' }}>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Confirmation Number</div>
+                          <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 700, marginTop: '2px' }}>{req.confirmationNumber}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Stay Dates</div>
+                          <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600, marginTop: '2px' }}>{req.checkIn} – {req.checkOut}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Booking Channel</div>
+                          <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600, marginTop: '2px' }}>{req.bookedChannel}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Submitted Date</div>
+                          <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600, marginTop: '2px' }}>{req.submittedAt}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Stay Dates</div>
-                        <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600, marginTop: '2px' }}>{req.checkIn} – {req.checkOut}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Booking Channel</div>
-                        <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600, marginTop: '2px' }}>{req.bookedChannel}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700 }}>Submitted Date</div>
-                        <div style={{ fontSize: '0.95rem', color: '#17271f', fontWeight: 600, marginTop: '2px' }}>{req.submittedAt}</div>
+
+                      {req.notes && (
+                        <p style={{ fontSize: '0.875rem', color: '#4a5753', margin: '0 0 16px', backgroundColor: '#f6f3ec', padding: '10px 14px', borderRadius: '8px', borderLeft: '3px solid #dda943' }}>
+                          <strong>Guest notes:</strong> {req.notes}
+                        </p>
+                      )}
+
+                      {/* CUSTOMER RESOLUTION VIEW & MANAGER NOTES */}
+                      {isResolved ? (
+                        <div style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '18px', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', fontWeight: 800, fontSize: '0.92rem' }}>
+                              <CheckCircle2 size={18} /> Official Resolution by {req.resolvedBy || 'Marcus Sterling (Property Manager)'}
+                            </div>
+                            <span style={{ fontSize: '0.75rem', color: '#15803d', backgroundColor: '#dcfce7', padding: '3px 10px', borderRadius: '999px', fontWeight: 700 }}>
+                              {req.resolvedAt || 'Resolved'}
+                            </span>
+                          </div>
+                          
+                          <div style={{ fontSize: '0.92rem', color: '#14532d', fontWeight: 700, marginBottom: '8px' }}>
+                            {req.resolutionOutcome || 'Claim approved. Reward nights credited to your member account.'}
+                          </div>
+
+                          {latestManagerNote && (
+                            <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '12px 14px', border: '1px solid #bbf7d0', fontSize: '0.875rem', color: '#166534', lineHeight: 1.5, marginBottom: '12px' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', marginBottom: '3px' }}>
+                                Property Manager Resolution Notes:
+                              </div>
+                              "{latestManagerNote.message}"
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedResolutionCase(req)}
+                              style={{ 
+                                backgroundColor: '#15803d', 
+                                color: '#ffffff', 
+                                border: 'none', 
+                                borderRadius: '8px', 
+                                padding: '9px 18px', 
+                                fontSize: '0.875rem', 
+                                fontWeight: 700, 
+                                cursor: 'pointer', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px',
+                                boxShadow: '0 2px 6px rgba(21, 128, 61, 0.2)'
+                              }}
+                            >
+                              <FileText size={15} /> View All Notes &amp; Resolution ({effectiveNotes.length})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedResolutionCase(req)}
+                              style={{ 
+                                backgroundColor: '#ffffff', 
+                                color: '#15803d', 
+                                border: '1px solid #86efac', 
+                                borderRadius: '8px', 
+                                padding: '9px 16px', 
+                                fontSize: '0.875rem', 
+                                fontWeight: 700, 
+                                cursor: 'pointer', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px' 
+                              }}
+                            >
+                              <MessageSquare size={15} /> Add Follow-up Note
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ backgroundColor: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '12px', padding: '18px', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b45309', fontWeight: 800, fontSize: '0.92rem' }}>
+                              <Clock size={18} /> Resolution Status: Under Review by Property Manager
+                            </div>
+                            <span style={{ fontSize: '0.75rem', color: '#92400e', backgroundColor: '#fef3c7', padding: '3px 10px', borderRadius: '999px', fontWeight: 700 }}>
+                              Assigned: Marcus Sterling
+                            </span>
+                          </div>
+                          
+                          <div style={{ fontSize: '0.875rem', color: '#78350f', lineHeight: 1.5, marginBottom: '14px' }}>
+                            Cloudbeds reservation folio is currently being audited against guest records. When the Project / Property Manager verifies your stay, their resolution and all notes will be published directly here.
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedResolutionCase(req)}
+                              style={{ 
+                                backgroundColor: '#ffffff', 
+                                color: '#92400e', 
+                                border: '1.5px solid #fcd34d', 
+                                borderRadius: '8px', 
+                                padding: '9px 16px', 
+                                fontSize: '0.875rem', 
+                                fontWeight: 700, 
+                                cursor: 'pointer', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px' 
+                              }}
+                            >
+                              <FileText size={15} /> View Case Notes ({effectiveNotes.length})
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSimulateManagerResolution(req.id)}
+                              style={{ 
+                                backgroundColor: '#173f34', 
+                                color: '#ffffff', 
+                                border: 'none', 
+                                borderRadius: '8px', 
+                                padding: '9px 18px', 
+                                fontSize: '0.875rem', 
+                                fontWeight: 700, 
+                                cursor: 'pointer', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px',
+                                boxShadow: '0 2px 6px rgba(23, 63, 52, 0.2)'
+                              }}
+                            >
+                              <Sparkles size={15} color="#dda943" /> Simulate Manager Resolution
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontSize: '0.85rem', fontWeight: 600 }}>
+                        <CheckCircle2 size={16} /> Cloudbeds central audit ledger synced. Staff matches reservations daily.
                       </div>
                     </div>
-
-                    {req.notes && (
-                      <p style={{ fontSize: '0.875rem', color: '#6e7a76', margin: '0 0 12px' }}>
-                        <strong>Guest notes:</strong> {req.notes}
-                      </p>
-                    )}
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontSize: '0.85rem', fontWeight: 600 }}>
-                      <CheckCircle2 size={16} /> Cloudbeds system audit in queue. Staff matches reservations daily.
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '48px 32px', textAlign: 'center', border: '1px solid #eeece5' }}>
@@ -1505,6 +1884,270 @@ export const MyStaysPage: React.FC = () => {
             </div>
           </div>
         )}
+        {/* RESOLUTION & ALL NOTES MODAL (CUSTOMER RESOLUTION VIEW) */}
+        {selectedResolutionCase && (() => {
+          const isResolved = selectedResolutionCase.status.toLowerCase().includes('resolved') || selectedResolutionCase.resolutionStatus === 'Resolved';
+          const notes = getEffectiveResolutionNotes(selectedResolutionCase);
+
+          return (
+            <div 
+              className="modal-overlay" 
+              onClick={() => setSelectedResolutionCase(null)} 
+              style={{ 
+                zIndex: 2200, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                padding: '20px',
+                backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                backdropFilter: 'blur(3px)'
+              }}
+            >
+              <div 
+                className="modal-content" 
+                onClick={(e) => e.stopPropagation()} 
+                style={{ 
+                  maxWidth: '680px', 
+                  width: '100%', 
+                  padding: '34px 30px', 
+                  borderRadius: '24px', 
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 24px 70px rgba(0,0,0,0.25)',
+                  position: 'relative',
+                  maxHeight: '90vh',
+                  overflowY: 'auto'
+                }}
+              >
+                <button 
+                  onClick={() => setSelectedResolutionCase(null)} 
+                  style={{ 
+                    position: 'absolute', 
+                    top: '22px', 
+                    right: '22px', 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    color: '#6e7a76', 
+                    padding: '4px' 
+                  }}
+                >
+                  <X size={20} />
+                </button>
+
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#997125', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>
+                  CASE RESOLUTION &amp; MANAGEMENT NOTES
+                </span>
+
+                <h3 style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: '1.85rem', fontWeight: 700, color: '#17271f', margin: '0 0 6px', lineHeight: 1.2 }}>
+                  Case #{selectedResolutionCase.refCode}
+                </h3>
+                <div style={{ color: '#6e7a76', fontSize: '0.9rem', marginBottom: '18px' }}>
+                  {selectedResolutionCase.property} • Confirmation #{selectedResolutionCase.confirmationNumber}
+                </div>
+
+                {/* Resolution Status Highlight Card */}
+                {isResolved ? (
+                  <div style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '14px', padding: '16px 18px', marginBottom: '22px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', fontWeight: 800, fontSize: '0.95rem' }}>
+                        <CheckCircle2 size={20} /> Official Project Manager Resolution
+                      </div>
+                      <span style={{ fontSize: '0.78rem', color: '#15803d', backgroundColor: '#dcfce7', padding: '3px 10px', borderRadius: '999px', fontWeight: 800 }}>
+                        +{selectedResolutionCase.nightsCredited || 2} Reward Nights Credited
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.88rem', color: '#14532d', lineHeight: 1.5, marginBottom: '6px' }}>
+                      <strong>Outcome:</strong> {selectedResolutionCase.resolutionOutcome || 'Claim approved. Reward nights credited to member account.'}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#15803d' }}>
+                      Resolved by: <strong>{selectedResolutionCase.resolvedBy || 'Marcus Sterling (Property Manager)'}</strong> • Date: {selectedResolutionCase.resolvedAt || 'Recently'}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ backgroundColor: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b45309', fontWeight: 800, fontSize: '0.95rem', marginBottom: '4px' }}>
+                      <Clock size={20} /> Status: In Review by Property Manager
+                    </div>
+                    <div style={{ fontSize: '0.88rem', color: '#78350f', lineHeight: 1.5 }}>
+                      Assigned to <strong>Marcus Sterling (Property Manager)</strong>. The Cloudbeds reservation audit is ongoing. Any notes or resolution remarks will be recorded in the timeline below.
+                    </div>
+                  </div>
+                )}
+
+                {/* Stay Details Quick Overview */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', padding: '12px 14px', backgroundColor: '#f8f7f4', borderRadius: '10px', marginBottom: '22px', fontSize: '0.82rem' }}>
+                  <div>
+                    <span style={{ color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>Dates</span>
+                    <div style={{ fontWeight: 600, color: '#17271f', marginTop: '2px' }}>{selectedResolutionCase.checkIn} – {selectedResolutionCase.checkOut}</div>
+                  </div>
+                  <div>
+                    <span style={{ color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>Channel</span>
+                    <div style={{ fontWeight: 600, color: '#17271f', marginTop: '2px' }}>{selectedResolutionCase.bookedChannel}</div>
+                  </div>
+                  <div>
+                    <span style={{ color: '#6e7a76', textTransform: 'uppercase', fontWeight: 700, fontSize: '0.7rem' }}>Submitted</span>
+                    <div style={{ fontWeight: 600, color: '#17271f', marginTop: '2px' }}>{selectedResolutionCase.submittedAt}</div>
+                  </div>
+                </div>
+
+                {/* Chronological Notes & Resolution Timeline */}
+                <div style={{ marginBottom: '22px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#17271f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MessageSquare size={17} color="#173f34" />
+                      All Case Notes &amp; Resolution History ({notes.length})
+                    </h4>
+                    <span style={{ fontSize: '0.75rem', color: '#6e7a76' }}>Chronological Audit Log</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {notes.map(note => {
+                      const isManagerRole = note.role === 'Property Manager' || note.role === 'Project Manager';
+                      const isGuestRole = note.role === 'Guest';
+
+                      return (
+                        <div 
+                          key={note.id} 
+                          style={{
+                            backgroundColor: note.isResolution ? '#f0fdf4' : isManagerRole ? '#fbfdfc' : isGuestRole ? '#faf8f4' : '#f8fafc',
+                            border: note.isResolution ? '1.5px solid #86efac' : isManagerRole ? '1px solid #bbf7d0' : '1px solid #e2ded5',
+                            borderRadius: '12px',
+                            padding: '14px 16px',
+                            position: 'relative'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontWeight: 800, color: '#17271f', fontSize: '0.88rem' }}>
+                                {note.author}
+                              </span>
+                              <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: isManagerRole ? '#dcfce7' : isGuestRole ? '#fef3c7' : '#e2e8f0',
+                                color: isManagerRole ? '#15803d' : isGuestRole ? '#92400e' : '#475569'
+                              }}>
+                                {note.role}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: '0.75rem', color: '#6e7a76' }}>
+                              {note.date}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '0.875rem', color: '#17271f', lineHeight: 1.5 }}>
+                            {note.message}
+                          </div>
+
+                          {note.isResolution && (
+                            <div style={{ marginTop: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <CheckCircle2 size={13} /> Official Management Resolution Clearance
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Add Note / Manager Resolution Input */}
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#17271f', marginBottom: '6px' }}>
+                    Add Note / Resolution Remark to Case #{selectedResolutionCase.refCode}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={newCaseReplyNote}
+                    onChange={(e) => setNewCaseReplyNote(e.target.value)}
+                    placeholder="Type follow-up inquiry, Cloudbeds folio details, or resolution remarks..."
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #d1d5db',
+                      fontSize: '0.88rem',
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      resize: 'vertical',
+                      marginBottom: '10px',
+                      outline: 'none'
+                    }}
+                  />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleAddCaseNote(selectedResolutionCase.id, false)}
+                        style={{
+                          backgroundColor: '#173f34',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '9px 16px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Send size={14} /> Send Note as Guest
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newCaseReplyNote.trim()) {
+                            handleAddCaseNote(selectedResolutionCase.id, true);
+                          } else {
+                            handleSimulateManagerResolution(selectedResolutionCase.id);
+                          }
+                        }}
+                        style={{
+                          backgroundColor: '#15803d',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '9px 16px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <UserCheck size={14} /> Post as Project Manager (Resolve Case)
+                      </button>
+                    </div>
+
+                    {isResolved && (
+                      <button
+                        type="button"
+                        onClick={() => handleResetCaseToPending(selectedResolutionCase.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#b45309',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Reset to Pending (Test)
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
