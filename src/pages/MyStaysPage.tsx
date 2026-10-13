@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp, normalizePhone, normalizeGuestCode } from '../context/AppContext';
 import { Reservation } from '../types';
+import { mockProperties } from '../data/mockProperties';
 import { 
   AlertCircle, ShieldCheck, Sparkles, Lock, ArrowRight, X, ArrowLeft, 
   CheckCircle2, CreditCard, Calendar, Check, Info, ArrowUpRight, HelpCircle, Phone
@@ -8,7 +9,7 @@ import {
 
 export const MyStaysPage: React.FC = () => {
   const { 
-    reservations, cancelReservation, navigateTo, addToast,
+    reservations, cancelReservation, navigateTo, addToast, setSelectedProperty,
     currentUser, currentPersona, activeGuestCode, activeGuestPhone,
     openAuthModal, loginAs
   } = useApp();
@@ -132,41 +133,32 @@ export const MyStaysPage: React.FC = () => {
     setOptionsModalOpen(true);
   };
 
-  // Cancel & Rebook Action: Cancels current reservation with zero fee and prompts to book new dates
+  // Cancel & Rebook Action: Cancels current reservation with zero fee and redirects immediately to the hotel booking page
   const handleCancelAndRebook = (res: Reservation) => {
-    const refCode = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
     const resCode = res.confirmationCode;
     const propName = res.propertyName;
     cancelReservation(res.id);
     setOptionsModalOpen(false);
-    addToast('success', 'Reservation Cancelled for Rebooking', `Reservation ${resCode} cancelled with zero fee. Ready to choose new dates.`);
-    setConfirmationModal({
-      tag: 'READY TO REBOOK',
-      title: 'Reservation Cancelled · Ready to Rebook',
-      description: `Reservation ${resCode} at ${propName} has been cancelled with zero fee. Because no upfront payment was taken, your card was not charged and no refund is needed. You can now select your desired dates and make a new reservation.`,
-      actionLabel: 'Browse & Book New Dates',
-      onAction: () => {
-        setConfirmationModal(null);
-        navigateTo('landing');
-      },
-      redirectTab: 'UPCOMING'
-    });
+
+    // Set matching property in context so property-detail page opens this hotel
+    const matchedProp = mockProperties.find(p => p.id === res.propertyId || p.name.toLowerCase() === res.propertyName.toLowerCase()) || mockProperties[0];
+    if (matchedProp) {
+      setSelectedProperty(matchedProp);
+    }
+
+    addToast('success', 'Reservation Cancelled for Rebooking', `Reservation ${resCode} at ${propName} was cancelled with zero fee. Select your new dates to book.`);
+    navigateTo('property-detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Cancel Reservation Only Action (Zero Fee, No Refund)
+  // Cancel Reservation Only Action (Zero Fee): Cancels current reservation and takes user directly to Cancelled reservations tab
   const handleConfirmCancelOnly = (res: Reservation) => {
-    const refCode = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
     const resCode = res.confirmationCode;
-    const propName = res.propertyName;
     cancelReservation(res.id);
     setOptionsModalOpen(false);
-    addToast('success', 'Reservation Cancelled', `Reservation ${resCode} has been cancelled with zero penalty.`);
-    setConfirmationModal({
-      tag: 'RESERVATION CANCELLATION CONFIRMATION',
-      title: 'Reservation Cancelled',
-      description: `Cloudbeds confirmed reservation cancellation ${refCode} for ${resCode} at ${propName}. Zero cancellation penalty. No upfront payment was taken, so no charges were made and no refund is needed.`,
-      redirectTab: 'CANCELLED'
-    });
+    setTab('CANCELLED');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    addToast('success', 'Reservation Cancelled', `Reservation ${resCode} has been cancelled with zero fee. Viewing your Cancelled reservations.`);
   };
 
   // Missing Stay Submission Handler
