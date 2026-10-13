@@ -1004,7 +1004,7 @@ export const PropertyDetailPage: React.FC = () => {
                         <div style={{ fontSize: '0.8125rem', color: '#5b6763', marginTop: '4px' }}>
                           {isMember 
                             ? '✓ Includes complimentary made-to-order breakfast and 2x bonus reward nights' 
-                            : '✓ Free cancellation up to 48 hours prior to check-in'}
+                            : '✓ Free cancellation until 4:00 PM the day before arrival (24 hours prior)'}
                         </div>
                       </div>
 

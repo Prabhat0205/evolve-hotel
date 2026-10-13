@@ -82,9 +82,10 @@ export const MyStaysPage: React.FC = () => {
   const cancelledStays = userReservations.filter(r => r.status === 'CANCELLED');
 
   // 24-Hour Policy Window calculation helper
-  // Policy rule: Reservations can only be cancelled or modified until 24 hours remain before check-in.
-  // Within the 24-hour window (<24h left), online changes and cancellations are locked.
-  const getCancellationPolicyStatus = (checkInDateStr: string, deadlineStr?: string) => {
+  // Policy rule: Reservations can only be cancelled until 24 hours prior to check-in start date (4:00 PM Central Time the day before arrival).
+  // Once within the 24-hour window (<24h left), cancellations are locked.
+  // Note: No upfront payment is taken at booking, so there is zero cancellation fee and no amount refund.
+  const getCancellationPolicyStatus = (checkInDateStr: string) => {
     try {
       const now = Date.now();
       const [y, m, d] = checkInDateStr.split('-').map(Number);
@@ -92,24 +93,21 @@ export const MyStaysPage: React.FC = () => {
         return { isLocked: false, hoursRemaining: 999, deadlineText: '24 hours prior to check-in' };
       }
 
-      // Check-in standard is 4:00 PM (16:00) on the check-in date
+      // Check-in standard is 4:00 PM (16:00) Central on the check-in date
       const checkInDateTime = new Date(y, m - 1, d, 16, 0, 0);
       const checkInTimestamp = checkInDateTime.getTime();
       const msLeft = checkInTimestamp - now;
       const hoursRemaining = msLeft / (1000 * 60 * 60);
 
-      // The 24-hour cutoff: 4:00 PM on the day before arrival (or explicit deadlineStr)
-      let cutoffTimestamp = checkInTimestamp - (24 * 60 * 60 * 1000);
-      if (deadlineStr && !isNaN(new Date(deadlineStr).getTime())) {
-        cutoffTimestamp = new Date(deadlineStr).getTime();
-      }
+      // The 24-hour cutoff: 4:00 PM Central on the calendar day before check-in (d - 1)
+      const cutoffDate = new Date(y, m - 1, d - 1, 16, 0, 0);
+      const cutoffTimestamp = cutoffDate.getTime();
 
-      const cutoffDate = new Date(cutoffTimestamp);
       const mStr = cutoffDate.toLocaleDateString('en-US', { month: 'short' });
       const dNum = cutoffDate.getDate();
       const deadlineText = `${mStr} ${dNum} at 4:00 PM Central Time`;
 
-      // Locked if under 24 hours until check-in or cutoff has passed
+      // Locked if under 24 hours until check-in (or cutoff has passed)
       const isLocked = hoursRemaining <= 24 || now >= cutoffTimestamp;
 
       return {
@@ -125,7 +123,7 @@ export const MyStaysPage: React.FC = () => {
   // Open modal for a reservation (routes to 24h locked view if <= 24h left, otherwise options view)
   const handleOpenOptions = (res: Reservation) => {
     setSelectedRes(res);
-    const policy = getCancellationPolicyStatus(res.checkInDate, res.cancellationDeadline);
+    const policy = getCancellationPolicyStatus(res.checkInDate);
     if (policy.isLocked) {
       setModalSubView('locked_24h');
     } else {
@@ -134,19 +132,18 @@ export const MyStaysPage: React.FC = () => {
     setOptionsModalOpen(true);
   };
 
-  // Cancel & Rebook Action: Cancels current reservation with full refund and prompts to book new dates
+  // Cancel & Rebook Action: Cancels current reservation with zero fee and prompts to book new dates
   const handleCancelAndRebook = (res: Reservation) => {
     const refCode = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
     const resCode = res.confirmationCode;
     const propName = res.propertyName;
-    const refund = res.totalAmount;
     cancelReservation(res.id);
     setOptionsModalOpen(false);
-    addToast('success', 'Reservation Cancelled for Rebooking', `Full refund of $${refund.toFixed(2)} USD credited. Ready to choose new dates.`);
+    addToast('success', 'Reservation Cancelled for Rebooking', `Reservation ${resCode} cancelled with zero fee. Ready to choose new dates.`);
     setConfirmationModal({
       tag: 'READY TO REBOOK',
       title: 'Reservation Cancelled · Ready to Rebook',
-      description: `Reservation ${resCode} at ${propName} has been cancelled and a 100% full refund of $${refund.toFixed(2)} USD was issued to your original payment method (${res.paymentMethod?.brand?.toUpperCase() || 'Card'} •••• ${res.paymentMethod?.last4 || '••••'}). You can now select your desired dates and make a new reservation.`,
+      description: `Reservation ${resCode} at ${propName} has been cancelled with zero fee. Because no upfront payment was taken, your card was not charged and no refund is needed. You can now select your desired dates and make a new reservation.`,
       actionLabel: 'Browse & Book New Dates',
       onAction: () => {
         setConfirmationModal(null);
@@ -156,19 +153,18 @@ export const MyStaysPage: React.FC = () => {
     });
   };
 
-  // Cancel Reservation Only Action
+  // Cancel Reservation Only Action (Zero Fee, No Refund)
   const handleConfirmCancelOnly = (res: Reservation) => {
     const refCode = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
     const resCode = res.confirmationCode;
     const propName = res.propertyName;
-    const refund = res.totalAmount;
     cancelReservation(res.id);
     setOptionsModalOpen(false);
-    addToast('success', 'Reservation Cancelled', `Reservation ${resCode} has been cancelled with full refund.`);
+    addToast('success', 'Reservation Cancelled', `Reservation ${resCode} has been cancelled with zero penalty.`);
     setConfirmationModal({
       tag: 'RESERVATION CANCELLATION CONFIRMATION',
       title: 'Reservation Cancelled',
-      description: `Cloudbeds confirmed reservation cancellation ${refCode} for ${resCode} at ${propName}. A full refund of $${refund.toFixed(2)} USD has been credited to your payment method (${res.paymentMethod?.brand?.toUpperCase() || 'Card'} •••• ${res.paymentMethod?.last4 || '••••'}).`,
+      description: `Cloudbeds confirmed reservation cancellation ${refCode} for ${resCode} at ${propName}. Zero cancellation penalty. No upfront payment was taken, so no charges were made and no refund is needed.`,
       redirectTab: 'CANCELLED'
     });
   };
@@ -497,7 +493,7 @@ export const MyStaysPage: React.FC = () => {
           <div style={{ backgroundColor: '#f0f5f2', borderLeft: '4px solid #173f34', borderRadius: '0 8px 8px 0', padding: '16px 20px' }}>
             <h4 style={{ color: '#17271f', margin: '0 0 4px 0', fontSize: '0.9375rem', fontWeight: 800 }}>Which stays can be managed here?</h4>
             <p style={{ color: '#17271f', margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>
-              Direct reservations made through the Evolve website, Evolve Guest App, hotel phone line or property front desk can be cancelled for a full refund and rebooked until 24 hours prior to check-in. In-place mid-stay date edits are disabled. Reservations within the 24-hour window are locked. Third-party reservations appear as view-only and must be handled via the original provider.
+              Direct reservations made through the Evolve website, Evolve Guest App, hotel phone line or property front desk can be cancelled with zero fee and rebooked until 24 hours prior to check-in (4:00 PM Central Time the day before arrival). No payment is charged upfront, so no refund is needed. In-place mid-stay date edits are disabled. Reservations within the 24-hour window are locked. Third-party reservations appear as view-only and must be handled via the original provider.
             </p>
           </div>
         </div>
@@ -573,7 +569,7 @@ export const MyStaysPage: React.FC = () => {
           {currentStays.map((stay, index) => {
             const { month, day } = getMonthAndDay(stay.checkInDate);
             const shortDates = formatShortDateRange(stay.checkInDate, stay.checkOutDate);
-            const policy = getCancellationPolicyStatus(stay.checkInDate, stay.cancellationDeadline);
+            const policy = getCancellationPolicyStatus(stay.checkInDate);
             
             let tag = 'WEBSITE DIRECT · CLOUDBEDS';
             let badgeText = 'Confirmed';
@@ -648,7 +644,7 @@ export const MyStaysPage: React.FC = () => {
                     </div>
                   )}
 
-                  {tab === 'UPCOMING' && !isViewOnly && (
+                  {tab === 'UPCOMING' && !isViewOnly && stay.status !== 'CANCELLED' && (
                     policy.isLocked ? (
                       <button 
                         onClick={() => handleOpenOptions(stay)} 
@@ -701,26 +697,29 @@ export const MyStaysPage: React.FC = () => {
                   )}
 
                   <p style={{ color: '#6e7a76', fontSize: '0.9375rem', margin: 0, lineHeight: 1.5 }}>
-                    {isPast ? (
+                    {stay.status === 'CANCELLED' ? (
+                      <span style={{ color: '#b91c1c', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                        <span><strong>Reservation cancelled on record.</strong> Zero cancellation fee · No charges were incurred.</span>
+                      </span>
+                    ) : isPast ? (
                       isViewOnly ? (
                         <span style={{ color: '#17271f' }}>This reservation was booked through a third party and was not eligible for Reward Nights.</span>
                       ) : (
                         <span style={{ color: '#17271f' }}>Completed eligible stay · {stay.nightsCount} Reward Nights credited</span>
                       )
+                    ) : isViewOnly ? (
+                      <><strong style={{ color: '#17271f' }}>View only.</strong> Contact original booking provider to cancel this reservation.</>
+                    ) : policy.isLocked ? (
+                      <span style={{ color: '#b91c1c', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <Lock size={14} style={{ flexShrink: 0 }} />
+                        <span><strong>Cancellation closed:</strong> Under 24 hours left before arrival (deadline was {policy.deadlineText}). Cancellations are locked.</span>
+                      </span>
                     ) : (
-                      isViewOnly ? (
-                        <><strong style={{ color: '#17271f' }}>View only.</strong> Contact original booking provider to modify or cancel this reservation.</>
-                      ) : policy.isLocked ? (
-                        <span style={{ color: '#b91c1c', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <Lock size={14} style={{ flexShrink: 0 }} />
-                          <span><strong>Cancellation closed:</strong> Under 24 hours left before arrival. In-place changes and cancellations are locked.</span>
-                        </span>
-                      ) : (
-                        <span style={{ color: '#17653e', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <ShieldCheck size={15} style={{ flexShrink: 0 }} />
-                          <span><strong>Free cancellation available until {policy.deadlineText}</strong> (24 hours prior to check-in). Full refund with zero penalty.</span>
-                        </span>
-                      )
+                      <span style={{ color: '#17653e', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <ShieldCheck size={15} style={{ flexShrink: 0 }} />
+                        <span><strong>Free cancellation available until {policy.deadlineText}</strong> (24 hours prior to check-in). Zero cancellation fee · No upfront charges were taken.</span>
+                      </span>
                     )}
                   </p>
                 </div>
@@ -883,7 +882,7 @@ export const MyStaysPage: React.FC = () => {
 
               {/* VIEW 1: LOCKED UNDER 24 HOURS */}
               {modalSubView === 'locked_24h' && (() => {
-                const policy = getCancellationPolicyStatus(selectedRes.checkInDate, selectedRes.cancellationDeadline);
+                const policy = getCancellationPolicyStatus(selectedRes.checkInDate);
                 return (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
@@ -912,10 +911,10 @@ export const MyStaysPage: React.FC = () => {
                       marginBottom: '18px'
                     }}>
                       <div style={{ fontWeight: 800, color: '#991b1b', fontSize: '0.9rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <AlertCircle size={16} /> Cancellation &amp; Date Modification Locked
+                        <AlertCircle size={16} /> Cancellation &amp; Stay Changes Locked
                       </div>
                       <div style={{ color: '#7f1d1d', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                        Under hotel reservation rules, all cancellations and stay modifications must be finalized at least 24 hours prior to arrival (deadline was {policy.deadlineText}). Because less than 24 hours remain, online cancellation or modification is no longer permitted.
+                        Under hotel reservation rules, all cancellations must be finalized at least 24 hours prior to check-in (deadline was {policy.deadlineText}). Because less than 24 hours remain, online cancellation is no longer permitted.
                       </div>
                     </div>
 
@@ -981,7 +980,7 @@ export const MyStaysPage: React.FC = () => {
 
               {/* VIEW 2: OPTIONS (>24H ELIGIBLE - CANCEL & REBOOK OR CANCEL ONLY) */}
               {modalSubView === 'options' && (() => {
-                const policy = getCancellationPolicyStatus(selectedRes.checkInDate, selectedRes.cancellationDeadline);
+                const policy = getCancellationPolicyStatus(selectedRes.checkInDate);
                 return (
                   <div>
                     <span style={{ 
@@ -1011,7 +1010,7 @@ export const MyStaysPage: React.FC = () => {
                       marginBottom: '20px', 
                       lineHeight: 1.5 
                     }}>
-                      Direct in-place date edits are disabled. If you wish to adjust your stay dates or room type, you can cancel this reservation for a full refund and immediately make a new booking.
+                      Direct in-place date edits are disabled. If you wish to adjust your stay dates or room type, you can cancel this reservation with zero fee and make a new booking.
                     </p>
 
                     {/* Reservation and Suite Details Card */}
@@ -1069,9 +1068,9 @@ export const MyStaysPage: React.FC = () => {
                         paddingTop: '12px',
                         fontSize: '0.9375rem'
                       }}>
-                        <span style={{ color: '#17271f' }}>Total Refund Amount</span>
-                        <strong style={{ color: '#17653e', fontWeight: 800, fontSize: '1.1rem' }}>
-                          ${selectedRes.totalAmount.toFixed(2)} USD
+                        <span style={{ color: '#17271f' }}>Cancellation Fee</span>
+                        <strong style={{ color: '#17653e', fontWeight: 800, fontSize: '1.05rem' }}>
+                          $0.00 USD (Zero Fee)
                         </strong>
                       </div>
                     </div>
@@ -1088,7 +1087,7 @@ export const MyStaysPage: React.FC = () => {
                         <ShieldCheck size={20} /> Free Cancellation Window Active (&gt;24h)
                       </div>
                       <div style={{ fontSize: '0.85rem', color: '#17271f', lineHeight: 1.5 }}>
-                        You are outside the 24-hour cutoff (deadline: {policy.deadlineText}). Cancellation fee is <strong>$0 USD (Zero penalty)</strong>. A 100% full refund of <strong>${selectedRes.totalAmount.toFixed(2)} USD</strong> will be credited to your original payment method.
+                        You are outside the 24-hour cutoff (deadline: {policy.deadlineText}). Cancellation fee is <strong>$0 USD (Zero penalty)</strong>. No payment was collected upfront, so no refund is needed. Your reservation will simply be released with zero charge.
                       </div>
                     </div>
 
@@ -1138,7 +1137,7 @@ export const MyStaysPage: React.FC = () => {
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
                       >
-                        Cancel Reservation Only
+                        Cancel Reservation Only (Zero Fee)
                       </button>
 
                       <button
@@ -1191,10 +1190,10 @@ export const MyStaysPage: React.FC = () => {
                     marginBottom: '24px'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#17653e', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>
-                      <ShieldCheck size={18} /> Free Cancellation Window Active (&gt;24h)
+                      <ShieldCheck size={18} /> Free Cancellation Active (&gt;24h)
                     </div>
                     <div style={{ fontSize: '0.8125rem', color: '#17271f', lineHeight: 1.5 }}>
-                      Cancellation penalty: <strong>$0 USD (Zero penalty)</strong>. Full refund of <strong>${selectedRes.totalAmount.toFixed(2)} USD</strong> will be automatically credited to your original payment method.
+                      Cancellation penalty: <strong>$0 USD (Zero penalty)</strong>. No payment was charged upfront, so no refund is needed. Your reservation will simply be released with zero charges.
                     </div>
                   </div>
 

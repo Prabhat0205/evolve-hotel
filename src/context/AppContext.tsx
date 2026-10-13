@@ -632,7 +632,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Cancel reservation helper
   const cancelReservation = (id: string) => {
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r));
-    addToast('success', 'Reservation Cancelled', 'Refund processed according to hotel cancellation policy.');
+    addToast('success', 'Reservation Cancelled', 'Reservation cancelled with zero penalty. No charges incurred.');
   };
 
   const updateReservation = (updatedRes: Reservation) => {

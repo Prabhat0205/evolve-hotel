@@ -30,7 +30,7 @@ export const ConfirmationPage: React.FC = () => {
     totalAmount: 2970,
     currency: 'USD',
     paymentMethod: { brand: 'visa', last4: '4242' },
-    cancellationDeadline: '48 hours prior to check-in',
+    cancellationDeadline: '24 hours prior to check-in (16:00 Central Time)',
     specialRequests: 'High floor, feather pillows, late check-out requested.',
     guestName: 'Valued Guest',
     guestEmail: 'guest@example.com',
@@ -253,10 +253,10 @@ export const ConfirmationPage: React.FC = () => {
             color: '#6e7a76',
             lineHeight: 1.6
           }}>
-            <strong style={{ color: '#17271f' }}>Cancellation Policy:</strong> Free cancellation permitted until 48 hours prior to check-in date. {isGuestBooking ? (
-              <>For modifications or cancellations, please contact the hotel directly referencing your booking code <strong>{res.confirmationCode}</strong> or reply to your email confirmation.</>
+            <strong style={{ color: '#17271f' }}>Cancellation Policy:</strong> Free cancellation permitted until 24 hours prior to check-in (4:00 PM Central Time the day before arrival). No upfront payment is taken at booking; cancellation is free with zero penalty. {isGuestBooking ? (
+              <>To cancel, please contact the hotel directly referencing your booking code <strong>{res.confirmationCode}</strong> or reply to your email confirmation.</>
             ) : (
-              <>Self-service modifications and cancellations are available inside the <strong style={{ color: '#173f34' }}>My Bookings</strong> portal.</>
+              <>Self-service cancellations and rebooking are available inside the <strong style={{ color: '#173f34' }}>My Stays</strong> portal.</>
             )}
           </div>
 

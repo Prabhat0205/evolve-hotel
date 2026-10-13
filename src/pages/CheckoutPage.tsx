@@ -54,8 +54,8 @@ export const CheckoutPage: React.FC = () => {
     nightlyPrice: selectedProperty?.startingRate || 480,
     cancellationPolicy: {
       isFreeCancellation: true,
-      deadlineHoursPrior: 48,
-      penaltyDescription: 'Free cancellation up to 48h prior to arrival.'
+      deadlineHoursPrior: 24,
+      penaltyDescription: 'Free cancellation until 4:00 PM the day before arrival (24h prior). Zero fee.'
     },
     includesBreakfast: true,
     bonusPoints: 960,
@@ -238,7 +238,7 @@ export const CheckoutPage: React.FC = () => {
         totalAmount: total,
         currency: 'USD',
         paymentMethod: { brand: 'visa', last4: '4242' },
-        cancellationDeadline: '48 hours prior to check-in (15:00 local time)',
+        cancellationDeadline: '24 hours prior to check-in (16:00 Central Time)',
         specialRequests: `${spaAccessSelected && userToAttach?.isMember ? 'Hydrotherapy Spa Access included. ' : ''}${specialRequests}`,
         guestPhone: phone,
         guestEmail: email,
