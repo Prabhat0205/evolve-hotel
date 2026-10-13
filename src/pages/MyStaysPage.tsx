@@ -231,11 +231,24 @@ export const MyStaysPage: React.FC = () => {
 
   const memberDisplayPhone = currentUser?.phone || activeGuestPhone || '(555) 123-4567';
 
+  // Timezone-safe local date parser to prevent UTC offset shifting days backwards
+  const parseLocalDate = (dateStr: string): Date => {
+    if (!dateStr) return new Date();
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts.map(Number);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        return new Date(y, m - 1, d, 12, 0, 0);
+      }
+    }
+    return new Date(dateStr);
+  };
+
   // Date Formatting Helpers
   const formatStayDates = (checkIn: string, checkOut: string) => {
     try {
-      const d1 = new Date(checkIn);
-      const d2 = new Date(checkOut);
+      const d1 = parseLocalDate(checkIn);
+      const d2 = parseLocalDate(checkOut);
       if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return `${checkIn}, ${checkOut}`;
       const opt: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
       return `${d1.toLocaleDateString('en-US', opt)} – ${d2.toLocaleDateString('en-US', opt)}`;
@@ -246,7 +259,7 @@ export const MyStaysPage: React.FC = () => {
 
   const getMonthAndDay = (dateStr: string) => {
     try {
-      const date = new Date(dateStr);
+      const date = parseLocalDate(dateStr);
       if (isNaN(date.getTime())) return { month: 'TBD', day: '--' };
       const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
       const day = date.getDate().toString().padStart(2, '0');
@@ -258,8 +271,8 @@ export const MyStaysPage: React.FC = () => {
 
   const formatShortDateRange = (checkIn: string, checkOut: string) => {
     try {
-      const d1 = new Date(checkIn);
-      const d2 = new Date(checkOut);
+      const d1 = parseLocalDate(checkIn);
+      const d2 = parseLocalDate(checkOut);
       if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return `${checkIn}—${checkOut}`;
       const m1 = d1.toLocaleDateString('en-US', { month: 'short' });
       const day1 = d1.getDate();
@@ -493,7 +506,7 @@ export const MyStaysPage: React.FC = () => {
           <div style={{ backgroundColor: '#f0f5f2', borderLeft: '4px solid #173f34', borderRadius: '0 8px 8px 0', padding: '16px 20px' }}>
             <h4 style={{ color: '#17271f', margin: '0 0 4px 0', fontSize: '0.9375rem', fontWeight: 800 }}>Which stays can be managed here?</h4>
             <p style={{ color: '#17271f', margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>
-              Direct reservations made through the Evolve website, Evolve Guest App, hotel phone line or property front desk can be cancelled with zero fee and rebooked until 24 hours prior to check-in (4:00 PM Central Time the day before arrival). No payment is charged upfront, so no refund is needed. In-place mid-stay date edits are disabled. Reservations within the 24-hour window are locked. Third-party reservations appear as view-only and must be handled via the original provider.
+              Direct reservations made through the Evolve website, Evolve Guest App, hotel phone line or property front desk can be cancelled with zero fee and rebooked before 24 hours of check-in time. Cancellations are only permitted before 24 hours of check-in time, not after that. No upfront payment was taken. In-place mid-stay date edits are disabled. Third-party reservations appear as view-only and must be handled via the original provider.
             </p>
           </div>
         </div>
@@ -603,7 +616,7 @@ export const MyStaysPage: React.FC = () => {
               }
             } else if (tab === 'UPCOMING' && stay.status !== 'CANCELLED' && !isViewOnly) {
               if (policy.isLocked) {
-                badgeText = 'Within 24h Window';
+                badgeText = 'No Cancellations';
                 badgeStyle = { bg: '#fef2f2', color: '#b91c1c' };
               }
             }
@@ -664,7 +677,7 @@ export const MyStaysPage: React.FC = () => {
                           gap: '6px'
                         }}
                       >
-                        <Lock size={14} color="#b91c1c" /> Cancellation Locked (&lt;24h)
+                        <Lock size={14} color="#b91c1c" /> No Cancellations
                       </button>
                     ) : (
                       <button 
@@ -713,12 +726,12 @@ export const MyStaysPage: React.FC = () => {
                     ) : policy.isLocked ? (
                       <span style={{ color: '#b91c1c', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <Lock size={14} style={{ flexShrink: 0 }} />
-                        <span><strong>Cancellation closed:</strong> Under 24 hours left before arrival (deadline was {policy.deadlineText}). Cancellations are locked.</span>
+                        <span><strong>No cancellations:</strong> Cancellation window is closed. Cancellations are only permitted before 24 hours of check-in time, not after that.</span>
                       </span>
                     ) : (
                       <span style={{ color: '#17653e', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <ShieldCheck size={15} style={{ flexShrink: 0 }} />
-                        <span><strong>Free cancellation available until {policy.deadlineText}</strong> (24 hours prior to check-in). Zero cancellation fee · No upfront charges were taken.</span>
+                        <span><strong>Free cancellation:</strong> You can cancel only before 24 hours of check-in time (until {policy.deadlineText}). Zero cancellation fee.</span>
                       </span>
                     )}
                   </p>
@@ -891,16 +904,16 @@ export const MyStaysPage: React.FC = () => {
                       </div>
                       <div>
                         <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                          24-HOUR CANCELLATION POLICY
+                          CANCELLATION POLICY
                         </span>
                         <h3 style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: '1.85rem', fontWeight: 700, color: '#17271f', margin: 0, lineHeight: 1.2 }}>
-                          Cancellation Window Closed
+                          No Cancellations
                         </h3>
                       </div>
                     </div>
 
                     <p style={{ fontSize: '0.9375rem', color: '#55655f', lineHeight: 1.55, margin: '0 0 18px 0' }}>
-                      Reservation <strong>#{selectedRes.confirmationCode}</strong> at <strong>{selectedRes.propertyName}</strong> has entered the 24-hour arrival window (check-in scheduled for {selectedRes.checkInDate} at 4:00 PM Central Time).
+                      Reservation <strong>#{selectedRes.confirmationCode}</strong> at <strong>{selectedRes.propertyName}</strong> is within 24 hours of check-in.
                     </p>
 
                     <div style={{
@@ -911,10 +924,10 @@ export const MyStaysPage: React.FC = () => {
                       marginBottom: '18px'
                     }}>
                       <div style={{ fontWeight: 800, color: '#991b1b', fontSize: '0.9rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <AlertCircle size={16} /> Cancellation &amp; Stay Changes Locked
+                        <AlertCircle size={16} /> Cancellation Window Closed
                       </div>
                       <div style={{ color: '#7f1d1d', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                        Under hotel reservation rules, all cancellations must be finalized at least 24 hours prior to check-in (deadline was {policy.deadlineText}). Because less than 24 hours remain, online cancellation is no longer permitted.
+                        Cancellations are only permitted before 24 hours of check-in time, not after that. Because this reservation is within 24 hours of check-in, cancellations are closed.
                       </div>
                     </div>
 
@@ -1087,7 +1100,7 @@ export const MyStaysPage: React.FC = () => {
                         <ShieldCheck size={20} /> Free Cancellation Window Active (&gt;24h)
                       </div>
                       <div style={{ fontSize: '0.85rem', color: '#17271f', lineHeight: 1.5 }}>
-                        You are outside the 24-hour cutoff (deadline: {policy.deadlineText}). Cancellation fee is <strong>$0 USD (Zero penalty)</strong>. No payment was collected upfront, so no refund is needed. Your reservation will simply be released with zero charge.
+                        You are outside the 24-hour cutoff (deadline: {policy.deadlineText}). You can cancel only before 24 hours of check-in time. Cancellation fee is <strong>$0 USD (Zero penalty)</strong>. Your reservation will simply be cancelled with zero charge.
                       </div>
                     </div>
 
@@ -1193,7 +1206,7 @@ export const MyStaysPage: React.FC = () => {
                       <ShieldCheck size={18} /> Free Cancellation Active (&gt;24h)
                     </div>
                     <div style={{ fontSize: '0.8125rem', color: '#17271f', lineHeight: 1.5 }}>
-                      Cancellation penalty: <strong>$0 USD (Zero penalty)</strong>. No payment was charged upfront, so no refund is needed. Your reservation will simply be released with zero charges.
+                      Cancellation fee: <strong>$0 USD (Zero fee)</strong>. Cancellations are permitted only before 24 hours of check-in time. Your reservation will simply be cancelled with zero charges.
                     </div>
                   </div>
 
