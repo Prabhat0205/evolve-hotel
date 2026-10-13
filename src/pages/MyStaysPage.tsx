@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp, normalizePhone, normalizeGuestCode } from '../context/AppContext';
 import { Reservation } from '../types';
 import { mockProperties } from '../data/mockProperties';
@@ -65,7 +65,26 @@ export const MyStaysPage: React.FC = () => {
     try {
       const saved = localStorage.getItem('evolve_missing_stays_v1');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed: MissingStayRequestItem[] = JSON.parse(saved);
+        const normalized = parsed.map(item => {
+          if (item.refCode === 'MS-4013' || item.status?.toLowerCase().includes('resolved')) {
+            return {
+              ...item,
+              status: 'Resolved',
+              resolutionNotes: item.resolutionNotes || `Cloudbeds reservation #${item.confirmationNumber || 'EV-4218'} verified against folio records. 2 qualifying Reward Nights credited to your member account.`,
+              resolvedAt: item.resolvedAt || 'Oct 13, 2026'
+            };
+          }
+          if (item.status?.toLowerCase().includes('pending')) {
+            return {
+              ...item,
+              status: 'In Progress'
+            };
+          }
+          return item;
+        });
+        localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(normalized));
+        return normalized;
       }
       return [
         {
@@ -87,6 +106,18 @@ export const MyStaysPage: React.FC = () => {
       return [];
     }
   });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'evolve_missing_stays_v1' && e.newValue) {
+        try {
+          setMissingStayRequests(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Filter reservations based on active session
   const userReservations = reservations.filter(r => {
@@ -211,7 +242,7 @@ export const MyStaysPage: React.FC = () => {
         bookedChannel: missingBookedChannel,
         notes: missingNotes,
         submittedAt: nowStr,
-        status: 'Pending Verification · Cloudbeds Match in Progress'
+        status: 'In Progress'
       };
 
       const updated = [newRequest, ...missingStayRequests];
@@ -233,7 +264,7 @@ export const MyStaysPage: React.FC = () => {
       setConfirmationModal({
         tag: 'STAY ASSISTANCE CONFIRMATION',
         title: 'Missing stay reported',
-        description: `Cloudbeds confirmed receipt of missing stay request ${refCode} for ${missingProperty}. Staff will verify your booking against your phone records and credit any eligible Reward Nights.`,
+        description: `Cloudbeds confirmed receipt of missing stay request ${refCode} for ${missingProperty}. Status is In Progress. Staff will verify your booking against your phone records and credit any eligible Reward Nights.`,
         redirectTab: 'MISSING'
       });
       setTab('MISSING');
@@ -774,9 +805,21 @@ export const MyStaysPage: React.FC = () => {
                 </div>
 
                 {missingStayRequests.map(req => {
-                  const isResolved = req.status.toLowerCase().includes('resolved');
+                  const getNormalizedStatus = (rawStatus: string): 'Resolved' | 'In Progress' | 'Open' => {
+                    const s = (rawStatus || '').toLowerCase();
+                    if (s.includes('resolved') || s.includes('complete') || s.includes('closed')) {
+                      return 'Resolved';
+                    }
+                    if (s.includes('open')) {
+                      return 'Open';
+                    }
+                    return 'In Progress';
+                  };
+
+                  const displayStatus = getNormalizedStatus(req.status);
+                  const isResolved = displayStatus === 'Resolved';
                   const resolutionNotesText = req.resolutionNotes || (isResolved 
-                    ? 'Cloudbeds reservation #EV-4218 verified against folio records. 2 qualifying Reward Nights credited to your member account.' 
+                    ? `Cloudbeds reservation #${req.confirmationNumber || 'EV-4218'} verified against folio records. 2 qualifying Reward Nights credited to your member account.` 
                     : null);
 
                   return (
@@ -791,8 +834,8 @@ export const MyStaysPage: React.FC = () => {
                           </h3>
                         </div>
                         <span style={{ 
-                          backgroundColor: isResolved ? '#dcfce7' : '#fef3c7', 
-                          color: isResolved ? '#15803d' : '#92400e', 
+                          backgroundColor: isResolved ? '#dcfce7' : displayStatus === 'In Progress' ? '#eff6ff' : '#fef3c7', 
+                          color: isResolved ? '#15803d' : displayStatus === 'In Progress' ? '#1d4ed8' : '#92400e', 
                           padding: '6px 14px', 
                           borderRadius: '999px', 
                           fontSize: '0.8125rem', 
@@ -802,7 +845,7 @@ export const MyStaysPage: React.FC = () => {
                           gap: '6px'
                         }}>
                           {isResolved ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-                          {isResolved ? 'Resolved' : req.status}
+                          {displayStatus}
                         </span>
                       </div>
 
@@ -863,12 +906,20 @@ export const MyStaysPage: React.FC = () => {
                           color: '#6e7a76',
                           lineHeight: 1.5
                         }}>
-                          <strong style={{ color: '#17271f' }}>Resolution notes:</strong> Under review. Staff matches reservations daily.
+                          <strong style={{ color: '#17271f' }}>Resolution notes:</strong> {displayStatus === 'In Progress' ? 'Folio audit in progress with property manager.' : 'Case open. Staff matches reservations daily against Cloudbeds records.'}
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#173f34', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <CheckCircle2 size={16} /> Cloudbeds system audit in queue. Staff matches reservations daily.
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isResolved ? '#15803d' : '#173f34', fontSize: '0.85rem', fontWeight: 600 }}>
+                        {isResolved ? (
+                          <>
+                            <CheckCircle2 size={16} /> Folio verified and qualifying Reward Nights credited to your account.
+                          </>
+                        ) : (
+                          <>
+                            <Clock size={16} /> Cloudbeds system audit in queue. Staff matches reservations daily.
+                          </>
+                        )}
                       </div>
                     </div>
                   );

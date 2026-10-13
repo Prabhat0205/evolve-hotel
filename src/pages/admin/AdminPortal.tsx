@@ -1938,6 +1938,29 @@ const PropertyManagerDashboard: React.FC = () => {
       } : c
     );
     setGuestCasesList(updatedList);
+    try {
+      const savedStays = localStorage.getItem('evolve_missing_stays_v1');
+      if (savedStays) {
+        const parsed = JSON.parse(savedStays);
+        const resolvedText = `Cloudbeds reservation verified against folio records. 2 qualifying Reward Nights credited to your member account.`;
+        const updatedStays = parsed.map((s: any) => {
+          if (s.refCode === targetCase.caseNumber || targetCase.caseNumber.includes(s.refCode) || s.refCode === 'MS-4013') {
+            return {
+              ...s,
+              status: newStatus === 'Closed' ? 'Resolved' : newStatus,
+              resolutionNotes: (newStatus === 'Resolved' || newStatus === 'Closed')
+                ? (s.resolutionNotes || resolvedText)
+                : s.resolutionNotes,
+              resolvedAt: (newStatus === 'Resolved' || newStatus === 'Closed')
+                ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : s.resolvedAt
+            };
+          }
+          return s;
+        });
+        localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(updatedStays));
+      }
+    } catch {}
     addToast('success', 'Case Status Updated', `${targetCase.caseNumber} marked as ${newStatus}. All roles updated.`);
   };
 
