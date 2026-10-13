@@ -9,6 +9,9 @@ export const mockSupportTickets: SupportTicket[] = [
     status: 'IN_PROGRESS',
     createdAt: '2026-09-08T18:40:00Z',
     reservationReference: 'EV-882910',
+    dateOpened: 'Oct 13, 2026',
+    dateClosed: '—',
+    resolutionNotes: 'Private tea ceremony appointment requested with Tea Master Sosei for 3:30 PM. Preference noted for ceremonial Uji matcha and seasonal wagashi confections. Appointment reserved.',
     messages: [
       {
         id: 'msg-1',
@@ -34,6 +37,9 @@ export const mockSupportTickets: SupportTicket[] = [
     status: 'RESOLVED',
     createdAt: '2026-08-30T10:15:00Z',
     reservationReference: 'EV-994102',
+    dateOpened: 'Oct 13, 2026',
+    dateClosed: 'Oct 13, 2026',
+    resolutionNotes: 'Sunset Overwater Infinity Villa is guaranteed on the western jetty with direct western ocean sunset vistas.',
     messages: [
       {
         id: 'msg-3',

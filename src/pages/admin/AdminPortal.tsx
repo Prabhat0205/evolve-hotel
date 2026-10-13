@@ -1961,6 +1961,29 @@ const PropertyManagerDashboard: React.FC = () => {
         localStorage.setItem('evolve_missing_stays_v1', JSON.stringify(updatedStays));
       }
     } catch {}
+    try {
+      const savedTickets = localStorage.getItem('evolve_support_tickets_v1');
+      if (savedTickets) {
+        const parsedT = JSON.parse(savedTickets);
+        const updatedT = parsedT.map((t: any) => {
+          if (t.ticketNumber === targetCase.caseNumber || targetCase.caseNumber.includes(t.ticketNumber)) {
+            const rawStatus = newStatus === 'Closed' ? 'CLOSED' : newStatus === 'Resolved' ? 'RESOLVED' : newStatus === 'In Progress' ? 'IN_PROGRESS' : 'OPEN';
+            return {
+              ...t,
+              status: rawStatus,
+              resolutionNotes: (newStatus === 'Resolved' || newStatus === 'Closed')
+                ? (t.resolutionNotes || targetCase.description || 'Case reviewed and verified by management.')
+                : t.resolutionNotes,
+              dateClosed: (newStatus === 'Resolved' || newStatus === 'Closed')
+                ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'
+            };
+          }
+          return t;
+        });
+        localStorage.setItem('evolve_support_tickets_v1', JSON.stringify(updatedT));
+      }
+    } catch {}
     addToast('success', 'Case Status Updated', `${targetCase.caseNumber} marked as ${newStatus}. All roles updated.`);
   };
 

@@ -834,6 +834,60 @@ export const mockGiftCardRequests: GiftCardRequestItem[] = [
 
 export const mockGuestCases: GuestCaseItem[] = [
   {
+    id: 'case-tkt-1092',
+    caseNumber: 'TKT-1092',
+    title: 'In-Stay Concierge Request',
+    property: 'Evolve Texarkana',
+    guestName: 'Marcus Sterling',
+    description: 'Kyoto Private Tea Ceremony Booking Request',
+    priority: 'High',
+    assignedRole: 'Property Manager',
+    updatedBy: 'Front Desk Lead',
+    status: 'In Progress',
+    createdDate: 'Oct 13, 2026',
+    timelineUpdates: [
+      {
+        author: 'Marcus Sterling',
+        role: 'Guest',
+        time: 'Oct 13 • 18:40',
+        message: 'Hello Concierge, could you arrange a private tea ceremony for two at the Tea Pavilion tomorrow afternoon around 3:30 PM?'
+      },
+      {
+        author: 'Kenji (Head Concierge)',
+        role: 'Front Desk',
+        time: 'Oct 13 • 18:52',
+        message: 'Good evening Mr. Sterling. We would be delighted to host you. Tea Master Sosei has confirmed availability for 3:30 PM. We have noted your preference for ceremonial Uji matcha and delicate seasonal wagashi confections. Your appointment is now reserved.'
+      }
+    ]
+  },
+  {
+    id: 'case-tkt-1085',
+    caseNumber: 'TKT-1085',
+    title: 'Reservation Room Preference',
+    property: 'Evolve Texarkana',
+    guestName: 'Marcus Sterling',
+    description: 'High-floor room preference confirmation',
+    priority: 'Normal',
+    assignedRole: 'Property Manager',
+    updatedBy: 'Property Manager',
+    status: 'Resolved',
+    createdDate: 'Oct 13, 2026',
+    timelineUpdates: [
+      {
+        author: 'Marcus Sterling',
+        role: 'Guest',
+        time: 'Oct 13 • 10:15',
+        message: 'Hi, just re-confirming that our Maldives villa is positioned for the sunset view side of the reef.'
+      },
+      {
+        author: 'Aishath (Island Host)',
+        role: 'Property Manager',
+        time: 'Oct 13 • 10:45',
+        message: 'Greetings Mr. Sterling. Your Sunset Overwater Infinity Villa is guaranteed on the western jetty with direct western ocean sunset vistas.'
+      }
+    ]
+  },
+  {
     id: 'case-1042',
     caseNumber: 'CASE-1042',
     title: 'Missing Stay',

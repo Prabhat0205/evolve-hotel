@@ -207,12 +207,16 @@ export interface SupportTicket {
   ticketNumber: string;
   subject: string;
   category: 'BILLING' | 'RESERVATION' | 'IN_STAY' | 'MEMBERSHIP' | 'GENERAL';
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | string;
   createdAt: string;
   reservationReference?: string;
+  reservationNumber?: string;
+  resolutionNotes?: string;
+  dateOpened?: string;
+  dateClosed?: string;
   messages: {
     id: string;
-    sender: 'GUEST' | 'CONCIERGE';
+    sender: 'GUEST' | 'CONCIERGE' | 'ADMIN' | string;
     senderName: string;
     text: string;
     timestamp: string;
